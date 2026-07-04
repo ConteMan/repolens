@@ -1,0 +1,14 @@
+# Build output
+/dist/
+/bin/
+repolens
+!cmd/repolens/
+
+# Test artifacts
+*.test
+coverage.out
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
