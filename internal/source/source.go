@@ -261,6 +261,13 @@ func extractTar(r io.Reader, root string) error {
 			}
 			file, err := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 			if err != nil {
+				if errors.Is(err, os.ErrExist) {
+					if existing, ok, findErr := findCaseCollision(root, name); findErr != nil {
+						return findErr
+					} else if ok {
+						return fmt.Errorf("archive paths %q and %q collide on this case-insensitive filesystem; rename one path before building", existing, filepath.ToSlash(name))
+					}
+				}
 				return err
 			}
 			_, copyErr := io.Copy(file, tr)
@@ -275,6 +282,47 @@ func extractTar(r io.Reader, root string) error {
 			continue
 		}
 	}
+}
+
+func findCaseCollision(root, name string) (string, bool, error) {
+	clean := filepath.Clean(name)
+	if clean == "." {
+		return "", false, nil
+	}
+
+	parts := strings.Split(clean, string(filepath.Separator))
+	actualParts := make([]string, 0, len(parts))
+	current := root
+	for _, part := range parts {
+		entries, err := os.ReadDir(current)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return "", false, nil
+			}
+			return "", false, err
+		}
+
+		actual := ""
+		for _, entry := range entries {
+			if strings.EqualFold(entry.Name(), part) {
+				actual = entry.Name()
+				break
+			}
+		}
+		if actual == "" {
+			return "", false, nil
+		}
+
+		actualParts = append(actualParts, actual)
+		current = filepath.Join(current, actual)
+	}
+
+	existing := filepath.ToSlash(filepath.Join(actualParts...))
+	requested := filepath.ToSlash(clean)
+	if existing == requested {
+		return "", false, nil
+	}
+	return existing, true, nil
 }
 
 func safeArchivePath(name string) (string, error) {
