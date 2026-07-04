@@ -1,6 +1,6 @@
 # 002: 配置加载与规则级联（internal/config）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M2、ADR-005（双信任域）、[design/config.md](../design/config.md)
 
 ## 问题
@@ -32,6 +32,7 @@ type Rule struct {
     Render *bool // nil = 未设置；false = 只镜像不出浏览页
     // 其余字段与 FileOptions 同构，指针类型表达"未设置"
     Markdown *MarkdownOptions; HTML *HTMLOptions; Code *CodeOptions
+    MaxFileSize *int64
 }
 
 type FileOptions struct {
@@ -43,6 +44,14 @@ type FileOptions struct {
 }
 
 type Warning struct{ Msg string }
+
+// Flags 为 CLI 可信域覆盖；空字符串表示未设置。
+type Flags struct {
+    Repo string
+    Ref string
+    OutputDir string
+    BasePath string
+}
 
 // Load 合并全部来源。repoRoot 为物化树根（找 .repolens.yml），
 // externalPath 可为空，flags 由 CLI 层构造。
