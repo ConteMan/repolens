@@ -101,12 +101,12 @@ func TestRelTo(t *testing.T) {
 		tt := tt
 		t.Run(fmt.Sprintf("%s_to_%s", tt.from, tt.to), func(t *testing.T) {
 			t.Parallel()
-			got := relTo(tt.from, tt.to)
+			got := RelTo(tt.from, tt.to)
 			if got != tt.want {
-				t.Fatalf("relTo(%q, %q) = %q, want %q", tt.from, tt.to, got, tt.want)
+				t.Fatalf("RelTo(%q, %q) = %q, want %q", tt.from, tt.to, got, tt.want)
 			}
 			if strings.Contains(got, "//") {
-				t.Fatalf("relTo(%q, %q) contains duplicate slash: %q", tt.from, tt.to, got)
+				t.Fatalf("RelTo(%q, %q) contains duplicate slash: %q", tt.from, tt.to, got)
 			}
 		})
 	}
