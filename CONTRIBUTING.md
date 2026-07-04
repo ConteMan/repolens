@@ -2,7 +2,7 @@
 
 **中文** | [English](CONTRIBUTING.en.md)
 
-感谢关注！repolens 以文档先行、AI Agent 优先的方式开发：[`docs/`](docs/) 中的设计文档是唯一真相源，[AGENTS.md](AGENTS.md) 是编码 Agent 的入口。同样欢迎人类贡献者——规则对所有人一致。
+感谢关注！repolens 以文档先行、AI Agent 优先的方式开发：[`docs/`](docs/README.md) 中的设计文档是唯一真相源，[AGENTS.md](AGENTS.md) 是编码 Agent 的入口。同样欢迎人类贡献者——规则对所有人一致。
 
 ## 开发环境
 

@@ -6,7 +6,7 @@
 
 repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（TOC、Mermaid）、HTML 文件直接预览、代码文件语法高亮，全部通过常驻文件树导航。访问者在浏览器里阅读一切——无需 clone、无需本地工具。AI Agent 则获得每个文件的干净纯文本视图。
 
-**状态：早期设计 / v1 之前。** 架构与路线图见 [`docs/`](docs/)，目前尚不可用。
+**状态：早期设计 / v1 之前。** 架构与路线图见 [`docs/`](docs/README.md)，目前尚不可用。
 
 ## 为什么
 
@@ -32,7 +32,7 @@ repolens serve ./local-repo                        # 本地预览，实时重建
 
 - [架构总览](docs/design/architecture.md)
 - [配置模型](docs/design/config.md)
-- [架构决策记录（ADR）](docs/decisions/)
+- [架构决策记录（ADR）](docs/decisions/README.md)
 - [路线图](docs/roadmap.md)
 
 ## 参与贡献

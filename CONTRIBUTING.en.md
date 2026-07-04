@@ -2,7 +2,7 @@
 
 [中文](CONTRIBUTING.md) | **English**
 
-Thanks for your interest! repolens is developed docs-first and AI-agent-first: design documents in [`docs/`](docs/) are the source of truth, and [AGENTS.md](AGENTS.md) is the entry point for coding agents. Human contributors are equally welcome — the same rules apply to everyone.
+Thanks for your interest! repolens is developed docs-first and AI-agent-first: design documents in [`docs/`](docs/README.md) are the source of truth, and [AGENTS.md](AGENTS.md) is the entry point for coding agents. Human contributors are equally welcome — the same rules apply to everyone.
 
 ## Development setup
 

@@ -6,7 +6,7 @@
 
 repolens takes a Git repository as-is and builds a static website from it: Markdown rendered with TOC and Mermaid, HTML files previewed directly, code files with syntax highlighting, all navigable through a persistent file tree. Visitors read everything in the browser — no cloning, no local tooling. AI agents get clean plaintext views of every file.
 
-**Status: early design / pre-v1.** The architecture and roadmap live in [`docs/`](docs/). Nothing is usable yet.
+**Status: early design / pre-v1.** The architecture and roadmap live in [`docs/`](docs/README.md). Nothing is usable yet.
 
 ## Why
 
@@ -32,7 +32,7 @@ repolens serve ./local-repo                        # local preview with live rel
 
 - [Architecture](docs/design/architecture.md)
 - [Configuration model](docs/design/config.md)
-- [Architecture decision records](docs/decisions/)
+- [Architecture decision records](docs/decisions/README.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Contributing
