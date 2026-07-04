@@ -14,12 +14,12 @@
    - `OptionsFor(path)` ＋ `Classify` 决定浏览页形态，渲染到 `dist/view/<path>`（文件页为 `view/<path>` 本身输出 HTML 内容——静态托管对无名扩展的处理不可控，因此**文件浏览页输出为 `view/<path>/index.html`，URL 以 `view/<path>/` 访问**；目录页为 `view/<dir>/index.html`）。
 2. **浏览页形态**（Kind → 模板数据）：
    - Markdown：spec 003 渲染正文 ＋ TOC；
-   - HTML：按 `html.view`——`embed`：iframe 指向镜像路径（相对），带"全屏打开 / 查看源码"工具栏；`direct`：浏览页仅工具栏 ＋ 跳转链接；`source`：按 Code 展示源码；
+   - HTML：按 `html.view`——`embed`：iframe 指向镜像路径（相对），带"全屏打开"工具栏；`direct`：浏览页仅工具栏 ＋ 跳转链接；`source`：按 Code 展示源码。工具栏的"查看源码"入口 v1 缓行——它需要独立的源码子页面 URL（如 `view/<path>/source/`），URL 结构扩展留给后续与 spec 008 一并权衡（实现时确认，2026-07-04）；
    - Code：spec 004 高亮正文；Image：`<img>` 预览；Binary：下载页（名称 / 大小 / 镜像链接）。
    - `render:false` 的文件：只镜像，文件树中直接链到镜像路径。
 3. **目录页**：每个目录（含根）生成 `view/<dir>/index.html`：存在 README（匹配顺序 `README.md`、`readme.md`，大小写完全匹配这两种）则渲染其正文，页尾附子项列表；否则仅列表（名称、Kind、大小、git 最后修改时间，目录在前按字典序）。
 4. **站点框架数据**（传给 theme 模板，契约见 spec 006）：完整文件树（当前路径的祖先展开、当前项高亮）、面包屑、页面标题、git 元信息、到镜像层原文件的相对链接、`rel=alternate` head 标签。
-5. **相对链接不变量**：所有生成页面中的 href/src（含树、面包屑、CSS/JS 资源 `_assets/`）一律相对路径；**禁止**以 `/` 开头。深度由页面 URL 计算。构建后自检：扫描产物中 `href="/` 与 `src="/` 与 `http(s)://` 外部引用，命中即构建失败（零外部请求约束的机器化）。
+5. **相对链接不变量**：所有生成页面中的 href/src（含树、面包屑、CSS/JS 资源 `_assets/`）一律相对路径；**禁止**以 `/` 开头。深度由页面 URL 计算。构建后自检：扫描产物中 `href="/`、`src="/`，以及**会发起资源加载的外部引用**（`src="http(s)://`、CSS `url(http(s)://)`），命中即构建失败（零外部请求约束的机器化）。普通超链接 `<a href="http(s)://">` 允许——仓库文档本就含正常外部链接，导航跳转不违反零外部请求约束（实现时确认，2026-07-04）。
 6. **根与杂项**：`dist/index.html` 为 meta-refresh ＋ 链接指向 `view/`（静态托管重定向不可移植）；`access.noindex: true` 时输出 robots.txt（`Disallow: /`）并在每页注入 `<meta name="robots" content="noindex">`。
 7. **build 命令接线**：`repolens build [repo|path]`，flags 与现有脚手架一致（`--config` / `--ref` / `-o`）。输出目录不存在则创建；已存在时清空重建（仅当目录含上次构建的哨兵文件 `.repolens-build` 才允许清空，否则报错拒绝——防误删）。结束打印统计（文件数、页面数、耗时、Warning 列表）。
 

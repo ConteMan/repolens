@@ -80,7 +80,7 @@ func rewriteLink(raw string, ref PageRef, image bool) string {
 		return raw
 	}
 
-	rewritten := relTo(viewURL(ref.Path), targetURL)
+	rewritten := RelTo(viewURL(ref.Path), targetURL)
 	if parsed.RawQuery != "" {
 		rewritten += "?" + parsed.RawQuery
 	}
@@ -136,7 +136,11 @@ func mirrorURL(repoPath string) string {
 	return cleanRepoPath(repoPath)
 }
 
-func relTo(fromURL, toURL string) string {
+// RelTo computes the relative URL from one site page URL to another. Both
+// arguments are root-relative URLs like "view/docs/a.md/"; a trailing slash
+// on toURL is preserved. Shared by the markdown link rewriter and the site
+// assembly layer (spec 005).
+func RelTo(fromURL, toURL string) string {
 	from := cleanURLPath(fromURL)
 	to, trailingSlash := cleanTargetURLPath(toURL)
 	if from == "" {
