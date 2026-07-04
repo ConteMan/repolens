@@ -6,7 +6,6 @@ import (
 	"path"
 	"strings"
 
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -139,8 +138,8 @@ func newGoldmark(withAnchors, withMermaid bool) goldmark.Markdown {
 		extension.GFM,
 		&frontmatter.Extender{Mode: frontmatter.SetMetadata},
 		highlighting.NewHighlighting(
-			highlighting.WithStyle("github"),
-			highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
+			highlighting.WithStyle(sharedHighlightTheme()),
+			highlighting.WithFormatOptions(sharedHighlightOptions()...),
 		),
 	}
 	if withAnchors {
