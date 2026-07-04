@@ -1,6 +1,6 @@
 # 001: Git 内容源（internal/source）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M2、ADR-004（系统 git）
 
 ## 问题
@@ -61,7 +61,7 @@ func (t *Tree) Cleanup() error
 ## 验收
 
 - 对远端仓库和本地路径均能 `Open` 出一致的 `Tree`；二次 `Open` 远端走 fetch 不重新 clone；
-- `Files` 与 `git ls-tree -r --name-only <hash>` 输出一致（不含目录项）；
+- `Files` 与 `git ls-tree -r --name-only <hash>` 输出一致（不含目录项；symlink 依行为 3 排除，此为与 ls-tree 的预期差异）；
 - 任选文件的 `LastCommit.Hash` 与 `git log -1 --format=%H <hash> -- <path>` 一致；
 - 单元测试用 `t.TempDir()` 内动态创建的 git 仓库，不依赖网络；
 - `gofmt` / `go vet` / `go test` 通过。
