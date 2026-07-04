@@ -26,6 +26,17 @@ repolens 是一个 Go 编写的单二进制 CLI 工具：把任意 Git 仓库原
 6. **范围纪律**：roadmap 中标记 Out of v1 的能力（搜索、多仓库聚合、主题市场等）不做，除非 roadmap 先修订。
 7. **零外部请求约束**：生成站点的任何页面不得引用外部 CDN / 字体 / 脚本，所有资源 embed 进二进制并输出到站点内。
 
+## 协作模式：主控 Agent 与实现 Agent
+
+本项目采用**主控 ＋ 实现**的分工：主控 Agent（与维护者对话的会话）负责设计决策、spec 撰写、review 与集成把关；实现 Agent 以**单份 spec 为工作单元**独立推进。
+
+实现 Agent 必须遵守（详见 [docs/specs/README.md](docs/specs/README.md)）：
+
+1. 只做 spec 范围内的事，接口契约是包间合同，调整必须回写 spec（同一 PR）；
+2. spec 与 design / ADR 冲突或有遗漏时，停下来报告，不自行拍板；
+3. 完成定义 = spec 验收项全过 ＋ 质量门禁绿 ＋ spec 状态改"已实现"；
+4. 一份 spec 一个 PR。
+
 ## 常用命令
 
 ```sh

@@ -29,9 +29,9 @@
 
 ## 里程碑
 
-| 里程碑 | 内容 | 验收 |
-|---|---|---|
-| M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | `repolens version` 可用，CI 绿 |
-| M2 核心管线 | source（git）→ config（双域级联）→ render（md/code）→ site（双层输出） | 对本仓 build 出可浏览的 dist/ |
-| M3 浏览层 | 文件树、目录页、HTML iframe、主题、增强层 JS、serve | docu.md 级浏览体验 |
-| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | 文档站上线，tag v1.0.0 |
+| 里程碑 | 内容 | Specs | 验收 |
+|---|---|---|---|
+| M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | — | `repolens version` 可用，CI 绿 ✅ 已完成 |
+| M2 核心管线 | source（git）→ config（双域级联）→ render（md/code）→ site（双层输出） | [001–005](specs/README.md) | 对本仓 build 出可浏览的 dist/ |
+| M3 浏览层 | 文件树、目录页、HTML iframe、主题、增强层 JS、serve | [006–007](specs/README.md) | docu.md 级浏览体验 |
+| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | [008](specs/README.md) ＋ 收尾项 | 文档站上线，tag v1.0.0 |

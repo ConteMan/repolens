@@ -32,12 +32,14 @@ dist/
 
 ## URL 约定
 
-| 内容 | URL |
-|---|---|
-| 原始文件（镜像层） | `/<repo 路径>` |
-| 文件浏览页 | `/view/<repo 路径>`（保留原扩展名，如 `/view/docs/foo.md`） |
-| 目录页 | `/view/<目录>/` |
-| 站点根 | `/` 跳转 `/view/`，渲染 `site.home`（默认根 README） |
+| 内容 | URL | 落地文件 |
+|---|---|---|
+| 原始文件（镜像层） | `/<repo 路径>` | `dist/<repo 路径>` |
+| 文件浏览页 | `/view/<repo 路径>/`（保留原扩展名 ＋ 尾斜杠，如 `/view/docs/foo.md/`） | `view/<repo 路径>/index.html` |
+| 目录页 | `/view/<目录>/` | `view/<目录>/index.html` |
+| 站点根 | `/` 跳转 `/view/`，渲染 `site.home`（默认根 README） | meta-refresh 页 |
+
+浏览页落地为 `index.html` 而非裸文件：若 `view/docs/foo.md` 作为文件输出，静态托管同样按 `.md` 扩展名给错 Content-Type——镜像层遇到的问题在浏览层同样存在，尾斜杠目录形式是唯一可移植解（2026-07-04 细化，见 ADR-001）。
 
 全站**只使用相对链接**，不烧录 base URL——部署在任意子路径、任意反代之后都成立。
 
