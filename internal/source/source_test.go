@@ -2,6 +2,8 @@ package source
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -131,6 +133,43 @@ func TestOpenSkipsSymlinks(t *testing.T) {
 	}
 }
 
+func TestOpenCaseCollisionReportsBothPathsOnCaseInsensitiveFS(t *testing.T) {
+	if !tempDirCaseInsensitive(t) {
+		t.Skip("case-sensitive filesystem")
+	}
+
+	tree, err := Open(context.Background(), Spec{Repo: newCaseCollisionRepo(t)})
+	if err == nil {
+		defer cleanupTree(t, tree)
+		t.Fatal("Open() error = nil, want case collision error")
+	}
+
+	msg := err.Error()
+	for _, want := range []string{"README.md", "readme.md", "case-insensitive filesystem"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("Open() error = %q, want substring %q", msg, want)
+		}
+	}
+}
+
+func TestOpenCaseDistinctPathsMaterializeOnCaseSensitiveFS(t *testing.T) {
+	if tempDirCaseInsensitive(t) {
+		t.Skip("case-insensitive filesystem")
+	}
+
+	tree, err := Open(context.Background(), Spec{Repo: newCaseCollisionRepo(t)})
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer cleanupTree(t, tree)
+
+	gotPaths := filePaths(tree.Files)
+	wantPaths := []string{"README.md", "readme.md"}
+	if !reflect.DeepEqual(gotPaths, wantPaths) {
+		t.Fatalf("paths = %#v, want %#v", gotPaths, wantPaths)
+	}
+}
+
 func TestOpenWorktreeIncludesUncommittedFilesBestEffortMetadata(t *testing.T) {
 	ctx := context.Background()
 	repo := newTestRepo(t)
@@ -204,6 +243,21 @@ func newTestRepo(t *testing.T) string {
 	return repo
 }
 
+func newCaseCollisionRepo(t *testing.T) string {
+	t.Helper()
+	repo := newEmptyRepo(t)
+
+	upper := gitStringInput(t, repo, "upper\n", "hash-object", "-w", "--stdin")
+	lower := gitStringInput(t, repo, "lower\n", "hash-object", "-w", "--stdin")
+	runGitTest(t, repo, "update-index", "--add", "--cacheinfo", fmt.Sprintf("100644,%s,README.md", upper))
+	runGitTest(t, repo, "update-index", "--add", "--cacheinfo", fmt.Sprintf("100644,%s,readme.md", lower))
+	tree := gitString(t, repo, "write-tree")
+	commit := gitStringInput(t, repo, "case collision\n", "commit-tree", tree)
+	runGitTest(t, repo, "update-ref", "refs/heads/main", commit)
+
+	return repo
+}
+
 func newEmptyRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
@@ -224,6 +278,23 @@ func writeFile(t *testing.T, root, rel, content string) {
 	}
 }
 
+func tempDirCaseInsensitive(t *testing.T) bool {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
+		t.Fatalf("WriteFile(a.txt): %v", err)
+	}
+	_, err := os.Stat(filepath.Join(dir, "A.txt"))
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	t.Fatalf("Stat(A.txt): %v", err)
+	return false
+}
+
 func runGitTest(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -240,6 +311,18 @@ func gitString(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %s failed: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func gitStringInput(t *testing.T, dir, input string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Stdin = strings.NewReader(input)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %s failed: %v\n%s", strings.Join(args, " "), err, out)
