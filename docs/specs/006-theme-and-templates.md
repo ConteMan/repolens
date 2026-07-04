@@ -12,7 +12,7 @@
 1. **模板集**（html/template，go:embed，模板名即公开 API，宁缺毋滥）：
    - `layout` —— 页面骨架：顶栏（站点标题、到镜像原文件链接）、文件树侧栏、内容区、页脚（git 最后修改时间、commit 短 hash）；
    - `page` —— 文件页正文（Markdown / Code / HTML iframe / Image / Binary 五种形态的分支在此）；
-   - `dirlist` —— 目录页（README 正文 ＋ 子项表格）；
+   - `dirlist` —— 目录页（README 正文来自 `PageData.Body`，子项表格来自 `PageData.DirEntries`）；
    - `tree` —— 文件树侧栏（递归 partial：目录可折叠、类型图标、当前项高亮、祖先默认展开、其余按 `tree_expand_depth`）。
 2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
@@ -37,6 +37,13 @@ type Renderer struct{ /* 解析后的模板集 ＋ 资源 */ }
 // overrideDir / customCSS 可为空；vars 为 theme.vars
 func New(overrideDir, customCSS string, vars map[string]string) (*Renderer, error)
 
+type DirEntry struct {
+    Name, Path, Href, Kind string // Href 为相对当前目录页的链接
+    Size                   int64
+    LastCommit             *source.Commit
+    IsDir                  bool
+}
+
 type PageData struct {
     Title, SiteTitle string
     RelRoot          string   // 当前页到站点根的相对前缀，如 "../../"
@@ -49,6 +56,7 @@ type PageData struct {
     LastCommit       *source.Commit
     HasMermaid, NoIndex bool
     HeadExtra        template.HTML // rel=alternate 等，site 层拼装
+    DirEntries       []DirEntry    // 仅目录页使用；由 dirlist 模板渲染子项表格
 }
 
 func (r *Renderer) Page(w io.Writer, d PageData) error

@@ -1,0 +1,25 @@
+{{define "dirlist"}}
+<article class="page page-dir">
+  {{if .Body}}<section class="readme">{{.Body}}</section>{{end}}
+  <section class="dir-list" aria-labelledby="dir-list-heading">
+    <h2 id="dir-list-heading">Files</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Kind</th><th>Size</th><th>Updated</th></tr>
+      </thead>
+      <tbody>
+        {{range .DirEntries}}
+        <tr>
+          <td><a class="dir-entry-name" href="{{.Href}}"><svg class="icon icon-{{iconName .Kind .IsDir}}" aria-hidden="true"><use href="#icon-{{iconName .Kind .IsDir}}"></use></svg><span>{{.Name}}</span></a></td>
+          <td>{{.Kind}}</td>
+          <td>{{formatSize .Size .IsDir}}</td>
+          <td>{{formatDate .LastCommit}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4">No files</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+</article>
+{{end}}

@@ -346,7 +346,7 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 		SiteTitle:   b.siteTitle(),
 		RelRoot:     relRoot(currentURL),
 		Breadcrumbs: breadcrumbs(currentURL, file.Path, false),
-		Tree:        buildTree(model, currentURL, file.Path),
+		Tree:        buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
 		Kind:        pageKind(file, b.cfg.OptionsFor(file.Path)),
 		Body:        body,
 		TOC:         toc,
@@ -444,23 +444,24 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		SiteTitle:   b.siteTitle(),
 		RelRoot:     relRoot(currentURL),
 		Breadcrumbs: breadcrumbs(currentURL, dir, true),
-		Tree:        buildTree(model, currentURL, dir),
+		Tree:        buildTree(model, currentURL, dir, b.cfg.View.TreeExpandDepth),
 		Kind:        "dir",
 		Body:        body,
 		TOC:         toc,
 		LastCommit:  lastCommit,
 		HasMermaid:  hasMermaid,
 		NoIndex:     b.cfg.Access.NoIndex,
+		DirEntries:  dirEntries(model, currentURL, dir),
 	}
 	return b.writePage(outDir, currentURL, data)
 }
 
 func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTML, []render.TOCItem, string, bool, *source.Commit, error) {
-	var body strings.Builder
 	var toc []render.TOCItem
 	var title string
 	var hasMermaid bool
 	var lastCommit *source.Commit
+	var body template.HTML
 	if readme, ok := findReadme(model, dir); ok && readme.Render && readme.Kind == render.KindMarkdown {
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(readme.Path)))
 		if err != nil {
@@ -490,16 +491,13 @@ func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTM
 			return "", nil, "", false, nil, err
 		}
 		html := rebaseRenderedLinks(string(result.HTML), viewFileURL(readme.Path), currentURL)
-		body.WriteString(`<section class="readme">`)
-		body.WriteString(html)
-		body.WriteString(`</section>`)
+		body = template.HTML(html)
 		toc = result.TOC
 		title = result.Title
 		hasMermaid = result.HasMermaid
 		lastCommit = readme.LastCommit
 	}
-	body.WriteString(dirListingHTML(model, currentURL, dir))
-	return template.HTML(body.String()), toc, title, hasMermaid, lastCommit, nil
+	return body, toc, title, hasMermaid, lastCommit, nil
 }
 
 func (b *Builder) writePage(outDir, pageURL string, data theme.PageData) error {
@@ -553,10 +551,9 @@ func findReadme(model siteModel, dir string) (fileEntry, bool) {
 	return fileEntry{}, false
 }
 
-func dirListingHTML(model siteModel, currentURL, dir string) string {
+func dirEntries(model siteModel, currentURL, dir string) []theme.DirEntry {
 	items := model.children[dir]
-	var b strings.Builder
-	b.WriteString(`<section class="dir-list"><h2>Files</h2><table><thead><tr><th>Name</th><th>Kind</th><th>Size</th><th>Updated</th></tr></thead><tbody>`)
+	entries := make([]theme.DirEntry, 0, len(items))
 	for _, item := range items {
 		href := ""
 		if item.IsDir {
@@ -566,24 +563,17 @@ func dirListingHTML(model siteModel, currentURL, dir string) string {
 		} else {
 			href = render.RelTo(currentURL, mirrorURL(item.Path))
 		}
-		updated := ""
-		if item.LastCommit != nil {
-			updated = item.LastCommit.Time.Format("2006-01-02")
-		}
-		size := "—"
-		if !item.IsDir {
-			size = fmt.Sprintf("%d", item.Size)
-		}
-		fmt.Fprintf(&b, `<tr><td><a href="%s">%s</a></td><td>%s</td><td>%s</td><td>%s</td></tr>`,
-			template.HTMLEscapeString(href),
-			template.HTMLEscapeString(item.Name),
-			template.HTMLEscapeString(item.Kind),
-			size,
-			template.HTMLEscapeString(updated),
-		)
+		entries = append(entries, theme.DirEntry{
+			Name:       item.Name,
+			Path:       item.Path,
+			Href:       href,
+			Kind:       item.Kind,
+			Size:       item.Size,
+			LastCommit: item.LastCommit,
+			IsDir:      item.IsDir,
+		})
 	}
-	b.WriteString(`</tbody></table></section>`)
-	return b.String()
+	return entries
 }
 
 func htmlEmbedBody(currentURL, repoPath string) template.HTML {
@@ -670,7 +660,10 @@ func resolveRelativeURL(fromURL, raw string) string {
 	return resolved
 }
 
-func buildTree(model siteModel, currentURL, currentPath string) *theme.TreeNode {
+// buildTree assembles the sidebar tree. Ancestors of currentPath are always
+// expanded; other directories expand while their depth <= expandDepth
+// (config view.tree_expand_depth).
+func buildTree(model siteModel, currentURL, currentPath string, expandDepth int) *theme.TreeNode {
 	root := &theme.TreeNode{Name: "root", IsDir: true, Expanded: true, Href: render.RelTo(currentURL, viewDirURL(""))}
 	for _, file := range model.files {
 		parts := strings.Split(file.Path, "/")
@@ -690,7 +683,7 @@ func buildTree(model siteModel, currentURL, currentPath string) *theme.TreeNode 
 					node.Children = append(node.Children, child)
 				}
 				child.Href = render.RelTo(currentURL, viewDirURL(dirPath))
-				child.Expanded = isAncestorOrSelf(dirPath, currentPath)
+				child.Expanded = isAncestorOrSelf(dirPath, currentPath) || i+1 <= expandDepth
 				child.Current = currentPath == dirPath
 				node = child
 				continue
@@ -780,7 +773,7 @@ func checkRelativeLinks(outDir string) error {
 			return err
 		}
 		text := string(data)
-		for _, needle := range []string{`href="/`, `src="/`, `src="http://`, `src="https://`, `url(http://`, `url(https://`} {
+		for _, needle := range generatedLinkNeedles(rel) {
 			if strings.Contains(text, needle) {
 				hits = append(hits, rel+": "+needle)
 			}
@@ -795,6 +788,14 @@ func checkRelativeLinks(outDir string) error {
 		return fmt.Errorf("site: generated output contains non-relative links: %s", strings.Join(hits, "; "))
 	}
 	return nil
+}
+
+func generatedLinkNeedles(rel string) []string {
+	needles := []string{`href="/`, `src="/`, `src="http://`, `src="https://`}
+	if strings.HasSuffix(rel, ".css") {
+		needles = append(needles, `url(http://`, `url(https://`, `@import`)
+	}
+	return needles
 }
 
 func isGeneratedText(rel string) bool {
