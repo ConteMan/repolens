@@ -99,6 +99,8 @@ func TestBuildEndToEnd(t *testing.T) {
 	docsPage := readOutput(t, outDir, "view/docs/index.html")
 	assertContains(t, docsPage, "Docs")
 	assertContains(t, docsPage, "guide.md")
+	// 非祖先目录 code 深度 1 ≤ tree_expand_depth(默认 2)，树中应默认展开。
+	assertContains(t, docsPage, `<details data-tree-path="code" open>`)
 
 	// 小写 readme.md 回退。
 	notesPage := readOutput(t, outDir, "view/notes/index.html")
@@ -106,7 +108,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, notesPage, "Lowercase readme.")
 
 	codeDirPage := readOutput(t, outDir, "view/code/index.html")
-	assertContains(t, codeDirPage, `<section class="dir-list">`)
+	assertContains(t, codeDirPage, `<section class="dir-list"`)
 	if strings.Contains(codeDirPage, `<section class="readme">`) {
 		t.Fatalf("code directory unexpectedly rendered a README section")
 	}
@@ -164,6 +166,17 @@ func TestBuildFailsWhenGeneratedOutputHasAbsoluteLinks(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "non-relative links") {
 		t.Fatalf("Build() error = %v, want non-relative link failure", err)
+	}
+}
+
+func TestGeneratedLinkNeedlesOnlyScanCSSURLsInCSS(t *testing.T) {
+	htmlNeedles := strings.Join(generatedLinkNeedles("view/code/main.go/index.html"), "\n")
+	if strings.Contains(htmlNeedles, "url(http") {
+		t.Fatalf("HTML needles = %q, should not scan literal code text as CSS url()", htmlNeedles)
+	}
+	cssNeedles := strings.Join(generatedLinkNeedles("_assets/site.css"), "\n")
+	if !strings.Contains(cssNeedles, "url(http://") || !strings.Contains(cssNeedles, "@import") {
+		t.Fatalf("CSS needles = %q, want CSS resource checks", cssNeedles)
 	}
 }
 

@@ -1,0 +1,10 @@
+{{define "page"}}
+{{if .TOC}}<nav class="toc" aria-label="Table of contents">{{range .TOC}}{{template "toc-item" .}}{{end}}</nav>{{end}}
+{{if eq .Kind "dir"}}
+  {{template "dirlist" .}}
+{{else}}
+  <article class="page page-{{.Kind}}">{{.Body}}</article>
+{{end}}
+{{end}}
+
+{{define "toc-item"}}<a class="toc-link toc-level-{{.Level}}" href="#{{.Anchor}}">{{.Title}}</a>{{range .Children}}{{template "toc-item" .}}{{end}}{{end}}
