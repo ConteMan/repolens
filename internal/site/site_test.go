@@ -3,10 +3,12 @@ package site
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/ConteMan/repolens/internal/config"
@@ -140,6 +142,79 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, robots, "Disallow: /")
 }
 
+func TestBuildMergesIndexHTMLIntoDirectoryPages(t *testing.T) {
+	repo := newIndexHTMLConflictRepo(t)
+	outDir, stats, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	if stats.Files != 9 || stats.Pages != 10 {
+		t.Fatalf("stats = %#v, want 9 files and 10 pages", stats)
+	}
+
+	for _, p := range []string{
+		"wireframes/index.html",
+		"direct/index.html",
+		"source/index.html",
+		"combo/index.html",
+		"skip/index.html",
+	} {
+		assertMirrorEqual(t, repo, outDir, p)
+	}
+
+	wireframesPage := readOutput(t, outDir, "view/wireframes/index.html")
+	// 合并页标题用目录名，而非文件名 "index.html"。
+	assertContains(t, wireframesPage, "<h1>wireframes</h1>")
+	assertContains(t, wireframesPage, `<iframe class="html-preview" src="../../wireframes/index.html"`)
+	assertContains(t, wireframesPage, "child.html")
+	assertContains(t, wireframesPage, `<a class="dir-entry-name" href=".">`)
+	assertUnavailable(t, outDir, "view/wireframes/index.html/index.html")
+
+	directPage := readOutput(t, outDir, "view/direct/index.html")
+	assertContains(t, directPage, "Open HTML file")
+	assertContains(t, directPage, `href="../../direct/index.html"`)
+	assertNotContains(t, directPage, "<iframe")
+	assertUnavailable(t, outDir, "view/direct/index.html/index.html")
+
+	sourcePage := readOutput(t, outDir, "view/source/index.html")
+	assertContains(t, sourcePage, "&lt;")
+	assertContains(t, sourcePage, "strong")
+	assertContains(t, sourcePage, "source index")
+	assertNotContains(t, sourcePage, "<iframe")
+	assertUnavailable(t, outDir, "view/source/index.html/index.html")
+
+	comboPage := readOutput(t, outDir, "view/combo/index.html")
+	assertContains(t, comboPage, `<iframe class="html-preview" src="../../combo/index.html"`)
+	assertNotContains(t, comboPage, "Combo Readme")
+	comboReadmePage := readOutput(t, outDir, "view/combo/README.md/index.html")
+	assertContains(t, comboReadmePage, "Combo Readme")
+
+	skipPage := readOutput(t, outDir, "view/skip/index.html")
+	assertContains(t, skipPage, "Skip Readme")
+	assertContains(t, skipPage, `href="../../skip/index.html"`)
+	assertNotContains(t, skipPage, "<iframe")
+	assertUnavailable(t, outDir, "view/skip/index.html/index.html")
+}
+
+func TestBuildFailsWhenRepositoryDirectoryIsNamedIndexHTML(t *testing.T) {
+	repo := newIndexHTMLDirectoryRepo(t)
+	_, _, err := buildSite(t, repo)
+	if err == nil {
+		t.Fatal("Build() error = nil, want index.html directory conflict")
+	}
+	msg := err.Error()
+	for _, want := range []string{
+		"wireframes/index.html",
+		"view/wireframes/index.html",
+		"view/wireframes/index.html/index.html",
+		"collides",
+	} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("Build() error = %q, want substring %q", msg, want)
+		}
+	}
+}
+
 func TestBuildFailsWhenGeneratedOutputHasAbsoluteLinks(t *testing.T) {
 	repo := newSiteTestRepo(t)
 	tree, err := source.Open(context.Background(), source.Spec{Repo: repo})
@@ -250,6 +325,98 @@ rules:
 	return repo
 }
 
+func newIndexHTMLConflictRepo(t *testing.T) string {
+	t.Helper()
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+
+	writeFile(t, repo, "README.md", "# Home\n")
+	writeFile(t, repo, "wireframes/index.html", "<!doctype html><p>wireframes index</p>\n")
+	writeFile(t, repo, "wireframes/child.html", "<!doctype html><p>child</p>\n")
+	writeFile(t, repo, "direct/index.html", "<!doctype html><p>direct index</p>\n")
+	writeFile(t, repo, "source/index.html", "<!doctype html><strong>source index</strong>\n")
+	writeFile(t, repo, "combo/README.md", "# Combo Readme\n")
+	writeFile(t, repo, "combo/index.html", "<!doctype html><p>combo index</p>\n")
+	writeFile(t, repo, "skip/README.md", "# Skip Readme\n")
+	writeFile(t, repo, "skip/index.html", "<!doctype html><p>skip index</p>\n")
+	writeFile(t, repo, ".repolens.yml", `
+rules:
+  - match: "direct/index.html"
+    html: { view: direct }
+  - match: "source/index.html"
+    html: { view: source }
+  - match: "skip/index.html"
+    render: false
+`)
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+	return repo
+}
+
+func TestBuildRootIndexHTMLKeepsMirror(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+	writeFile(t, repo, "index.html", "<!doctype html><p>root index</p>\n")
+	writeFile(t, repo, "docs/guide.md", "# Guide\n")
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+
+	outDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// 根 index.html 的镜像不被 meta-refresh 跳转页覆盖。
+	assertMirrorEqual(t, repo, outDir, "index.html")
+	rootIndex := readOutput(t, outDir, "index.html")
+	assertNotContains(t, rootIndex, "meta http-equiv")
+
+	// 根目录页合并其浏览形态（默认 embed → iframe），且无独立文件页。
+	rootView := readOutput(t, outDir, "view/index.html")
+	assertContains(t, rootView, `<iframe class="html-preview" src="../index.html"`)
+	assertUnavailable(t, outDir, "view/index.html/index.html")
+}
+
+func newIndexHTMLDirectoryRepo(t *testing.T) string {
+	t.Helper()
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+
+	writeFile(t, repo, "README.md", "# Home\n")
+	writeFile(t, repo, "wireframes/index.html/page.html", "<!doctype html><p>bad dir</p>\n")
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+	return repo
+}
+
+func buildSite(t *testing.T, repo string) (string, Stats, error) {
+	t.Helper()
+	tree, err := source.Open(context.Background(), source.Spec{Repo: repo})
+	if err != nil {
+		t.Fatalf("source.Open() error = %v", err)
+	}
+	defer tree.Cleanup()
+
+	cfg, _, err := config.Load(tree.Root, "", config.Flags{Repo: repo})
+	if err != nil {
+		t.Fatalf("config.Load() error = %v", err)
+	}
+	renderer, err := theme.New("", "", cfg.Theme.Vars)
+	if err != nil {
+		t.Fatalf("theme.New() error = %v", err)
+	}
+
+	outDir := filepath.Join(t.TempDir(), "dist")
+	stats, err := NewBuilder(cfg, renderer).Build(context.Background(), tree, outDir)
+	return outDir, stats, err
+}
+
 func runGit(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -309,6 +476,18 @@ func assertMissing(t *testing.T, root, rel string) {
 	t.Helper()
 	if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel))); !os.IsNotExist(err) {
 		t.Fatalf("expected %s to be missing, stat err = %v", rel, err)
+	}
+}
+
+func assertUnavailable(t *testing.T, root, rel string) {
+	t.Helper()
+	_, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel)))
+	if err == nil {
+		t.Fatalf("expected %s to be unavailable", rel)
+	}
+	// ENOENT 或路径前缀是普通文件（ENOTDIR）都算不可用。
+	if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTDIR) {
+		t.Fatalf("stat %s: unexpected error %v", rel, err)
 	}
 }
 
