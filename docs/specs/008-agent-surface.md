@@ -13,7 +13,7 @@
    - 头部说明两条路径约定：原始文件在 `/<repo-path>`，浏览页在 `/view/<repo-path>/`；
    - 内容清单按目录分节，列出全部 Markdown 文件（`- [标题](相对镜像路径): 首段摘要 ≤120 字符`），标题取 spec 003 的 Title；
    - 尾部指向 `index.json` 与（若开启）`llms-full.txt`。
-2. **llms-full.txt**（`agent.llms_full`，默认开、`max_size` 默认 2MB）：全部 Markdown 与纯文本文件原文拼接，每篇前加 `----- <repo-path> -----` 分隔头，按树序；写满 `max_size` 即截断并在文末标注 `[truncated]`。
+2. **llms-full.txt**（`agent.llms_full`，默认开、`max_size` 默认 2MB）：全部 Markdown 与纯文本（v1 按扩展名界定：`.txt` / `.text` / `.log`——比 Classify 的 Code 口径窄，避免把代码与数据文件拼入，实现时确认 2026-07-05）文件原文拼接，每篇前加 `----- <repo-path> -----` 分隔头，按树序；写满 `max_size` 即截断并在文末标注 `[truncated]`。
 3. **index.json**（`agent.index_json`，默认开）：
    ```json
    {
@@ -28,7 +28,7 @@
      ]
    }
    ```
-   `files` 含全部非 ignore 文件（含二进制，title 仅 Markdown 有）；路径均为站点根相对，不带前导 `/`。
+   `files` 含全部非 ignore 文件（含二进制，title 仅 Markdown 有）；路径均为站点根相对，不带前导 `/`。补充语义（实现时确认，2026-07-05）：`render:false` 的文件 `view` 为 `null`；合并进目录页的 `index.html`（spec 005 冲突规则）`view` 指向目录页 URL；worktree 模式无 commit hash，`commit` 为 `null`。
 4. **逐页指引**：每个 Markdown 浏览页 `<head>` 注入 `<link rel="alternate" type="text/markdown" href="<相对镜像路径>">`（spec 006 的 `HeadExtra` 通道）。
 5. **互斥告警**：`access.encrypt.paths` 与本 spec 输出集合有交集时构建 Warning（spec 002 已定义，此处消费）。
 

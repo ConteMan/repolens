@@ -29,6 +29,7 @@ type Builder struct {
 	cfg      *config.Config
 	theme    *theme.Renderer
 	markdown *render.Markdown
+	version  string
 }
 
 type Stats struct {
@@ -36,8 +37,8 @@ type Stats struct {
 	// merged into its directory page is counted only as that directory page.
 	Files, Pages int
 	Duration     time.Duration
-	// Warnings collects build-time warnings. Currently no build step
-	// produces any; config cascade warnings are reported by the cli layer.
+	// Warnings collects build-time warnings produced by site assembly.
+	// Config cascade warnings are reported by the cli layer before these.
 	Warnings []config.Warning
 }
 
@@ -46,6 +47,13 @@ func NewBuilder(cfg *config.Config, renderer *theme.Renderer) *Builder {
 		cfg:      cfg,
 		theme:    renderer,
 		markdown: render.NewMarkdown(),
+		version:  GeneratorVersion,
+	}
+}
+
+func (b *Builder) SetGeneratorVersion(version string) {
+	if strings.TrimSpace(version) != "" {
+		b.version = version
 	}
 }
 
@@ -70,7 +78,7 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 	if err := validateIndexHTMLDirs(dirs); err != nil {
 		return stats, err
 	}
-	model := newSiteModel(tree.Root, files, dirs)
+	model := newSiteModel(tree.Root, tree.CommitHash, files, dirs)
 
 	if err := prepareOutput(outDir); err != nil {
 		return stats, err
@@ -121,6 +129,10 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 			return stats, err
 		}
 	}
+	if err := b.writeAgentOutputs(outDir, model, time.Now()); err != nil {
+		return stats, err
+	}
+	stats.Warnings = append(stats.Warnings, agentWarnings(b.cfg)...)
 	if err := checkRelativeLinks(outDir, generatedRootIndex); err != nil {
 		return stats, err
 	}
@@ -288,6 +300,7 @@ func copyMirror(root, outDir string, file fileEntry) error {
 
 type siteModel struct {
 	root             string
+	commitHash       string
 	files            []fileEntry
 	fileByPath       map[string]fileEntry
 	dirs             map[string]bool
@@ -304,9 +317,10 @@ type listItem struct {
 	IsDir      bool
 }
 
-func newSiteModel(root string, files []fileEntry, dirs []string) siteModel {
+func newSiteModel(root, commitHash string, files []fileEntry, dirs []string) siteModel {
 	m := siteModel{
 		root:             root,
+		commitHash:       commitHash,
 		files:            files,
 		fileByPath:       make(map[string]fileEntry, len(files)),
 		dirs:             make(map[string]bool, len(dirs)),
@@ -654,6 +668,9 @@ func binaryBody(currentURL string, file fileEntry) template.HTML {
 func alternateHead(currentURL, repoPath string) template.HTML {
 	href := template.HTMLEscapeString(render.RelTo(currentURL, mirrorURL(repoPath)))
 	typ := mime.TypeByExtension(path.Ext(repoPath))
+	if isMarkdownPath(repoPath) {
+		typ = "text/markdown"
+	}
 	if typ == "" {
 		typ = "application/octet-stream"
 	}

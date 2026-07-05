@@ -101,7 +101,9 @@ func newBuildCmd() *cobra.Command {
 
 			outDir := cfg.Output.Dir
 			fmt.Fprintf(cmd.OutOrStdout(), "Building site into %s...\n", outDir)
-			stats, err := site.NewBuilder(cfg, renderer).Build(ctx, tree, outDir)
+			builder := site.NewBuilder(cfg, renderer)
+			builder.SetGeneratorVersion(Version)
+			stats, err := builder.Build(ctx, tree, outDir)
 			if err != nil {
 				return err
 			}
@@ -229,7 +231,9 @@ func newServeCmd() *cobra.Command {
 				}()
 
 				fmt.Fprintf(cmd.OutOrStdout(), "Building preview into %s...\n", outDir)
-				stats, err := site.NewBuilder(cfg, renderer).Build(ctx, tree, outDir)
+				builder := site.NewBuilder(cfg, renderer)
+				builder.SetGeneratorVersion(Version)
+				stats, err := builder.Build(ctx, tree, outDir)
 				if err != nil {
 					return "", err
 				}

@@ -3,10 +3,12 @@ package site
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"testing"
@@ -50,6 +52,9 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertExists(t, outDir, "robots.txt")
 	assertExists(t, outDir, "_assets/site.css")
 	assertExists(t, outDir, "_assets/site.js")
+	assertExists(t, outDir, "llms.txt")
+	assertExists(t, outDir, "llms-full.txt")
+	assertExists(t, outDir, "index.json")
 	assertMissing(t, outDir, ".repolens.yml")
 
 	for _, p := range []string{
@@ -98,6 +103,9 @@ func TestBuildEndToEnd(t *testing.T) {
 	// 普通外部超链接允许出现在产物中（自检只拦资源加载类外部引用）。
 	assertContains(t, rootPage, `href="https://example.com/"`)
 
+	readmePage := readOutput(t, outDir, "view/README.md/index.html")
+	assertContains(t, readmePage, `<link rel="alternate" type="text/markdown" href="../../README.md">`)
+
 	docsPage := readOutput(t, outDir, "view/docs/index.html")
 	assertContains(t, docsPage, "Docs")
 	assertContains(t, docsPage, "guide.md")
@@ -140,6 +148,179 @@ func TestBuildEndToEnd(t *testing.T) {
 
 	robots := readOutput(t, outDir, "robots.txt")
 	assertContains(t, robots, "Disallow: /")
+}
+
+func TestAgentOutputs(t *testing.T) {
+	repo := newAgentTestRepo(t)
+	outDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	llms := readOutput(t, outDir, "llms.txt")
+	assertContains(t, llms, "# Agent Repo")
+	assertContains(t, llms, "> Browseable static rendering")
+	assertContains(t, llms, "Raw files are available at `/<repo-path>`.")
+	assertContains(t, llms, "Browser pages are available at `/view/<repo-path>/`.")
+	assertContains(t, llms, "## /")
+	assertContains(t, llms, "## docs/")
+	assertContains(t, llms, "- [Home Title](README.md): This summary comes after front matter and after the heading.")
+	assertContains(t, llms, "- [Long](docs/long.md): 0123456789 0123456789")
+	assertContains(t, llms, "[index.json](index.json)")
+	assertContains(t, llms, "[llms-full.txt](llms-full.txt)")
+	// front-matter 的键值不得泄漏进摘要（fixture 的 README 有 title: Home Title）。
+	assertNotContains(t, llms, "title: Home Title")
+	for _, line := range strings.Split(llms, "\n") {
+		if !strings.Contains(line, "[Long]") {
+			continue
+		}
+		summary := strings.TrimPrefix(line[strings.Index(line, "): ")+3:], "")
+		if countRunes(summary) > 120 {
+			t.Fatalf("summary length = %d, want <= 120: %q", countRunes(summary), summary)
+		}
+		if !strings.HasSuffix(summary, "...") {
+			t.Fatalf("truncated summary = %q, want ellipsis", summary)
+		}
+	}
+
+	full := readOutput(t, outDir, "llms-full.txt")
+	assertContains(t, full, "----- README.md -----")
+	assertContains(t, full, "----- docs/long.md -----")
+	assertContains(t, full, "----- notes.txt -----")
+	assertNotContains(t, full, "package main")
+
+	rawIndex := []byte(readOutput(t, outDir, "index.json"))
+	if !json.Valid(rawIndex) {
+		t.Fatalf("index.json is not valid JSON:\n%s", rawIndex)
+	}
+	var index struct {
+		Generator string `json:"generator"`
+		Commit    string `json:"commit"`
+		BuiltAt   string `json:"built_at"`
+		Site      struct {
+			Title string `json:"title"`
+		} `json:"site"`
+		Files []struct {
+			Path     string  `json:"path"`
+			Kind     string  `json:"kind"`
+			Size     int64   `json:"size"`
+			Title    *string `json:"title"`
+			Modified *string `json:"modified"`
+			Raw      string  `json:"raw"`
+			View     *string `json:"view"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal(rawIndex, &index); err != nil {
+		t.Fatalf("Unmarshal(index.json): %v", err)
+	}
+	if index.Generator != "repolens dev" || index.Commit == "" || index.BuiltAt == "" || index.Site.Title != "Agent Repo" {
+		t.Fatalf("index metadata = %#v", index)
+	}
+	gotPaths := make([]string, 0, len(index.Files))
+	for _, file := range index.Files {
+		gotPaths = append(gotPaths, file.Path)
+		if strings.HasPrefix(file.Path, "/") || strings.HasPrefix(file.Raw, "/") {
+			t.Fatalf("index paths must be relative: %#v", file)
+		}
+		assertExists(t, outDir, file.Raw)
+		if file.View != nil {
+			assertExists(t, outDir, *file.View+"index.html")
+		}
+		if file.Path == "README.md" {
+			if file.Kind != "markdown" || file.Title == nil || *file.Title != "Home Title" || file.Modified == nil || file.Raw != "README.md" {
+				t.Fatalf("README index entry = %#v", file)
+			}
+		}
+		if file.Path == "image.bin" && (file.Kind != "binary" || file.Title != nil) {
+			t.Fatalf("binary index entry = %#v", file)
+		}
+	}
+	wantPaths := []string{"README.md", "code/main.go", "docs/long.md", "image.bin", "notes.txt"}
+	if !slices.Equal(gotPaths, wantPaths) {
+		t.Fatalf("index paths = %v, want %v", gotPaths, wantPaths)
+	}
+}
+
+func TestLLMSFullTruncates(t *testing.T) {
+	repo := newAgentTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Agent.LLMSFull.MaxSize = 80
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	full := readOutput(t, outDir, "llms-full.txt")
+	assertContains(t, full, "----- README.md -----")
+	assertContains(t, full, "[truncated]")
+}
+
+func TestAgentOutputSwitches(t *testing.T) {
+	tests := []struct {
+		name    string
+		disable func(*config.Config)
+		missing string
+		present []string
+	}{
+		{
+			name:    "llms txt",
+			disable: func(cfg *config.Config) { cfg.Agent.LLMSTxt = false },
+			missing: "llms.txt",
+			present: []string{"llms-full.txt", "index.json"},
+		},
+		{
+			name:    "llms full",
+			disable: func(cfg *config.Config) { cfg.Agent.LLMSFull.Enabled = false },
+			missing: "llms-full.txt",
+			present: []string{"llms.txt", "index.json"},
+		},
+		{
+			name:    "index json",
+			disable: func(cfg *config.Config) { cfg.Agent.IndexJSON = false },
+			missing: "index.json",
+			present: []string{"llms.txt", "llms-full.txt"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newAgentTestRepo(t)
+			outDir, _, err := buildSiteWithConfig(t, repo, tt.disable)
+			if err != nil {
+				t.Fatalf("Build() error = %v", err)
+			}
+			assertMissing(t, outDir, tt.missing)
+			for _, rel := range tt.present {
+				assertExists(t, outDir, rel)
+			}
+		})
+	}
+}
+
+func TestAgentEncryptOverlapWarningInStats(t *testing.T) {
+	repo := newAgentTestRepo(t)
+	_, stats, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Access.Encrypt.Enabled = true
+		cfg.Access.Encrypt.Paths = []string{"llms.txt"}
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	if len(stats.Warnings) != 1 || !strings.Contains(stats.Warnings[0].Msg, "overlap") {
+		t.Fatalf("stats warnings = %#v, want overlap warning", stats.Warnings)
+	}
+}
+
+func TestAgentEncryptWholeSiteWarningInStats(t *testing.T) {
+	repo := newAgentTestRepo(t)
+	_, stats, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Access.Encrypt.Enabled = true
+		// Paths 留空 = 全站加密，与 agent 产物必然冲突。
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	if len(stats.Warnings) != 1 || !strings.Contains(stats.Warnings[0].Msg, "whole site") {
+		t.Fatalf("stats warnings = %#v, want whole-site warning", stats.Warnings)
+	}
 }
 
 func TestBuildMergesIndexHTMLIntoDirectoryPages(t *testing.T) {
@@ -355,6 +536,34 @@ rules:
 	return repo
 }
 
+func newAgentTestRepo(t *testing.T) string {
+	t.Helper()
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+
+	writeFile(t, repo, "README.md", `---
+title: Home Title
+---
+
+# Home Heading
+
+This summary comes after front matter and after the heading.
+`)
+	writeFile(t, repo, "docs/long.md", "# Long\n\n"+strings.Repeat("0123456789 ", 20)+"\n")
+	writeFile(t, repo, "notes.txt", "plain note\n")
+	writeFile(t, repo, "code/main.go", "package main\n\nfunc main() {}\n")
+	writeFileBytes(t, repo, "image.bin", []byte{0x00, 0x01, 0x02})
+	writeFile(t, repo, ".repolens.yml", `
+site:
+  title: Agent Repo
+`)
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+	return repo
+}
+
 func TestBuildRootIndexHTMLKeepsMirror(t *testing.T) {
 	repo := t.TempDir()
 	runGit(t, repo, "init", "-b", "main")
@@ -397,6 +606,11 @@ func newIndexHTMLDirectoryRepo(t *testing.T) string {
 
 func buildSite(t *testing.T, repo string) (string, Stats, error) {
 	t.Helper()
+	return buildSiteWithConfig(t, repo, nil)
+}
+
+func buildSiteWithConfig(t *testing.T, repo string, mutate func(*config.Config)) (string, Stats, error) {
+	t.Helper()
 	tree, err := source.Open(context.Background(), source.Spec{Repo: repo})
 	if err != nil {
 		t.Fatalf("source.Open() error = %v", err)
@@ -406,6 +620,9 @@ func buildSite(t *testing.T, repo string) (string, Stats, error) {
 	cfg, _, err := config.Load(tree.Root, "", config.Flags{Repo: repo})
 	if err != nil {
 		t.Fatalf("config.Load() error = %v", err)
+	}
+	if mutate != nil {
+		mutate(cfg)
 	}
 	renderer, err := theme.New("", "", cfg.Theme.Vars)
 	if err != nil {
@@ -512,4 +729,12 @@ func assertNotContains(t *testing.T, got, want string) {
 	if strings.Contains(got, want) {
 		t.Fatalf("output unexpectedly contains %q\n%s", want, got)
 	}
+}
+
+func countRunes(s string) int {
+	count := 0
+	for range s {
+		count++
+	}
+	return count
 }
