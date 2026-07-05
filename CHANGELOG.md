@@ -25,3 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
+
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ConteMan/repolens/releases/tag/v1.0.0
