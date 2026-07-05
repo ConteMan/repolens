@@ -32,6 +32,8 @@ type Builder struct {
 }
 
 type Stats struct {
+	// Pages counts generated browser-layer HTML pages. A renderable index.html
+	// merged into its directory page is counted only as that directory page.
 	Files, Pages int
 	Duration     time.Duration
 	// Warnings collects build-time warnings. Currently no build step
@@ -65,6 +67,10 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 		return stats, err
 	}
 	dirs := collectDirs(files)
+	if err := validateIndexHTMLDirs(dirs); err != nil {
+		return stats, err
+	}
+	model := newSiteModel(tree.Root, files, dirs)
 
 	if err := prepareOutput(outDir); err != nil {
 		return stats, err
@@ -73,7 +79,6 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 		return stats, fmt.Errorf("write theme assets: %w", err)
 	}
 
-	model := newSiteModel(tree.Root, files, dirs)
 	for _, file := range files {
 		if err := ctx.Err(); err != nil {
 			return stats, err
@@ -83,6 +88,9 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 		}
 		stats.Files++
 		if !file.Render {
+			continue
+		}
+		if model.mergesIntoDirPage(file) {
 			continue
 		}
 		if err := b.writeFilePage(outDir, model, file); err != nil {
@@ -101,15 +109,19 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 		stats.Pages++
 	}
 
-	if err := b.writeRootIndex(outDir); err != nil {
-		return stats, err
+	_, hasRootIndex := model.fileByPath["index.html"]
+	generatedRootIndex := !hasRootIndex
+	if generatedRootIndex {
+		if err := b.writeRootIndex(outDir); err != nil {
+			return stats, err
+		}
 	}
 	if b.cfg.Access.NoIndex {
 		if err := os.WriteFile(filepath.Join(outDir, "robots.txt"), []byte("User-agent: *\nDisallow: /\n"), 0o644); err != nil {
 			return stats, err
 		}
 	}
-	if err := checkRelativeLinks(outDir); err != nil {
+	if err := checkRelativeLinks(outDir, generatedRootIndex); err != nil {
 		return stats, err
 	}
 	stats.Duration = time.Since(start)
@@ -197,6 +209,18 @@ func collectDirs(files []fileEntry) []string {
 	return dirs
 }
 
+func validateIndexHTMLDirs(dirs []string) error {
+	for _, dir := range dirs {
+		if !isIndexHTMLDir(dir) {
+			continue
+		}
+		parentPage := outputHTMLRel(viewDirURL(parentDir(dir)))
+		dirPage := outputHTMLRel(viewDirURL(dir))
+		return fmt.Errorf("site: repository directory %q collides with generated browser paths %q and %q; rename the directory before building", dir, parentPage, dirPage)
+	}
+	return nil
+}
+
 func prepareOutput(outDir string) error {
 	info, err := os.Stat(outDir)
 	if err == nil {
@@ -263,11 +287,12 @@ func copyMirror(root, outDir string, file fileEntry) error {
 }
 
 type siteModel struct {
-	root       string
-	files      []fileEntry
-	fileByPath map[string]fileEntry
-	dirs       map[string]bool
-	children   map[string][]listItem
+	root             string
+	files            []fileEntry
+	fileByPath       map[string]fileEntry
+	dirs             map[string]bool
+	children         map[string][]listItem
+	mergedIndexByDir map[string]fileEntry
 }
 
 type listItem struct {
@@ -281,14 +306,21 @@ type listItem struct {
 
 func newSiteModel(root string, files []fileEntry, dirs []string) siteModel {
 	m := siteModel{
-		root:       root,
-		files:      files,
-		fileByPath: make(map[string]fileEntry, len(files)),
-		dirs:       make(map[string]bool, len(dirs)),
-		children:   make(map[string][]listItem),
+		root:             root,
+		files:            files,
+		fileByPath:       make(map[string]fileEntry, len(files)),
+		dirs:             make(map[string]bool, len(dirs)),
+		children:         make(map[string][]listItem),
+		mergedIndexByDir: make(map[string]fileEntry),
 	}
 	for _, dir := range dirs {
 		m.dirs[dir] = true
+	}
+	for _, file := range files {
+		m.fileByPath[file.Path] = file
+		if file.Render && isIndexHTMLFile(file.Path) {
+			m.mergedIndexByDir[parentDir(file.Path)] = file
+		}
 	}
 	seenDirs := make(map[string]map[string]bool)
 	for _, dir := range dirs {
@@ -310,7 +342,6 @@ func newSiteModel(root string, files []fileEntry, dirs []string) siteModel {
 		}
 	}
 	for _, file := range files {
-		m.fileByPath[file.Path] = file
 		dir := parentDir(file.Path)
 		m.children[dir] = append(m.children[dir], listItem{
 			Name:       path.Base(file.Path),
@@ -330,6 +361,18 @@ func newSiteModel(root string, files []fileEntry, dirs []string) siteModel {
 		})
 	}
 	return m
+}
+
+func (m siteModel) mergesIntoDirPage(file fileEntry) bool {
+	index, ok := m.mergedIndexByDir[parentDir(file.Path)]
+	return ok && index.Path == file.Path
+}
+
+func (m siteModel) browserURLForFile(file fileEntry) string {
+	if m.mergesIntoDirPage(file) {
+		return viewDirURL(parentDir(file.Path))
+	}
+	return viewFileURL(file.Path)
 }
 
 func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) error {
@@ -462,6 +505,17 @@ func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTM
 	var hasMermaid bool
 	var lastCommit *source.Commit
 	var body template.HTML
+
+	if index, ok := model.mergedIndexByDir[dir]; ok {
+		body, toc, _, hasMermaid, err := b.fileBody(model, currentURL, index)
+		if err != nil {
+			return "", nil, "", false, nil, err
+		}
+		// 合并页标题留空走 dirTitle 回退：fileBody 对 HTML 恒返回
+		// 文件名 "index.html"，作为目录页标题无意义。
+		return body, toc, "", hasMermaid, index.LastCommit, nil
+	}
+
 	if readme, ok := findReadme(model, dir); ok && readme.Render && readme.Kind == render.KindMarkdown {
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(readme.Path)))
 		if err != nil {
@@ -559,7 +613,7 @@ func dirEntries(model siteModel, currentURL, dir string) []theme.DirEntry {
 		if item.IsDir {
 			href = render.RelTo(currentURL, viewDirURL(item.Path))
 		} else if file, ok := model.fileByPath[item.Path]; ok && file.Render {
-			href = render.RelTo(currentURL, viewFileURL(item.Path))
+			href = render.RelTo(currentURL, model.browserURLForFile(file))
 		} else {
 			href = render.RelTo(currentURL, mirrorURL(item.Path))
 		}
@@ -690,7 +744,7 @@ func buildTree(model siteModel, currentURL, currentPath string, expandDepth int)
 			}
 			href := render.RelTo(currentURL, mirrorURL(file.Path))
 			if file.Render {
-				href = render.RelTo(currentURL, viewFileURL(file.Path))
+				href = render.RelTo(currentURL, model.browserURLForFile(file))
 			}
 			node.Children = append(node.Children, &theme.TreeNode{
 				Name:    part,
@@ -751,7 +805,7 @@ func breadcrumbs(currentURL, repoPath string, dir bool) []theme.Crumb {
 	return crumbs
 }
 
-func checkRelativeLinks(outDir string) error {
+func checkRelativeLinks(outDir string, generatedRootIndex bool) error {
 	var hits []string
 	err := filepath.WalkDir(outDir, func(filePath string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -765,7 +819,7 @@ func checkRelativeLinks(outDir string) error {
 			return err
 		}
 		rel = filepath.ToSlash(rel)
-		if !isGeneratedText(rel) {
+		if !isGeneratedText(rel, generatedRootIndex) {
 			return nil
 		}
 		data, err := os.ReadFile(filePath)
@@ -798,18 +852,26 @@ func generatedLinkNeedles(rel string) []string {
 	return needles
 }
 
-func isGeneratedText(rel string) bool {
-	return rel == "index.html" ||
+func isGeneratedText(rel string, generatedRootIndex bool) bool {
+	return generatedRootIndex && rel == "index.html" ||
 		strings.HasPrefix(rel, "view/") && strings.HasSuffix(rel, ".html") ||
 		strings.HasPrefix(rel, "_assets/") && (strings.HasSuffix(rel, ".css") || strings.HasSuffix(rel, ".js"))
 }
 
 func outputHTMLPath(outDir, pageURL string) string {
-	clean := strings.TrimSuffix(cleanURLPath(pageURL), "/")
-	if clean == "" {
+	rel := outputHTMLRel(pageURL)
+	if rel == "index.html" {
 		return filepath.Join(outDir, "index.html")
 	}
-	return filepath.Join(outDir, filepath.FromSlash(clean), "index.html")
+	return filepath.Join(outDir, filepath.FromSlash(rel))
+}
+
+func outputHTMLRel(pageURL string) string {
+	clean := strings.TrimSuffix(cleanURLPath(pageURL), "/")
+	if clean == "" {
+		return "index.html"
+	}
+	return clean + "/index.html"
 }
 
 func viewFileURL(repoPath string) string {
@@ -872,6 +934,14 @@ func parentDir(repoPath string) string {
 		return ""
 	}
 	return dir
+}
+
+func isIndexHTMLFile(repoPath string) bool {
+	return path.Base(repoPath) == "index.html"
+}
+
+func isIndexHTMLDir(dir string) bool {
+	return dir != "" && path.Base(dir) == "index.html"
 }
 
 func isAncestorOrSelf(dir, current string) bool {
