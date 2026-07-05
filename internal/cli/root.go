@@ -2,7 +2,7 @@
 package cli
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ConteMan/repolens/internal/config"
+	"github.com/ConteMan/repolens/internal/server"
 	"github.com/ConteMan/repolens/internal/site"
 	"github.com/ConteMan/repolens/internal/source"
 	"github.com/ConteMan/repolens/internal/theme"
@@ -41,8 +42,6 @@ func Execute() error {
 	}
 	return nil
 }
-
-var errNotImplemented = errors.New("not implemented yet, see docs/roadmap.md")
 
 func newBuildCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -136,7 +135,114 @@ func newServeCmd() *cobra.Command {
 		Short: "Preview a repository locally with live rebuild",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return errNotImplemented
+			configPath, err := cmd.Flags().GetString("config")
+			if err != nil {
+				return err
+			}
+			if configPath != "" {
+				configPath, err = filepath.Abs(configPath)
+				if err != nil {
+					return err
+				}
+			}
+			addr, err := cmd.Flags().GetString("addr")
+			if err != nil {
+				return err
+			}
+			worktree, err := cmd.Flags().GetBool("worktree")
+			if err != nil {
+				return err
+			}
+
+			repo := "."
+			if len(args) > 0 {
+				repo = args[0]
+			}
+			repoDir, err := filepath.Abs(repo)
+			if err != nil {
+				return err
+			}
+			info, err := os.Stat(repoDir)
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				return fmt.Errorf("%s is not a directory", repo)
+			}
+
+			previousDir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			if err := os.Chdir(repoDir); err != nil {
+				return err
+			}
+			defer func() {
+				_ = os.Chdir(previousDir)
+			}()
+
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+
+			flags := config.Flags{Repo: repoDir}
+			rebuild := func(ctx context.Context) (string, error) {
+				start := time.Now()
+				initialCfg, _, err := config.Load("", configPath, flags)
+				if err != nil {
+					return "", err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Opening source %s...\n", initialCfg.Source.Repo)
+				tree, err := source.Open(ctx, source.Spec{
+					Repo:     initialCfg.Source.Repo,
+					Ref:      initialCfg.Source.Ref,
+					Worktree: worktree,
+				})
+				if err != nil {
+					return "", err
+				}
+				defer tree.Cleanup()
+
+				cfg, warnings, err := config.Load(tree.Root, configPath, flags)
+				if err != nil {
+					return "", err
+				}
+				overrideDir := resolveSourcePath(tree.Root, cfg.Theme.Templates)
+				customCSS := resolveSourcePath(tree.Root, cfg.Theme.CSS)
+				renderer, err := theme.New(overrideDir, customCSS, cfg.Theme.Vars)
+				if err != nil {
+					return "", err
+				}
+
+				outDir, err := os.MkdirTemp("", "repolens-serve-*")
+				if err != nil {
+					return "", err
+				}
+				// site.Build 拒绝清空无哨兵的已存在目录：删掉空壳让它自建。
+				if err := os.Remove(outDir); err != nil {
+					return "", err
+				}
+				keepOutDir := false
+				defer func() {
+					if !keepOutDir {
+						_ = os.RemoveAll(outDir)
+					}
+				}()
+
+				fmt.Fprintf(cmd.OutOrStdout(), "Building preview into %s...\n", outDir)
+				stats, err := site.NewBuilder(cfg, renderer).Build(ctx, tree, outDir)
+				if err != nil {
+					return "", err
+				}
+				warnings = append(warnings, stats.Warnings...)
+				fmt.Fprintf(cmd.OutOrStdout(), "Built %d files and %d pages in %s.\n", stats.Files, stats.Pages, time.Since(start).Round(time.Millisecond))
+				for _, warning := range warnings {
+					fmt.Fprintf(cmd.OutOrStdout(), "Warning: %s\n", warning.Msg)
+				}
+				keepOutDir = true
+				return outDir, nil
+			}
+
+			return server.Run(ctx, server.Options{Addr: addr, Worktree: worktree}, rebuild)
 		},
 	}
 	cmd.Flags().String("config", "", "path to an external config file (trusted domain)")
