@@ -51,11 +51,20 @@ func Run(ctx context.Context, opts Options, rebuild func(ctx context.Context) (d
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	initialRoot, err := rebuild(runCtx)
+	// 先绑端口再做首次构建：端口被占用时立即报错，
+	// 不让用户等一次完整构建才发现。
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
+
+	initialRoot, err := rebuild(runCtx)
+	if err != nil {
+		_ = listener.Close()
+		return err
+	}
 	if initialRoot == "" {
+		_ = listener.Close()
 		return errors.New("server: rebuild returned an empty directory")
 	}
 
@@ -78,11 +87,6 @@ func Run(ctx context.Context, opts Options, rebuild func(ctx context.Context) (d
 
 	var currentRoot atomic.Value
 	currentRoot.Store(initialRoot)
-
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
 
 	requestRebuild := make(chan struct{}, 1)
 	var wg sync.WaitGroup

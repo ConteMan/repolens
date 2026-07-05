@@ -1,6 +1,6 @@
 # 006: 主题、模板与增强层（internal/theme）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M3、ADR-002、ADR-003
 
 ## 问题
@@ -57,6 +57,7 @@ type PageData struct {
     HasMermaid, NoIndex bool
     HeadExtra        template.HTML // rel=alternate 等，site 层拼装
     DirEntries       []DirEntry    // 仅目录页使用；由 dirlist 模板渲染子项表格
+    Lang             string        // <html lang>，取 site.language，空则省略（v1 收尾接线，2026-07-05）
 }
 
 func (r *Renderer) Page(w io.Writer, d PageData) error

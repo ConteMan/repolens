@@ -309,6 +309,22 @@ func TestAgentEncryptOverlapWarningInStats(t *testing.T) {
 	}
 }
 
+func TestBuildSiteHomeOverridesRootPage(t *testing.T) {
+	repo := newSiteTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Site.Home = "docs/guide.md"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	rootPage := readOutput(t, outDir, "view/index.html")
+	assertContains(t, rootPage, "Guide")
+	// README 专属内容不应再出现在根页正文。
+	assertNotContains(t, rootPage, "External")
+	// site.language 注入 <html lang>（默认 zh-CN）。
+	assertContains(t, rootPage, `<html lang="zh-CN">`)
+}
+
 func TestAgentEncryptWholeSiteWarningInStats(t *testing.T) {
 	repo := newAgentTestRepo(t)
 	_, stats, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {

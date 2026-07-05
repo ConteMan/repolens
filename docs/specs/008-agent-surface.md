@@ -1,6 +1,6 @@
 # 008: Agent 视图（internal/site）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M4、[design/architecture.md](../design/architecture.md) Agent 视图一节
 
 ## 问题

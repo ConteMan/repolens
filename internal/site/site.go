@@ -411,6 +411,7 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 		LastCommit:  file.LastCommit,
 		HasMermaid:  hasMermaid,
 		NoIndex:     b.cfg.Access.NoIndex,
+		Lang:        b.cfg.Site.Language,
 		HeadExtra:   alternateHead(currentURL, file.Path),
 	}
 	return b.writePage(outDir, currentURL, data)
@@ -508,6 +509,7 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		LastCommit:  lastCommit,
 		HasMermaid:  hasMermaid,
 		NoIndex:     b.cfg.Access.NoIndex,
+		Lang:        b.cfg.Site.Language,
 		DirEntries:  dirEntries(model, currentURL, dir),
 	}
 	return b.writePage(outDir, currentURL, data)
@@ -530,7 +532,7 @@ func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTM
 		return body, toc, "", hasMermaid, index.LastCommit, nil
 	}
 
-	if readme, ok := findReadme(model, dir); ok && readme.Render && readme.Kind == render.KindMarkdown {
+	if readme, ok := b.dirDocFile(model, dir); ok {
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(readme.Path)))
 		if err != nil {
 			return "", nil, "", false, nil, err
@@ -604,6 +606,22 @@ func (b *Builder) siteTitle() string {
 		}
 	}
 	return "repolens"
+}
+
+// dirDocFile 选目录页正文来源：根目录优先 site.home（缺失或不可渲染
+// 时回退 README），其余目录按 README.md、readme.md 顺序。
+func (b *Builder) dirDocFile(model siteModel, dir string) (fileEntry, bool) {
+	if dir == "" && b.cfg != nil {
+		if home := cleanRepoPath(b.cfg.Site.Home); home != "" {
+			if file, ok := model.fileByPath[home]; ok && file.Render && file.Kind == render.KindMarkdown {
+				return file, true
+			}
+		}
+	}
+	if readme, ok := findReadme(model, dir); ok && readme.Render && readme.Kind == render.KindMarkdown {
+		return readme, true
+	}
+	return fileEntry{}, false
 }
 
 func findReadme(model siteModel, dir string) (fileEntry, bool) {
