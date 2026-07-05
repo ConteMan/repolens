@@ -6,7 +6,7 @@
 
 repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（TOC、Mermaid）、HTML 文件直接预览、代码文件语法高亮，全部通过常驻文件树导航。访问者在浏览器里阅读一切——无需 clone、无需本地工具。AI Agent 则获得每个文件的干净纯文本视图。
 
-**状态：早期设计 / v1 之前。** 架构与路线图见 [`docs/`](docs/README.md)，目前尚不可用。
+**状态：v1.0.0。** `build` 与 `serve` 可用；架构与路线图见 [`docs/`](docs/README.md)。
 
 ## 为什么
 
@@ -21,17 +21,23 @@ repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（
 - **随处部署** —— 输出是纯静态目录：Cloudflare Pages、GitHub Pages、对象存储、nginx。全相对链接、零外部请求，可置于任何认证代理之后。
 - **单一二进制** —— Go 编写，模板与资源全部内嵌。
 
-## 快速开始（规划中的 CLI）
+## 快速开始
 
 ```sh
+go install github.com/ConteMan/repolens/cmd/repolens@latest
+
 repolens build git@github.com:you/your-docs.git   # → ./dist
-repolens serve ./local-repo                        # 本地预览，实时重建
+repolens build . -o dist --ref v2.0               # 本地仓库，指定 ref
+repolens serve . --worktree                       # 本地预览（含未提交内容），改动自动重建
 ```
+
+构建产物是纯静态目录，直接交给任何静态托管即可，见[部署指南](docs/deploy.md)。渲染行为可通过仓库根的 `.repolens.yml` 定制（可选，零配置即有合理默认），见[配置模型](docs/design/config.md)。
 
 ## 文档
 
 - [架构总览](docs/design/architecture.md)
 - [配置模型](docs/design/config.md)
+- [部署指南](docs/deploy.md)
 - [架构决策记录（ADR）](docs/decisions/README.md)
 - [路线图](docs/roadmap.md)
 

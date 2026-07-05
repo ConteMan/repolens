@@ -73,6 +73,8 @@ type PageData struct {
 	HasMermaid, NoIndex bool
 	HeadExtra           template.HTML
 	DirEntries          []DirEntry
+	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
+	Lang string
 }
 
 // New creates a Renderer from built-in templates plus optional user overrides.

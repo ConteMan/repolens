@@ -1,6 +1,6 @@
 # 003: Markdown 渲染管线（internal/render）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M2、ADR-002、ADR-003、[design/architecture.md](../design/architecture.md) 渲染管线一节
 
 ## 问题

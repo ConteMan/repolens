@@ -6,7 +6,7 @@
 
 repolens takes a Git repository as-is and builds a static website from it: Markdown rendered with TOC and Mermaid, HTML files previewed directly, code files with syntax highlighting, all navigable through a persistent file tree. Visitors read everything in the browser — no cloning, no local tooling. AI agents get clean plaintext views of every file.
 
-**Status: early design / pre-v1.** The architecture and roadmap live in [`docs/`](docs/README.md). Nothing is usable yet.
+**Status: v1.0.0.** `build` and `serve` are usable; architecture and roadmap live in [`docs/`](docs/README.md).
 
 ## Why
 
@@ -21,17 +21,23 @@ Documentation often already lives in a Git repository, but reading it comfortabl
 - **Deploy anywhere** — output is a plain static directory: Cloudflare Pages, GitHub Pages, object storage, nginx. Fully relative links, zero external requests, works behind any auth proxy.
 - **Single binary** — Go, with templates and assets embedded.
 
-## Quick start (planned CLI)
+## Quick start
 
 ```sh
+go install github.com/ConteMan/repolens/cmd/repolens@latest
+
 repolens build git@github.com:you/your-docs.git   # → ./dist
-repolens serve ./local-repo                        # local preview with live reload
+repolens build . -o dist --ref v2.0               # local repository, specific ref
+repolens serve . --worktree                       # local preview (incl. uncommitted changes), auto rebuild
 ```
+
+The build output is a plain static directory — hand it to any static host; see the [deployment guide](docs/deploy.md). Rendering is customizable through an optional `.repolens.yml` at the repository root (sensible defaults need no config); see the [configuration model](docs/design/config.md).
 
 ## Documentation
 
 - [Architecture](docs/design/architecture.md)
 - [Configuration model](docs/design/config.md)
+- [Deployment guide](docs/deploy.md)
 - [Architecture decision records](docs/decisions/README.md)
 - [Roadmap](docs/roadmap.md)
 

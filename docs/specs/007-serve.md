@@ -1,6 +1,6 @@
 # 007: 本地预览 serve（internal/server）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M3、specs 001、005
 
 ## 问题

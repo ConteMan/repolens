@@ -1,6 +1,6 @@
 # 005: 站点组装与 build 命令（internal/site ＋ internal/cli）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M2、ADR-001、ADR-005、specs 001–004、006
 
 ## 问题

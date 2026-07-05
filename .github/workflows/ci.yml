@@ -13,10 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # dogfood 构建需要 git 历史取最后修改元数据
 
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+
+      - name: go mod tidy check
+        run: go mod tidy -diff
 
       - name: gofmt
         run: |
@@ -33,4 +38,11 @@ jobs:
         run: go build ./...
 
       - name: go test
-        run: go test ./...
+        run: go test -race ./...
+
+      - name: dogfood build
+        run: |
+          go run ./cmd/repolens build . -o /tmp/dogfood-dist
+          test -f /tmp/dogfood-dist/view/index.html
+          test -f /tmp/dogfood-dist/llms.txt
+          test -f /tmp/dogfood-dist/index.json
