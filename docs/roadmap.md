@@ -19,9 +19,21 @@
 - `repolens serve`：本地预览 ＋ fsnotify 重建（`--worktree` 预览未提交内容）
 - CI 质量门禁 ＋ dogfood（用 repolens 构建本仓 docs/ 并部署）
 
+## v1.x 范围（2026-07-06 维护者确认方向）
+
+### In
+
+- 多平台分发与升级：GoReleaser 流水线、Homebrew tap、Windows 单 exe ＋ Scoop、`repolens upgrade`（[009](specs/009-release-distribution.md)）
+- 文件树混合形态：固定侧栏可收起 ＋ 浮动覆盖层，窄屏自动浮动（[010](specs/010-hybrid-tree.md)）
+- 顶部工具栏：树/TOC 开关、前进后退、缩放、布局宽度、源码视图（`view/<path>/source/`）、下载、搜索入口；pjax 导航（[011](specs/011-toolbar-and-pjax.md)）
+- 站内搜索：文件名 ＋ 标题级构建期索引，客户端检索，零外部请求（[012](specs/012-site-search.md)）
+- 图形化管理界面：`repolens ui` 本地 Web GUI——选目录、可视化配置写回 YAML、构建与预览（[013](specs/013-config-ui.md)）
+
 ### Out（v2 及以后，实现前需先修订本文档）
 
-- 全文搜索（预定 pagefind 后处理方案）
+- 全文搜索（v1.x 仅文件名＋标题级；全文仍预定 pagefind 后处理方案）
+- 格式导出（PDF / docx / epub）
+- 原生桌面壳（Wails/Tauri——Web UI 验证后再议）
 - 客户端加密（PageCrypt 思路，设计已在 ADR-005 预留）
 - 多仓库聚合（v1 单仓，聚合交给部署层拼路径）
 - 增量构建、数学公式渲染、Mermaid 之外的图表引擎
@@ -34,4 +46,9 @@
 | M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | — | `repolens version` 可用，CI 绿 ✅ 已完成 |
 | M2 核心管线 | source（git）→ config（双域级联）→ render（md/code）→ site（双层输出） | [001–005](specs/README.md) | 对本仓 build 出可浏览的 dist/ |
 | M3 浏览层 | 文件树、目录页、HTML iframe、主题、增强层 JS、serve | [006–007](specs/README.md) | docu.md 级浏览体验 |
-| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | [008](specs/README.md) ＋ 收尾项 | 文档站上线，tag v1.0.0 |
+| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | [008](specs/README.md) ＋ 收尾项 | 文档站上线，tag v1.0.0 ✅ 已完成（2026-07-05） |
+| M7 分发 | GoReleaser、brew tap、Windows 单 exe/Scoop、upgrade、version 修复 | [009](specs/README.md) | 三平台免 Go 环境安装实测通过 |
+| M5 浏览体验 | 混合树、顶部工具栏、pjax、源码视图、站内搜索 | [010–012](specs/README.md) | 维护者对照 docu.md 交互验收 |
+| M6 图形界面 | `repolens ui`：项目选择、可视化配置、构建预览闭环 | [013](specs/README.md) | 全新用户零终端完成建站路径 |
+
+> v1.x 推进顺序：M7 → M5 → M6（2026-07-06 确认；M7 与 M5 无代码冲突，必要时可并行）。
