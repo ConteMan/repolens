@@ -47,6 +47,9 @@ release:
     owner: ConteMan
     name: repolens
   name_template: "{{ .Tag }}"
+  # rc/beta 等预发布 tag 自动标记 prerelease，避免被 /releases/latest
+  # 返回给 repolens upgrade 的普通用户。
+  prerelease: auto
 
 # GoReleaser 2.10+ 弃用 brews，CLI 二进制走 homebrew_casks。
 homebrew_casks:
@@ -60,6 +63,16 @@ homebrew_casks:
     homepage: https://github.com/ConteMan/repolens
     description: Turn any Git repository into a browsable static site
     license: MIT
+    # 二进制未做 Apple 签名/公证：cask 安装会带 com.apple.quarantine，
+    # Apple Silicon 上 Gatekeeper 直接 SIGKILL（v1.0.1-rc.1 实测）。
+    # GoReleaser 官方 workaround：装后钩子去隔离属性。
+    # 正式签名+公证需 Apple Developer 账号，后置（见 spec 009 边界）。
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/repolens"]
+          end
 
 # Scoop bucket 寄宿在 homebrew-tap 仓的 bucket/ 目录（单卫星仓，2026-07-07 确认）。
 scoops:
