@@ -37,10 +37,13 @@ archives:
 checksum:
   name_template: checksums.txt
 
-# Release notes 由 workflow 从 CHANGELOG.md 抽取（--release-notes），
-# 不用 git log 自动生成。
+# Release notes 由 workflow 从 CHANGELOG.md 抽取后经 --release-notes 传入。
+# 注意不能 disable: true——changelog 管线被禁用时连 --release-notes 的
+# 自定义文件也会被跳过（v1.0.1 实测 release body 为空）；保持启用，
+# --release-notes 存在时自动取代 git 生成。
 changelog:
-  disable: true
+  use: git
+  sort: desc
 
 release:
   github:
