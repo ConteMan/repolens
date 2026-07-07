@@ -23,6 +23,27 @@ func TestVersionCommand(t *testing.T) {
 	}
 }
 
+func TestResolveVersion(t *testing.T) {
+	tests := []struct {
+		name             string
+		injected         string
+		buildInfoVersion string
+		want             string
+	}{
+		{name: "ldflags wins", injected: "v1.2.3", buildInfoVersion: "v1.0.0", want: "v1.2.3"},
+		{name: "go install fallback", injected: "dev", buildInfoVersion: "v1.2.3", want: "v1.2.3"},
+		{name: "devel stays dev", injected: "dev", buildInfoVersion: "(devel)", want: "dev"},
+		{name: "empty stays dev", injected: "", buildInfoVersion: "", want: "dev"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveVersion(tt.injected, tt.buildInfoVersion); got != tt.want {
+				t.Fatalf("resolveVersion(%q, %q) = %q, want %q", tt.injected, tt.buildInfoVersion, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBuildCommand(t *testing.T) {
 	repo := newCLITestRepo(t)
 	outDir := filepath.Join(t.TempDir(), "dist")

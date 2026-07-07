@@ -1,6 +1,6 @@
 # 009: 发布流水线与分发（GoReleaser / Homebrew / Windows）
 
-- 状态：草稿
+- 状态：已确认
 - 关联：roadmap M7、v1 迭代清单（version 显示 dev）
 
 ## 问题

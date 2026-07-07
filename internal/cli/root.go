@@ -15,6 +15,7 @@ import (
 	"github.com/ConteMan/repolens/internal/site"
 	"github.com/ConteMan/repolens/internal/source"
 	"github.com/ConteMan/repolens/internal/theme"
+	"github.com/ConteMan/repolens/internal/update"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newBuildCmd(), newServeCmd(), newVersionCmd())
+	root.AddCommand(newBuildCmd(), newServeCmd(), newVersionCmd(), newUpgradeCmd())
 	return root
 }
 
@@ -102,7 +103,7 @@ func newBuildCmd() *cobra.Command {
 			outDir := cfg.Output.Dir
 			fmt.Fprintf(cmd.OutOrStdout(), "Building site into %s...\n", outDir)
 			builder := site.NewBuilder(cfg, renderer)
-			builder.SetGeneratorVersion(Version)
+			builder.SetGeneratorVersion(ResolveVersion())
 			stats, err := builder.Build(ctx, tree, outDir)
 			if err != nil {
 				return err
@@ -232,7 +233,7 @@ func newServeCmd() *cobra.Command {
 
 				fmt.Fprintf(cmd.OutOrStdout(), "Building preview into %s...\n", outDir)
 				builder := site.NewBuilder(cfg, renderer)
-				builder.SetGeneratorVersion(Version)
+				builder.SetGeneratorVersion(ResolveVersion())
 				stats, err := builder.Build(ctx, tree, outDir)
 				if err != nil {
 					return "", err
@@ -261,7 +262,28 @@ func newVersionCmd() *cobra.Command {
 		Short: "Print the repolens version",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintln(cmd.OutOrStdout(), "repolens", Version)
+			fmt.Fprintln(cmd.OutOrStdout(), "repolens", ResolveVersion())
 		},
 	}
+}
+
+func newUpgradeCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade repolens to the latest release",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			checkOnly, err := cmd.Flags().GetBool("check")
+			if err != nil {
+				return err
+			}
+			return update.Run(cmd.Context(), update.Options{
+				CurrentVersion: ResolveVersion(),
+				CheckOnly:      checkOnly,
+				Out:            cmd.OutOrStdout(),
+			})
+		},
+	}
+	cmd.Flags().Bool("check", false, "check for the latest version without installing it")
+	return cmd
 }
