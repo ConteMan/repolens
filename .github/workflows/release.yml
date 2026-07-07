@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # 从 CHANGELOG.md 抽取当前版本对应节做 release notes；
+      # rc/预发布 tag 无对应节时回退为指向 CHANGELOG 的占位。
+      - name: Extract release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          base="${version%%-*}"
+          awk -v ver="$base" '
+            $0 ~ "^## \\[" ver "\\]" {found=1; next}
+            found && /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if ! grep -q '[^[:space:]]' /tmp/release-notes.md; then
+            echo "See [CHANGELOG.md](https://github.com/ConteMan/repolens/blob/main/CHANGELOG.md)." > /tmp/release-notes.md
+          fi
+          cat /tmp/release-notes.md
+
+      # GH_PAT 缺失时跳过 tap/bucket 推送而不是让 Release 变成半成品
+      #（goreleaser 先传完 Release 资产才推 tap，中途 401 无法重试同 tag）。
+      - name: Decide publish scope
+        id: scope
+        run: |
+          if [ -z "${{ secrets.GH_PAT }}" ]; then
+            echo "::warning::GH_PAT not set; skipping Homebrew tap and Scoop bucket updates"
+            echo "skip=--skip=homebrew,scoop" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --release-notes /tmp/release-notes.md ${{ steps.scope.outputs.skip }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
