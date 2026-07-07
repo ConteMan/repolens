@@ -15,7 +15,7 @@
    - GitHub Release 自动生成（changelog 取 CHANGELOG.md 对应节）。
 2. **版本显示修复**：`cli.Version` 保持 ldflags 注入为主；为空时回退 `debug.ReadBuildInfo().Main.Version`（覆盖 `go install @vX.Y.Z` 场景），仍无则 `dev`。`index.json` 的 `generator` 同步受益。
 3. **Homebrew**：GoReleaser 自动维护 `ConteMan/homebrew-tap` 的 formula；用户侧 `brew install conteman/tap/repolens`、`brew upgrade repolens`。
-4. **Windows**：Release 页直接下载 zip（解压即用的单 exe）；提供 Scoop manifest（`scoop bucket add` + `scoop install repolens`）。winget 提交后置（需微软审核流程，v1.x 观望）。
+4. **Windows**：Release 页直接下载 zip（解压即用的单 exe）；提供 Scoop manifest——bucket 寄宿在 `homebrew-tap` 仓的 `bucket/` 目录（单卫星仓，2026-07-07 确认；`scoop bucket add conteman https://github.com/ConteMan/homebrew-tap` + `scoop install repolens`）。winget 提交后置（需微软审核流程，v1.x 观望）。
 5. **升级方案**：
    - 包管理器安装的：交给 `brew upgrade` / `scoop update`，`repolens upgrade` 检测到该来源时提示对应命令而不自更新；
    - 直接下载 / go install 的：`repolens upgrade` 查 GitHub Releases API，下载校验（checksums）后原子替换自身；

@@ -61,14 +61,16 @@ homebrew_casks:
     description: Turn any Git repository into a browsable static site
     license: MIT
 
+# Scoop bucket 寄宿在 homebrew-tap 仓的 bucket/ 目录（单卫星仓，2026-07-07 确认）。
 scoops:
   - name: repolens
     ids:
       - archive
     repository:
       owner: ConteMan
-      name: scoop-bucket
+      name: homebrew-tap
       token: "{{ .Env.GH_PAT }}"
+    directory: bucket
     homepage: https://github.com/ConteMan/repolens
     description: Turn any Git repository into a browsable static site
     license: MIT
