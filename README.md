@@ -21,11 +21,25 @@ repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（
 - **随处部署** —— 输出是纯静态目录：Cloudflare Pages、GitHub Pages、对象存储、nginx。全相对链接、零外部请求，可置于任何认证代理之后。
 - **单一二进制** —— Go 编写，模板与资源全部内嵌。
 
+## 安装
+
+```sh
+# macOS
+brew install conteman/tap/repolens
+
+# Windows（Scoop；或从 Releases 页直接下载 zip）
+scoop bucket add conteman https://github.com/ConteMan/homebrew-tap
+scoop install repolens
+
+# 任意平台（需 Go 环境）
+go install github.com/ConteMan/repolens/cmd/repolens@latest
+```
+
+升级：包管理器用户走 `brew upgrade` / `scoop update`；直接下载的用户执行 `repolens upgrade` 原地自更新。
+
 ## 快速开始
 
 ```sh
-go install github.com/ConteMan/repolens/cmd/repolens@latest
-
 repolens build git@github.com:you/your-docs.git   # → ./dist
 repolens build . -o dist --ref v2.0               # 本地仓库，指定 ref
 repolens serve . --worktree                       # 本地预览（含未提交内容），改动自动重建
