@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-07
+
+### Added
+
+- 多平台预编译分发（spec 009）：GoReleaser 流水线（darwin/linux/windows × amd64/arm64）、Homebrew tap（`brew install conteman/tap/repolens`）、Scoop bucket（寄宿 tap 仓 `bucket/`）、Release 页直接下载。
+- `repolens upgrade`：直装用户自更新（GitHub 域白名单 + sha256 校验 + 原子替换）；brew/scoop 安装自动提示对应升级命令；`--check` 只查不更。联网仅发生在显式执行时。
+
+### Fixed
+
+- `go install` 安装的二进制 `repolens version` 不再显示 `dev`（回退读 build info）。
+- macOS cask 安装的未签名二进制被 Gatekeeper 拦截：装后钩子去 quarantine。
+
 ## [1.0.0] - 2026-07-05
 
 ### Added
@@ -26,5 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/ConteMan/repolens/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ConteMan/repolens/releases/tag/v1.0.0

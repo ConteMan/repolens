@@ -21,11 +21,25 @@ Documentation often already lives in a Git repository, but reading it comfortabl
 - **Deploy anywhere** — output is a plain static directory: Cloudflare Pages, GitHub Pages, object storage, nginx. Fully relative links, zero external requests, works behind any auth proxy.
 - **Single binary** — Go, with templates and assets embedded.
 
+## Install
+
+```sh
+# macOS
+brew install conteman/tap/repolens
+
+# Windows (Scoop; or grab the zip from the Releases page)
+scoop bucket add conteman https://github.com/ConteMan/homebrew-tap
+scoop install repolens
+
+# any platform (requires Go)
+go install github.com/ConteMan/repolens/cmd/repolens@latest
+```
+
+Upgrades: package-manager users run `brew upgrade` / `scoop update`; direct downloads self-update via `repolens upgrade`.
+
 ## Quick start
 
 ```sh
-go install github.com/ConteMan/repolens/cmd/repolens@latest
-
 repolens build git@github.com:you/your-docs.git   # → ./dist
 repolens build . -o dist --ref v2.0               # local repository, specific ref
 repolens serve . --worktree                       # local preview (incl. uncommitted changes), auto rebuild
