@@ -15,7 +15,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [007](007-serve.md) | 本地预览 serve | internal/server | M3 | 已实现 |
 | [008](008-agent-surface.md) | Agent 视图 | internal/site | M4 | 已实现 |
 | [009](009-release-distribution.md) | 发布流水线与分发 | .github, cli | M7 | 已实现 |
-| [010](010-hybrid-tree.md) | 文件树混合形态 | internal/theme | M5 | 已确认 |
+| [010](010-hybrid-tree.md) | 文件树混合形态 | internal/theme | M5 | 已实现 |
 | [011](011-toolbar-and-pjax.md) | 顶部工具栏与 pjax | internal/theme, site | M5 | 已确认 |
 | [012](012-site-search.md) | 站内搜索 | internal/site, theme | M5 | 草稿 |
 | [013](013-config-ui.md) | 图形化管理界面 | internal/ui | M6 | 草稿 |

@@ -1,6 +1,6 @@
 # 010: 文件树混合形态（固定侧栏 ＋ 浮动覆盖层）
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M5、spec 006、ADR-001、ADR-002
 - 视觉契约：[docs/design/mockups/010-011-prototype.html](../design/mockups/010-011-prototype.html)（2026-07-08 三轮评审定稿，实现须与其对齐）
 
