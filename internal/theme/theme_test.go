@@ -114,6 +114,105 @@ func TestVarsCustomCSSAndMermaidInjection(t *testing.T) {
 	}
 }
 
+func TestHybridTreeLayoutRendering(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	var out bytes.Buffer
+	err = renderer.Page(&out, PageData{
+		Title:     "guide.md",
+		SiteTitle: "test",
+		RelRoot:   "../../",
+		Kind:      "markdown",
+		Body:      html("<p>Guide</p>"),
+		Tree: &TreeNode{IsDir: true, Children: []*TreeNode{
+			{
+				Name:     "docs",
+				Path:     "docs",
+				Href:     "../",
+				Kind:     "dir",
+				IsDir:    true,
+				Expanded: true,
+				Children: []*TreeNode{
+					{Name: "guide.md", Path: "docs/guide.md", Href: ".", Kind: "markdown", Current: true},
+				},
+			},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	got := out.String()
+
+	for _, want := range []string{
+		`<button class="tb-btn" id="btn-tree" type="button"`,
+		`<use href="#icon-tree"></use>`,
+		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
+		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
+		`<span class="tree-chevron" aria-hidden="true"></span>`,
+		`<div class="scrim" id="scrim" aria-hidden="true"></div>`,
+		`<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">`,
+		`<nav class="overlay-tree" id="overlay-tree" data-tree-scroll aria-label="Repository tree"></nav>`,
+		`<button class="tb-btn" id="btn-pin-tree" type="button"`,
+		`<details data-tree-path="docs" open>`,
+		`<symbol id="icon-markdown" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/><path d="M5.3 8.2h5.4M5.3 10.7h5.4"/></symbol>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output missing %q\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `data-tree="collapsed"`) || strings.Contains(got, `data-tree-mode="floating"`) {
+		t.Fatalf("no-JS fallback should render the fixed sidebar by default\n%s", got)
+	}
+}
+
+func TestHybridTreeAssetsExposeContract(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	outDir := t.TempDir()
+	if err := renderer.WriteAssets(outDir); err != nil {
+		t.Fatalf("WriteAssets() error = %v", err)
+	}
+
+	css := readTestOutput(t, outDir, "_assets/site.css")
+	for _, want := range []string{
+		`.tree-chevron`,
+		`border-right: 1.6px solid var(--muted);`,
+		`body[data-tree="collapsed"] .sidebar`,
+		`body[data-tree-mode="floating"] .sidebar`,
+		`.scrim`,
+		`.overlay`,
+		`body[data-overlay="open"] .overlay`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Fatalf("site.css missing %q\n%s", want, css)
+		}
+	}
+
+	js := readTestOutput(t, outDir, "_assets/site.js")
+	for _, want := range []string{
+		`var treePreferenceKey = "repolens:tree:preference";`,
+		`window.localStorage.getItem(key)`,
+		`window.matchMedia("(max-width: 1023px)")`,
+		`overlayTree.innerHTML = treeSource.innerHTML;`,
+		`event.key === "Escape"`,
+		`storageSet(keyFor(detail), detail.open ? "open" : "closed");`,
+		`storageSet(scrollKey, String(container.scrollTop));`,
+	} {
+		if !strings.Contains(js, want) {
+			t.Fatalf("site.js missing %q\n%s", want, js)
+		}
+	}
+}
+
 func TestTemplateOverrideIncludesDirlist(t *testing.T) {
 	t.Parallel()
 

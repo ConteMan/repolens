@@ -1,10 +1,10 @@
-{{define "tree"}}{{if .}}<ul class="tree">{{range .Children}}{{template "tree-node" .}}{{end}}</ul>{{end}}{{end}}
+{{define "tree"}}{{if .}}<div class="tree-search" data-tree-search-placeholder hidden></div><ul class="tree">{{range .Children}}{{template "tree-node" .}}{{end}}</ul>{{end}}{{end}}
 
 {{define "tree-node"}}
 <li class="{{if .Current}}current {{end}}{{if .IsDir}}dir{{else}}file{{end}}" data-kind="{{.Kind}}">
 {{if .IsDir}}
   <details data-tree-path="{{.Path}}" {{if .Expanded}}open{{end}}>
-    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="{{.Href}}">{{.Name}}</a></span></summary>
+    <summary><span class="tree-chevron" aria-hidden="true"></span><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="{{.Href}}">{{.Name}}</a></span></summary>
     <ul>{{range .Children}}{{template "tree-node" .}}{{end}}</ul>
   </details>
 {{else}}

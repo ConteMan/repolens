@@ -126,8 +126,9 @@ th {
   top: 0;
   z-index: 5;
   display: flex;
+  gap: 0.5rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: var(--topbar-height);
   padding: 0 1rem;
   border-bottom: 1px solid var(--border);
@@ -136,12 +137,51 @@ th {
 }
 
 .brand {
+  margin-right: auto;
   min-width: 0;
   overflow: hidden;
   color: var(--fg);
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--fg);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tb-btn:hover {
+  background: var(--subtle-strong);
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tb-btn[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tb-btn .icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-basis: 1.05rem;
 }
 
 .top-actions {
@@ -166,6 +206,25 @@ th {
   display: grid;
   grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
   min-height: calc(100vh - var(--topbar-height));
+  transition: grid-template-columns 0.18s ease;
+}
+
+/* 收起 = 侧栏列宽过渡到 0（对齐原型动效），内容立即隐藏防溢出。 */
+body[data-tree="collapsed"] .shell,
+body[data-tree-mode="floating"] .shell {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+body[data-tree="collapsed"] .sidebar,
+body[data-tree-mode="floating"] .sidebar {
+  overflow: hidden;
+  border-right: 0;
+  visibility: hidden;
+}
+
+body[data-tree="collapsed"] .sidebar .tree-nav,
+body[data-tree-mode="floating"] .sidebar .tree-nav {
+  display: none;
 }
 
 .sidebar {
@@ -201,7 +260,8 @@ th {
 }
 
 .tree summary {
-  display: block;
+  display: flex;
+  align-items: center;
   cursor: pointer;
 }
 
@@ -209,16 +269,19 @@ th {
   display: none;
 }
 
-.tree summary::before {
+.tree-chevron {
   display: inline-block;
-  width: 1rem;
-  color: var(--muted);
-  content: ">";
-  transform: rotate(0deg);
+  width: 0.42rem;
+  height: 0.42rem;
+  margin: 0 0.5rem 0.12rem 0.15rem;
+  border-right: 1.6px solid var(--muted);
+  border-bottom: 1.6px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
 }
 
-.tree details[open] > summary::before {
-  transform: rotate(90deg);
+.tree details[open] > summary .tree-chevron {
+  transform: rotate(45deg);
 }
 
 .summary-row,
@@ -256,6 +319,67 @@ th {
   color: var(--accent);
   background: var(--accent-soft);
   font-weight: 650;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  visibility: hidden;
+  background: rgb(0 0 0 / 32%);
+  opacity: 0;
+  transition: opacity 0.15s ease, visibility 0.15s;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, 88vw);
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
+  transform: translateX(-102%);
+  transition: transform 0.18s ease;
+}
+
+body[data-overlay="open"] .scrim {
+  visibility: visible;
+  opacity: 1;
+}
+
+body[data-overlay="open"] .overlay {
+  transform: none;
+}
+
+.overlay-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.overlay-tree {
+  flex: 1;
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell,
+  .overlay,
+  .scrim,
+  .tree-chevron {
+    transition: none;
+  }
 }
 
 .content {
@@ -421,11 +545,9 @@ h4 {
   font-size: 0.88rem;
 }
 
-@media (max-width: 860px) {
-  .topbar {
-    position: static;
-  }
-
+@media (max-width: 1023px) {
+  /* 无 JS 兜底：窄屏退化为单列 + 限高静态侧栏，可读可导航。
+     有 JS 时 data-tree-mode="floating" 的隐藏规则优先生效。 */
   .shell {
     grid-template-columns: 1fr;
   }
@@ -434,8 +556,15 @@ h4 {
     position: static;
     height: auto;
     max-height: 42vh;
+    overflow: auto;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    position: sticky;
   }
 
   .content {
