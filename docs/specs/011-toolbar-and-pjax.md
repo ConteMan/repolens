@@ -1,6 +1,6 @@
 # 011: 顶部工具栏与 pjax 导航
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M5、spec 006（pjax 当时缓行）、spec 005（"查看源码"入口当时缓行）、spec 010
 - 视觉契约：[docs/design/mockups/010-011-prototype.html](../design/mockups/010-011-prototype.html)（2026-07-08 三轮评审定稿，实现须与其对齐）
 

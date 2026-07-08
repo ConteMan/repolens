@@ -120,6 +120,8 @@ type Theme struct {
 type View struct {
 	TreePosition    string `yaml:"tree_position"`
 	TreeExpandDepth int    `yaml:"tree_expand_depth"`
+	// TOCPanel controls Markdown TOC placement: "floating" or "inline".
+	TOCPanel string `yaml:"toc_panel"`
 }
 
 // Agent configures machine-readable outputs.
@@ -247,6 +249,7 @@ func defaultConfig() Config {
 		View: View{
 			TreePosition:    "left",
 			TreeExpandDepth: 2,
+			TOCPanel:        "floating",
 		},
 		Agent: Agent{
 			LLMSTxt: true,
@@ -319,23 +322,31 @@ func applyRule(opts *FileOptions, rule Rule) {
 }
 
 func lintConfig(cfg Config) []Warning {
+	warnings := lintViewConfig(cfg.View)
 	if !cfg.Access.Encrypt.Enabled {
-		return nil
+		return warnings
 	}
 	agentPaths := enabledAgentPaths(cfg.Agent)
 	if len(agentPaths) == 0 {
-		return nil
+		return warnings
 	}
 	if len(cfg.Access.Encrypt.Paths) == 0 {
-		return []Warning{{Msg: "access.encrypt covers the whole site while agent outputs are enabled"}}
+		return append(warnings, Warning{Msg: "access.encrypt covers the whole site while agent outputs are enabled"})
 	}
 	for _, pattern := range cfg.Access.Encrypt.Paths {
 		for _, agentPath := range agentPaths {
 			matched, err := doublestar.Match(pattern, agentPath)
 			if err == nil && matched {
-				return []Warning{{Msg: "access.encrypt paths overlap enabled agent outputs"}}
+				return append(warnings, Warning{Msg: "access.encrypt paths overlap enabled agent outputs"})
 			}
 		}
+	}
+	return warnings
+}
+
+func lintViewConfig(view View) []Warning {
+	if view.TOCPanel != "floating" && view.TOCPanel != "inline" {
+		return []Warning{{Msg: fmt.Sprintf("view.toc_panel %q is invalid; expected floating or inline", view.TOCPanel)}}
 	}
 	return nil
 }
@@ -501,6 +512,7 @@ type themePatch struct {
 type viewPatch struct {
 	TreePosition    *string `yaml:"tree_position"`
 	TreeExpandDepth *int    `yaml:"tree_expand_depth"`
+	TOCPanel        *string `yaml:"toc_panel"`
 }
 
 type agentPatch struct {
@@ -712,6 +724,9 @@ func applyViewPatch(dst *View, patch *viewPatch) {
 	}
 	if patch.TreeExpandDepth != nil {
 		dst.TreeExpandDepth = *patch.TreeExpandDepth
+	}
+	if patch.TOCPanel != nil {
+		dst.TOCPanel = *patch.TOCPanel
 	}
 }
 

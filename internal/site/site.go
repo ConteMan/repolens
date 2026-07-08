@@ -105,6 +105,12 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 			return stats, err
 		}
 		stats.Pages++
+		if supportsSourcePage(file, b.cfg.OptionsFor(file.Path)) {
+			if err := b.writeSourcePage(outDir, model, file); err != nil {
+				return stats, err
+			}
+			stats.Pages++
+		}
 	}
 
 	for _, dir := range dirs {
@@ -400,21 +406,56 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 	}
 	data := theme.PageData{
 		Title:       title,
-		SiteTitle:   b.siteTitle(),
-		RelRoot:     relRoot(currentURL),
 		Breadcrumbs: breadcrumbs(currentURL, file.Path, false),
 		Tree:        buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
 		Kind:        pageKind(file, b.cfg.OptionsFor(file.Path)),
 		Body:        body,
 		TOC:         toc,
 		MirrorHref:  render.RelTo(currentURL, mirrorURL(file.Path)),
+		SourceHref:  sourceHref(currentURL, file, b.cfg.OptionsFor(file.Path)),
+		FileSize:    file.Size,
+		RepoPath:    file.Path,
 		LastCommit:  file.LastCommit,
 		HasMermaid:  hasMermaid,
-		NoIndex:     b.cfg.Access.NoIndex,
-		Lang:        b.cfg.Site.Language,
 		HeadExtra:   alternateHead(currentURL, file.Path),
 	}
+	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
+}
+
+func (b *Builder) writeSourcePage(outDir string, model siteModel, file fileEntry) error {
+	currentURL := viewSourceURL(file.Path)
+	opts := b.cfg.OptionsFor(file.Path)
+	data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
+	if err != nil {
+		return err
+	}
+	code, err := render.Code(data, file.Path, render.CodeOptions{
+		LineNumbers: opts.Code.LineNumbers,
+		Theme:       opts.Code.Theme,
+	})
+	if err != nil {
+		return err
+	}
+	kind := "markdown-source"
+	if file.Kind == render.KindHTML {
+		kind = "html-source"
+	}
+	page := theme.PageData{
+		Title:       path.Base(file.Path),
+		Breadcrumbs: breadcrumbs(currentURL, file.Path, false),
+		Tree:        buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
+		Kind:        kind,
+		Body:        code.HTML,
+		MirrorHref:  render.RelTo(currentURL, mirrorURL(file.Path)),
+		SourceHref:  render.RelTo(currentURL, model.browserURLForFile(file)),
+		FileSize:    file.Size,
+		RepoPath:    file.Path,
+		LastCommit:  file.LastCommit,
+		HeadExtra:   alternateHead(currentURL, file.Path),
+	}
+	b.fillCommonPageData(currentURL, &page)
+	return b.writePage(outDir, currentURL, page)
 }
 
 func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (template.HTML, []render.TOCItem, string, bool, error) {
@@ -499,8 +540,6 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 	}
 	data := theme.PageData{
 		Title:       title,
-		SiteTitle:   b.siteTitle(),
-		RelRoot:     relRoot(currentURL),
 		Breadcrumbs: breadcrumbs(currentURL, dir, true),
 		Tree:        buildTree(model, currentURL, dir, b.cfg.View.TreeExpandDepth),
 		Kind:        "dir",
@@ -508,11 +547,20 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		TOC:         toc,
 		LastCommit:  lastCommit,
 		HasMermaid:  hasMermaid,
-		NoIndex:     b.cfg.Access.NoIndex,
-		Lang:        b.cfg.Site.Language,
+		RepoPath:    dir,
 		DirEntries:  dirEntries(model, currentURL, dir),
 	}
+	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
+}
+
+func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
+	data.SiteTitle = b.siteTitle()
+	data.RelRoot = relRoot(currentURL)
+	data.NoIndex = b.cfg.Access.NoIndex
+	data.Lang = b.cfg.Site.Language
+	data.TOCPanel = tocPanelMode(b.cfg.View.TOCPanel)
+	data.UI = theme.UIStrings(b.cfg.Site.Language)
 }
 
 func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTML, []render.TOCItem, string, bool, *source.Commit, error) {
@@ -913,6 +961,10 @@ func viewFileURL(repoPath string) string {
 	return "view/" + cleanRepoPath(repoPath) + "/"
 }
 
+func viewSourceURL(repoPath string) string {
+	return viewFileURL(repoPath) + "source/"
+}
+
 func viewDirURL(dir string) string {
 	dir = cleanRepoPath(dir)
 	if dir == "" {
@@ -996,6 +1048,32 @@ func kindName(kind render.Kind) string {
 	default:
 		return "binary"
 	}
+}
+
+func supportsSourcePage(file fileEntry, opts config.FileOptions) bool {
+	switch file.Kind {
+	case render.KindMarkdown:
+		return true
+	case render.KindHTML:
+		view := strings.TrimSpace(opts.HTML.View)
+		return view == "" || view == "embed" || view == "direct"
+	default:
+		return false
+	}
+}
+
+func sourceHref(currentURL string, file fileEntry, opts config.FileOptions) string {
+	if !supportsSourcePage(file, opts) {
+		return ""
+	}
+	return render.RelTo(currentURL, viewSourceURL(file.Path))
+}
+
+func tocPanelMode(mode string) string {
+	if mode == "inline" {
+		return "inline"
+	}
+	return "floating"
 }
 
 func pageKind(file fileEntry, opts config.FileOptions) string {

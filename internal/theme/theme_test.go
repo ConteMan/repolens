@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ConteMan/repolens/internal/render"
 	"github.com/ConteMan/repolens/internal/source"
 )
 
@@ -149,7 +150,16 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 	got := out.String()
 
 	for _, want := range []string{
+		`<div class="tb-group js-only">`,
 		`<button class="tb-btn" id="btn-tree" type="button"`,
+		`<button class="tb-btn" id="btn-back" type="button"`,
+		`<button class="tb-btn" id="btn-fwd" type="button"`,
+		`<nav class="tb-crumbs" aria-label="Breadcrumbs">`,
+		`<button class="tb-btn js-only" id="btn-zoom-out" type="button"`,
+		`<span class="zoom-readout js-only" id="zoom-readout">100%</span>`,
+		`<button class="tb-btn js-only" id="btn-width" type="button"`,
+		`<span class="info-wrap js-only" id="info-wrap">`,
+		`<button class="tb-btn js-only" id="btn-search" type="button"`,
 		`<use href="#icon-tree"></use>`,
 		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
 		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
@@ -191,6 +201,11 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`.scrim`,
 		`.overlay`,
 		`body[data-overlay="open"] .overlay`,
+		`.tb-crumbs`,
+		`.toc-panel`,
+		`body[data-width="narrow"] .content`,
+		`.info-panel`,
+		`.dl-menu`,
 	} {
 		if !strings.Contains(css, want) {
 			t.Fatalf("site.css missing %q\n%s", want, css)
@@ -200,16 +215,77 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	js := readTestOutput(t, outDir, "_assets/site.js")
 	for _, want := range []string{
 		`var treePreferenceKey = "repolens:tree:preference";`,
-		`window.localStorage.getItem(key)`,
+		`storageGet(window.localStorage, key)`,
 		`window.matchMedia("(max-width: 1023px)")`,
 		`overlayTree.innerHTML = treeSource.innerHTML;`,
 		`event.key === "Escape"`,
-		`storageSet(keyFor(detail), detail.open ? "open" : "closed");`,
-		`storageSet(scrollKey, String(container.scrollTop));`,
+		`sessionSet(keyFor(detail), detail.open ? "open" : "closed");`,
+		`sessionSet(scrollKey, String(container.scrollTop));`,
+		`window.fetch(url.href, { credentials: "same-origin" })`,
+		`window.history.pushState({ pjax: true }, "", url.href);`,
+		`navigator.clipboard.writeText(text)`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Fatalf("site.js missing %q\n%s", want, js)
 		}
+	}
+}
+
+func TestToolbarPageDataAndLanguage(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	var out bytes.Buffer
+	err = renderer.Page(&out, PageData{
+		Title:      "guide.md",
+		SiteTitle:  "test",
+		Lang:       "en",
+		RelRoot:    "../../",
+		Kind:       "markdown",
+		RepoPath:   "docs/guide.md",
+		FileSize:   1536,
+		MirrorHref: "../../docs/guide.md",
+		SourceHref: "source/",
+		TOCPanel:   "floating",
+		TOC:        []render.TOCItem{{Level: 2, Anchor: "intro", Title: "Intro"}},
+		LastCommit: &source.Commit{
+			Hash:    "0123456789abcdef",
+			Time:    time.Date(2026, 7, 8, 9, 30, 0, 0, time.UTC),
+			Subject: "docs: update guide",
+		},
+		Breadcrumbs: []Crumb{
+			{Label: "root", Href: "../../"},
+			{Label: "docs", Href: "../"},
+			{Label: "guide.md", Current: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	got := out.String()
+	for _, want := range []string{
+		`<html class="no-js" lang="en">`,
+		`title="Page information"`,
+		`<div class="info-row"><span>Path</span><code data-page-path>docs/guide.md</code></div>`,
+		`<div class="info-row"><span>Size</span><b>1.5 KiB</b></div>`,
+		`<code>0123456</code><small>docs: update guide</small>`,
+		`href="../../docs/guide.md"`,
+		`href="source/"`,
+		`Raw file guide.md`,
+		`Search (/)`,
+		`<aside class="toc-panel" id="toc-panel" aria-label="Table of contents">`,
+		`<a href="#intro" data-lv="2">Intro</a>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output missing %q\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `footer class="meta"`) {
+		t.Fatalf("footer meta should not render\n%s", got)
 	}
 }
 

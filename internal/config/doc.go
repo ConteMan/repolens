@@ -5,4 +5,6 @@
 // output and access are honored only from the external --config file and CLI
 // flags. Precedence: CLI > external config > in-repo config > defaults.
 // Render rules cascade in order, later rules overriding earlier ones.
+// View.TOCPanel accepts "floating" or "inline"; invalid values are reported
+// as warnings and rendered with the floating fallback by site assembly.
 package config
