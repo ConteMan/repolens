@@ -10,7 +10,7 @@
 ## 行为
 
 1. **模板集**（html/template，go:embed，模板名即公开 API，宁缺毋滥）：
-   - `layout` —— 页面骨架：顶栏（站点标题、到镜像原文件链接）、文件树侧栏、内容区、页脚（git 最后修改时间、commit 短 hash）；
+   - `layout` —— 页面骨架：顶部工具栏（文件树、历史导航、面包屑、TOC、缩放、宽度、页面信息、源码、下载、搜索）、文件树侧栏、内容区、浮动面板；
    - `page` —— 文件页正文（Markdown / Code / HTML iframe / Image / Binary 五种形态的分支在此）；
    - `dirlist` —— 目录页（README 正文来自 `PageData.Body`，子项表格来自 `PageData.DirEntries`）；
    - `tree` —— 文件树侧栏（递归 partial：目录可折叠、类型图标、当前项高亮、祖先默认展开、其余按 `tree_expand_depth`）。
@@ -18,7 +18,7 @@
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
    - 文件树折叠状态持久化（sessionStorage，key 为目录路径）；
    - 树滚动位置保持；
-   - 可选 pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 ＋ history.pushState，失败回退整页跳转。v1 允许先不做 pjax，树状态持久化必须有。
+   - pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 / 顶栏 / TOC / 树高亮 ＋ history.pushState，失败回退整页跳转。
    - 无 JS 时一切可读可导航（`<details>` 或默认展开态兜底）。
 4. **Mermaid**：vendor `mermaid.min.js`（UMD 构建，版本写入文件头注释与 CHANGELOG）到 `_assets/`；仅 `HasMermaid` 的页面注入 `<script defer>` 与初始化调用。
 5. **三级定制**：
@@ -53,6 +53,12 @@ type PageData struct {
     Body             template.HTML
     TOC              []render.TOCItem
     MirrorHref       string // 相对路径
+    SourceHref       string // 源码子页或源码页返回渲染视图的相对路径；无则为空
+    FileSize         int64  // 文件页原始大小；目录页为 0，信息面板隐藏
+    RepoPath         string // 仓库相对路径，目录页为目录路径或空
+    TOCPanel         string // floating|inline；floating 由 layout 渲染浮动面板
+    KindLabel        string // 当前语言下的类型文案；空则由 theme 回退
+    UI               map[string]string // zh/en 内置主题字符串表
     LastCommit       *source.Commit
     HasMermaid, NoIndex bool
     HeadExtra        template.HTML // rel=alternate 等，site 层拼装

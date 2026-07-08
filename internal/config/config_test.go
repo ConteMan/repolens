@@ -50,7 +50,7 @@ func TestLoadTable(t *testing.T) {
 				if !cfg.Render.Code.LineNumbers || cfg.Render.Code.Theme != "github" {
 					t.Fatalf("code defaults = %#v", cfg.Render.Code)
 				}
-				if cfg.View.TreePosition != "left" || cfg.View.TreeExpandDepth != 2 {
+				if cfg.View.TreePosition != "left" || cfg.View.TreeExpandDepth != 2 || cfg.View.TOCPanel != "floating" {
 					t.Fatalf("view defaults = %#v", cfg.View)
 				}
 				if !cfg.Agent.LLMSTxt || !cfg.Agent.LLMSFull.Enabled ||
@@ -189,6 +189,34 @@ access:
 					t.Fatalf("llms_full.max_size = %d", cfg.Agent.LLMSFull.MaxSize)
 				}
 				requireWarningContains(t, warnings, "overlap")
+			},
+		},
+		{
+			name: "toc panel override",
+			extYAML: `
+view:
+  toc_panel: inline
+`,
+			assert: func(t *testing.T, cfg *Config, warnings []Warning) {
+				if len(warnings) != 0 {
+					t.Fatalf("warnings = %v, want none", warnings)
+				}
+				if cfg.View.TOCPanel != "inline" {
+					t.Fatalf("toc_panel = %q, want inline", cfg.View.TOCPanel)
+				}
+			},
+		},
+		{
+			name: "invalid toc panel warns",
+			extYAML: `
+view:
+  toc_panel: drawer
+`,
+			assert: func(t *testing.T, cfg *Config, warnings []Warning) {
+				if cfg.View.TOCPanel != "drawer" {
+					t.Fatalf("toc_panel = %q, want raw invalid value preserved", cfg.View.TOCPanel)
+				}
+				requireWarningContains(t, warnings, "view.toc_panel")
 			},
 		},
 	}

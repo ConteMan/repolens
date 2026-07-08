@@ -69,6 +69,7 @@ theme:
 view:
   tree_position: left                # left / right
   tree_expand_depth: 2
+  toc_panel: floating                # floating / inline；默认 floating
 
 agent:
   llms_txt: true

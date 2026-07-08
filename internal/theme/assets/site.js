@@ -1,49 +1,52 @@
 (function () {
   "use strict";
 
+  var body = document.body;
   var statePrefix = "repolens:tree:";
   var scrollKey = "repolens:tree:scroll";
-  // Cross-session preference for the wide-screen fixed sidebar:
-  // "expanded" keeps the sidebar pinned, "collapsed" uses the overlay tree.
   var treePreferenceKey = "repolens:tree:preference";
+  var tocKey = "repolens:toc";
+  var zoomKey = "repolens:zoom";
+  var widthKey = "repolens:width";
+  var zooms = [0.9, 1, 1.1, 1.25];
+  var widths = ["narrow", "default", "full"];
   var floatingQuery = window.matchMedia ? window.matchMedia("(max-width: 1023px)") : null;
-  var body = document.body;
-  var treeButton = document.getElementById("btn-tree");
-  var pinButton = document.getElementById("btn-pin-tree");
-  var scrim = document.getElementById("scrim");
-  var treeSource = document.getElementById("tree-src");
-  var overlayTree = document.getElementById("overlay-tree");
+  var boundScrollContainers = typeof WeakSet === "function" ? new WeakSet() : null;
 
-  function storageGet(key) {
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function storageGet(store, key) {
     try {
-      return window.sessionStorage.getItem(key);
+      return store.getItem(key);
     } catch (_) {
       return null;
     }
   }
 
-  function storageSet(key, value) {
+  function storageSet(store, key, value) {
     try {
-      window.sessionStorage.setItem(key, value);
+      store.setItem(key, value);
     } catch (_) {
       return;
     }
+  }
+
+  function sessionGet(key) {
+    return storageGet(window.sessionStorage, key);
+  }
+
+  function sessionSet(key, value) {
+    storageSet(window.sessionStorage, key, value);
   }
 
   function localGet(key) {
-    try {
-      return window.localStorage.getItem(key);
-    } catch (_) {
-      return null;
-    }
+    return storageGet(window.localStorage, key);
   }
 
   function localSet(key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-    } catch (_) {
-      return;
-    }
+    storageSet(window.localStorage, key, value);
   }
 
   function keyFor(detail) {
@@ -51,7 +54,7 @@
   }
 
   function applySavedDetailState(detail) {
-    var saved = storageGet(keyFor(detail));
+    var saved = sessionGet(keyFor(detail));
     if (saved === "open") {
       detail.open = true;
     } else if (saved === "closed") {
@@ -75,17 +78,20 @@
       applySavedDetailState(detail);
       detail.addEventListener("toggle", function () {
         var path = detail.getAttribute("data-tree-path") || "";
-        storageSet(keyFor(detail), detail.open ? "open" : "closed");
+        sessionSet(keyFor(detail), detail.open ? "open" : "closed");
         syncDetailPath(path, detail.open, detail);
       });
     });
   }
 
   function bindScroll(container) {
-    if (!container) {
+    if (!container || (boundScrollContainers && boundScrollContainers.has(container))) {
       return;
     }
-    var savedScroll = parseInt(storageGet(scrollKey) || "0", 10);
+    if (boundScrollContainers) {
+      boundScrollContainers.add(container);
+    }
+    var savedScroll = parseInt(sessionGet(scrollKey) || "0", 10);
     if (!Number.isNaN(savedScroll)) {
       container.scrollTop = savedScroll;
     }
@@ -97,7 +103,7 @@
       pending = true;
       window.requestAnimationFrame(function () {
         pending = false;
-        storageSet(scrollKey, String(container.scrollTop));
+        sessionSet(scrollKey, String(container.scrollTop));
       });
     }, { passive: true });
   }
@@ -111,17 +117,17 @@
   }
 
   function setOverlay(open) {
+    var treeButton = $("btn-tree");
+    var overlayTree = $("overlay-tree");
     var wasOpen = body.hasAttribute("data-overlay");
     if (open) {
       body.setAttribute("data-overlay", "open");
-      // 焦点移入覆盖层首个可聚焦项，键盘用户可直接导航。
       var first = overlayTree && overlayTree.querySelector("a, button, summary");
       if (first && first.focus) {
         first.focus();
       }
     } else {
       body.removeAttribute("data-overlay");
-      // 仅在真正关闭时归还焦点，避免初始化时抢走页面焦点。
       if (wasOpen && treeButton && treeButton.focus) {
         treeButton.focus();
       }
@@ -130,6 +136,7 @@
 
   function applyTreeMode(preference) {
     var floating = isFloatingViewport();
+    var treeButton = $("btn-tree");
     body.setAttribute("data-tree", preference);
     if (floating) {
       body.setAttribute("data-tree-mode", "floating");
@@ -146,65 +153,239 @@
     applyTreeMode(preference);
   }
 
-  function initTree() {
-    if (!treeSource || !overlayTree) {
+  function setupTreeDOM() {
+    var treeSource = $("tree-src");
+    var overlayTree = $("overlay-tree");
+    if (treeSource && overlayTree) {
+      overlayTree.innerHTML = treeSource.innerHTML;
+      bindDetails(treeSource);
+      bindDetails(overlayTree);
+    } else {
       bindDetails(document);
-      bindScroll(document.querySelector("[data-tree-scroll]"));
-      return;
     }
-
-    overlayTree.innerHTML = treeSource.innerHTML;
-    bindDetails(document);
     Array.prototype.forEach.call(document.querySelectorAll("[data-tree-scroll]"), bindScroll);
     applyTreeMode(savedTreePreference());
+  }
 
-    if (treeButton) {
-      treeButton.addEventListener("click", function () {
-        if (!isFloatingViewport() && savedTreePreference() === "expanded") {
-          setTreePreference("collapsed");
-          return;
-        }
-        setOverlay(true);
-      });
+  function getZoomIndex() {
+    var saved = parseInt(localGet(zoomKey) || "1", 10);
+    if (Number.isNaN(saved)) {
+      return 1;
     }
+    return Math.max(0, Math.min(zooms.length - 1, saved));
+  }
 
-    if (pinButton) {
-      pinButton.addEventListener("click", function () {
-        setOverlay(false);
-        setTreePreference("expanded");
-      });
+  function setZoomIndex(index) {
+    localSet(zoomKey, String(index));
+    applyZoom();
+  }
+
+  function applyZoom() {
+    var index = getZoomIndex();
+    var content = $("content");
+    var readout = $("zoom-readout");
+    if (content) {
+      content.style.setProperty("--zoom", zooms[index]);
     }
-
-    if (scrim) {
-      scrim.addEventListener("click", function () {
-        setOverlay(false);
-      });
+    if (readout) {
+      readout.textContent = Math.round(zooms[index] * 100) + "%";
     }
+  }
 
-    overlayTree.addEventListener("click", function (event) {
-      var target = event.target;
-      if (target && target.closest && target.closest("a")) {
-        setOverlay(false);
+  function widthLabels() {
+    var zh = (document.documentElement.lang || "").toLowerCase().indexOf("zh") === 0;
+    return zh ? ["窄栏", "默认", "全宽"] : ["Narrow", "Default", "Full"];
+  }
+
+  function applyWidth() {
+    var saved = localGet(widthKey);
+    var mode = widths.indexOf(saved) >= 0 ? saved : "default";
+    var label = $("width-label");
+    body.setAttribute("data-width", mode);
+    if (label) {
+      label.textContent = widthLabels()[widths.indexOf(mode)];
+    }
+  }
+
+  function cycleWidth() {
+    var current = body.getAttribute("data-width") || "default";
+    var next = widths[(widths.indexOf(current) + 1) % widths.length] || "default";
+    localSet(widthKey, next);
+    applyWidth();
+  }
+
+  function applyTOC() {
+    var panel = $("toc-panel");
+    var button = $("btn-toc");
+    if (!panel || !button) {
+      body.removeAttribute("data-toc");
+      return;
+    }
+    var open = localGet(tocKey) === "open";
+    if (open) {
+      body.setAttribute("data-toc", "open");
+    } else {
+      body.removeAttribute("data-toc");
+    }
+    button.setAttribute("aria-pressed", String(open));
+    updateTOCActive();
+  }
+
+  function setTOC(open) {
+    localSet(tocKey, open ? "open" : "closed");
+    applyTOC();
+  }
+
+  function updateTOCActive() {
+    var panel = $("toc-panel");
+    if (!panel) {
+      return;
+    }
+    var current = null;
+    Array.prototype.forEach.call(document.querySelectorAll("#content h1[id], #content h2[id], #content h3[id], #content h4[id], #content h5[id], #content h6[id]"), function (heading) {
+      if (heading.getBoundingClientRect().top < 90) {
+        current = heading.id;
       }
     });
+    Array.prototype.forEach.call(panel.querySelectorAll("a"), function (link) {
+      link.classList.toggle("active", link.getAttribute("href") === "#" + current);
+    });
+  }
 
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") {
-        setOverlay(false);
+  function closeInfo() {
+    var button = $("btn-info");
+    body.removeAttribute("data-info");
+    if (button) {
+      button.setAttribute("aria-pressed", "false");
+    }
+  }
+
+  function closeDownload() {
+    var wrap = $("dl-wrap");
+    if (wrap) {
+      wrap.setAttribute("data-open", "false");
+    }
+    var dlButton = $("btn-dl");
+    if (dlButton) {
+      dlButton.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function copyPath() {
+    var node = document.querySelector("[data-page-path]");
+    var text = node ? node.textContent : "";
+    if (!text) {
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var input = document.createElement("textarea");
+    input.value = text;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand("copy");
+    } catch (_) {
+      return;
+    } finally {
+      document.body.removeChild(input);
+    }
+  }
+
+  function applyToolbarState() {
+    applyZoom();
+    applyWidth();
+    applyTOC();
+    closeInfo();
+    closeDownload();
+  }
+
+  function sameOriginURL(href) {
+    try {
+      return new URL(href, window.location.href);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function isPjaxLink(link) {
+    var raw = link ? link.getAttribute("href") : "";
+    if (!link || link.target || link.hasAttribute("download") || !raw || raw.charAt(0) === "#") {
+      return false;
+    }
+    var url = sameOriginURL(raw);
+    return !!url && url.origin === window.location.origin && url.pathname.indexOf("/view/") >= 0;
+  }
+
+  function fetchPage(url, push) {
+    return window.fetch(url.href, { credentials: "same-origin" }).then(function (response) {
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.text();
+    }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var nextTopbar = doc.querySelector(".topbar");
+      var nextContent = doc.querySelector("#content");
+      var nextTree = doc.querySelector("#tree-src");
+      if (!nextTopbar || !nextContent || !nextTree) {
+        throw new Error("missing pjax targets");
+      }
+      document.title = doc.title;
+      var nextKind = doc.body && doc.body.getAttribute("data-page-kind");
+      if (nextKind) {
+        body.setAttribute("data-page-kind", nextKind);
+      }
+      document.querySelector(".topbar").outerHTML = nextTopbar.outerHTML;
+      $("content").outerHTML = nextContent.outerHTML;
+      $("tree-src").innerHTML = nextTree.innerHTML;
+      replaceOptional("#toc-panel", doc);
+      loadMermaidIfNeeded(doc);
+      setupTreeDOM();
+      applyToolbarState();
+      initMermaid();
+      if (push) {
+        window.history.pushState({ pjax: true }, "", url.href);
       }
     });
+  }
 
-    if (floatingQuery) {
-      var onViewportChange = function () {
-        applyTreeMode(savedTreePreference());
-        setOverlay(false);
-      };
-      if (typeof floatingQuery.addEventListener === "function") {
-        floatingQuery.addEventListener("change", onViewportChange);
-      } else if (typeof floatingQuery.addListener === "function") {
-        floatingQuery.addListener(onViewportChange);
-      }
+  function replaceOptional(selector, doc) {
+    var current = document.querySelector(selector);
+    var next = doc.querySelector(selector);
+    if (current && next) {
+      current.outerHTML = next.outerHTML;
+    } else if (current) {
+      current.remove();
+    } else if (next) {
+      document.querySelector(".overlay").insertAdjacentHTML("afterend", next.outerHTML);
     }
+  }
+
+  function loadMermaidIfNeeded(doc) {
+    if (window.mermaid || !doc.querySelector('script[src$="mermaid.min.js"]')) {
+      return;
+    }
+    var selfScript = document.querySelector('script[src$="site.js"]');
+    if (!selfScript) {
+      return;
+    }
+    var script = document.createElement("script");
+    script.defer = true;
+    script.src = selfScript.src.replace(/site\.js$/, "mermaid.min.js");
+    script.onload = initMermaid;
+    document.body.appendChild(script);
   }
 
   function initMermaid() {
@@ -223,8 +404,115 @@
     }
   }
 
-  initTree();
+  document.addEventListener("click", function (event) {
+    var target = event.target;
+    var link = target.closest && target.closest("a");
+    if (link && isPjaxLink(link) && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      setOverlay(false);
+      fetchPage(sameOriginURL(link.href), true).catch(function () {
+        window.location.href = link.href;
+      });
+      return;
+    }
 
+    var button = target.closest && target.closest("button");
+    if (button && button.id === "btn-tree") {
+      if (!isFloatingViewport() && savedTreePreference() === "expanded") {
+        setTreePreference("collapsed");
+      } else {
+        setOverlay(true);
+      }
+    } else if (button && button.id === "btn-pin-tree") {
+      setOverlay(false);
+      setTreePreference("expanded");
+    } else if (button && button.id === "btn-back") {
+      window.history.back();
+    } else if (button && button.id === "btn-fwd") {
+      window.history.forward();
+    } else if (button && button.id === "btn-toc") {
+      setTOC(body.getAttribute("data-toc") !== "open");
+    } else if (button && button.id === "btn-zoom-out") {
+      setZoomIndex(Math.max(0, getZoomIndex() - 1));
+    } else if (button && button.id === "btn-zoom-in") {
+      setZoomIndex(Math.min(zooms.length - 1, getZoomIndex() + 1));
+    } else if (button && button.id === "btn-width") {
+      cycleWidth();
+    } else if (button && button.id === "btn-info") {
+      if (body.getAttribute("data-info") === "open") {
+        closeInfo();
+      } else {
+        body.setAttribute("data-info", "open");
+        button.setAttribute("aria-pressed", "true");
+        var infoPanel = document.querySelector(".info-panel");
+        var infoFirst = infoPanel && infoPanel.querySelector("a, button");
+        if (infoFirst && infoFirst.focus) {
+          infoFirst.focus();
+        }
+      }
+    } else if (button && button.id === "btn-dl") {
+      var wrap = $("dl-wrap");
+      if (wrap) {
+        var dlOpen = wrap.getAttribute("data-open") === "true";
+        wrap.setAttribute("data-open", dlOpen ? "false" : "true");
+        button.setAttribute("aria-expanded", String(!dlOpen));
+      }
+    } else if (button && button.id === "btn-search") {
+      return;
+    } else if (link && link.id === "info-copy") {
+      event.preventDefault();
+      copyPath();
+    } else if (!target.closest("#info-wrap")) {
+      closeInfo();
+    }
+
+    if (!target.closest("#dl-wrap")) {
+      closeDownload();
+    }
+    if (target === $("scrim")) {
+      setOverlay(false);
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      var infoWasOpen = body.getAttribute("data-info") === "open";
+      setOverlay(false);
+      setTOC(false);
+      closeInfo();
+      closeDownload();
+      // Esc 关闭 ⓘ 面板时把焦点还给触发按钮（外点关闭不抢焦点）。
+      var infoButton = $("btn-info");
+      if (infoWasOpen && infoButton && infoButton.focus) {
+        infoButton.focus();
+      }
+    }
+  });
+
+  window.addEventListener("scroll", updateTOCActive, { passive: true });
+  window.addEventListener("popstate", function () {
+    fetchPage(new URL(window.location.href), false).catch(function () {
+      window.location.reload();
+    });
+  });
+
+  if (floatingQuery) {
+    var onViewportChange = function () {
+      applyTreeMode(savedTreePreference());
+      setOverlay(false);
+    };
+    if (typeof floatingQuery.addEventListener === "function") {
+      floatingQuery.addEventListener("change", onViewportChange);
+    } else if (typeof floatingQuery.addListener === "function") {
+      floatingQuery.addListener(onViewportChange);
+    }
+  }
+
+  setupTreeDOM();
+  applyToolbarState();
+  if (!window.history.state) {
+    window.history.replaceState({ pjax: true }, "", window.location.href);
+  }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initMermaid);
   } else {

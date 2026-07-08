@@ -18,6 +18,7 @@
   --sidebar-width: 300px;
   --topbar-height: 52px;
   --content-width: 980px;
+  --toc-width: 240px;
   --radius: 6px;
 }
 
@@ -124,7 +125,8 @@ th {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 5;
+  /* 高于 TOC 面板（20），让顶栏内的 ⓘ/下载弹层压住它；仍低于遮罩（30）与树覆盖层（31）。 */
+  z-index: 21;
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -136,14 +138,23 @@ th {
   backdrop-filter: blur(10px);
 }
 
+.no-js .js-only {
+  display: none !important;
+}
+
 .brand {
-  margin-right: auto;
   min-width: 0;
   overflow: hidden;
   color: var(--fg);
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .tb-btn {
@@ -184,22 +195,48 @@ th {
   flex-basis: 1.05rem;
 }
 
-.top-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.tb-sep {
+  width: 1px;
+  height: 1.25rem;
+  margin: 0 0.35rem;
+  background: var(--border);
 }
 
-.action-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2rem;
-  padding: 0 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+.tb-crumbs {
+  display: flex;
+  flex: 1;
+  gap: 0.35rem;
+  align-items: baseline;
+  min-width: 0;
+  margin: 0 0.5rem;
+  overflow: hidden;
   color: var(--fg);
-  background: var(--subtle);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.tb-crumbs a {
+  color: var(--muted);
+}
+
+.tb-crumbs a::after {
+  margin-left: 0.35rem;
+  content: "/";
+}
+
+.tb-crumbs .tb-file {
+  overflow: hidden;
+  color: var(--fg);
+  font-weight: 650;
+  text-overflow: ellipsis;
+}
+
+.zoom-readout {
+  min-width: 3ch;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .shell {
@@ -386,21 +423,15 @@ body[data-overlay="open"] .overlay {
   width: 100%;
   max-width: var(--content-width);
   padding: 2rem 2.25rem 4rem;
+  font-size: calc(1em * var(--zoom, 1));
 }
 
-.breadcrumbs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-  color: var(--muted);
-  font-size: 0.88rem;
+body[data-width="narrow"] .content {
+  max-width: 72ch;
 }
 
-.breadcrumbs a::after {
-  margin-left: 0.35rem;
-  color: var(--muted);
-  content: "/";
+body[data-width="full"] .content {
+  max-width: none;
 }
 
 h1 {
@@ -463,6 +494,70 @@ h4 {
   padding-left: 2rem;
 }
 
+.toc-panel {
+  position: fixed;
+  top: calc(var(--topbar-height) + 12px);
+  right: 12px;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  width: var(--toc-width);
+  max-height: calc(100vh - var(--topbar-height) - 24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 12%);
+}
+
+body[data-toc="open"] .toc-panel {
+  display: flex;
+}
+
+.toc-panel-head {
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toc-panel-body {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5rem;
+  overflow: auto;
+}
+
+.toc-panel-body a {
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+
+.toc-panel-body a:hover {
+  background: var(--subtle-strong);
+  text-decoration: none;
+}
+
+.toc-panel-body a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.toc-panel-body a[data-lv="2"] {
+  padding-left: 1.1rem;
+}
+
+.toc-panel-body a[data-lv="3"],
+.toc-panel-body a[data-lv="4"],
+.toc-panel-body a[data-lv="5"],
+.toc-panel-body a[data-lv="6"] {
+  padding-left: 1.9rem;
+}
+
 .readme {
   margin-bottom: 2rem;
 }
@@ -507,6 +602,128 @@ h4 {
   border-radius: var(--radius);
   color: var(--fg);
   background: var(--subtle);
+}
+
+.dl-wrap {
+  position: relative;
+}
+
+.dl-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 25;
+  display: none;
+  min-width: 220px;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 14%);
+}
+
+.dl-wrap[data-open="true"] .dl-menu {
+  display: block;
+}
+
+.dl-menu a {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--fg);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dl-menu a:hover {
+  background: var(--subtle-strong);
+  text-decoration: none;
+}
+
+.dl-menu small {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.info-wrap {
+  position: relative;
+}
+
+.info-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: -80px;
+  z-index: 25;
+  display: none;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 330px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 16%);
+  font-size: 0.84rem;
+}
+
+body[data-info="open"] .info-panel {
+  display: flex;
+}
+
+.info-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.info-row > span:first-child {
+  flex: 0 0 4.2em;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.info-row code {
+  overflow-wrap: anywhere;
+  font-size: 0.85em;
+}
+
+.info-commit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.info-commit .icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-basis: 0.9rem;
+  color: var(--muted);
+}
+
+.info-commit small {
+  flex-basis: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
 }
 
 .html-preview {
@@ -565,6 +782,23 @@ h4 {
 @media (max-width: 860px) {
   .topbar {
     position: sticky;
+    overflow-x: auto;
+  }
+
+  .tb-crumbs a {
+    display: none;
+  }
+
+  .tb-crumbs {
+    min-width: 8rem;
+  }
+
+  .info-panel {
+    position: fixed;
+    top: calc(var(--topbar-height) + 8px);
+    right: 8px;
+    left: 8px;
+    width: auto;
   }
 
   .content {

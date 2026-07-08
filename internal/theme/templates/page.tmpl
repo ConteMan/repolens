@@ -1,5 +1,5 @@
 {{define "page"}}
-{{if .TOC}}<nav class="toc" aria-label="Table of contents">{{range .TOC}}{{template "toc-item" .}}{{end}}</nav>{{end}}
+{{if and .TOC (eq .TOCPanel "inline")}}<nav class="toc" aria-label="Table of contents">{{range .TOC}}{{template "toc-item" .}}{{end}}</nav>{{end}}
 {{if eq .Kind "dir"}}
   {{template "dirlist" .}}
 {{else}}

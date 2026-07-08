@@ -1,10 +1,11 @@
 {{define "layout"}}<!doctype html>
-<html{{if .Lang}} lang="{{.Lang}}"{{end}}>
+<html class="no-js"{{if .Lang}} lang="{{.Lang}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
 <title>{{.Title}} - {{.SiteTitle}}</title>
+<script>document.documentElement.className=document.documentElement.className.replace(/\bno-js\b/,"js");</script>
 <link rel="stylesheet" href="{{.RelRoot}}_assets/site.css">
 <link rel="stylesheet" href="{{.RelRoot}}_assets/chroma.css">
 {{if .VarsCSS}}<style>{{.VarsCSS}}</style>{{end}}
@@ -21,37 +22,81 @@
   <symbol id="icon-image" viewBox="0 0 16 16"><path d="M2.5 3.5h11v9h-11z"/><path d="M4 11l3-3 2 2 1.2-1.2L13 11"/><circle cx="10.8" cy="5.8" r=".8"/></symbol>
   <symbol id="icon-binary" viewBox="0 0 16 16"><path d="M3 1.5h10v13H3z"/><path d="M5 5h2v2H5zM9 5h2v2H9zM5 9h2v2H5zM9 9h2v2H9z"/></symbol>
   <symbol id="icon-tree" viewBox="0 0 16 16"><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h11"/></symbol>
+  <symbol id="icon-back" viewBox="0 0 16 16"><path d="M9.5 3.5L5 8l4.5 4.5"/></symbol>
+  <symbol id="icon-fwd" viewBox="0 0 16 16"><path d="M6.5 3.5L11 8l-4.5 4.5"/></symbol>
+  <symbol id="icon-toc" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="2.8" cy="4" r=".9"/><circle cx="2.8" cy="8" r=".9"/><circle cx="2.8" cy="12" r=".9"/></symbol>
+  <symbol id="icon-minus" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+  <symbol id="icon-width" viewBox="0 0 16 16"><path d="M2 2.5v11M14 2.5v11M5 8h6M5 8l1.6-1.6M5 8l1.6 1.6M11 8L9.4 6.4M11 8l-1.6 1.6"/></symbol>
+  <symbol id="icon-download" viewBox="0 0 16 16"><path d="M8 2.5v7.5M4.8 7l3.2 3 3.2-3M3 13h10"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></symbol>
+  <symbol id="icon-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.7"/><path d="M8 7.2V11"/><circle cx="8" cy="5" r=".35"/></symbol>
+  <symbol id="icon-commit" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M1.5 8h4.3M10.2 8h4.3"/></symbol>
   <symbol id="icon-pin" viewBox="0 0 16 16"><path d="M6 2.5h4l.5 5 2 2h-9l2-2z"/><path d="M8 9.5V14"/></symbol>
 </svg>
 <header class="topbar">
-  <button class="tb-btn" id="btn-tree" type="button" title="Repository tree" aria-label="Repository tree" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
-  <a class="brand" href="{{.RelRoot}}view/">{{.SiteTitle}}</a>
-  <nav class="top-actions" aria-label="Page actions">
-    {{if .MirrorHref}}<a class="action-link" href="{{.MirrorHref}}">Raw</a>{{end}}
+  <div class="tb-group js-only">
+    <button class="tb-btn" id="btn-tree" type="button" title="{{index .UI "tree_title"}}" aria-label="{{index .UI "tree"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
+    <button class="tb-btn" id="btn-back" type="button" title="{{index .UI "back"}}" aria-label="{{index .UI "back"}}"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+    <button class="tb-btn" id="btn-fwd" type="button" title="{{index .UI "forward"}}" aria-label="{{index .UI "forward"}}"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
+  </div>
+  <nav class="tb-crumbs" aria-label="Breadcrumbs">
+    {{range .Breadcrumbs}}{{if .Current}}<span class="tb-file" aria-current="page">{{.Label}}</span>{{else}}<a href="{{.Href}}">{{.Label}}</a>{{end}}{{end}}
   </nav>
+  <div class="tb-group">
+    {{if and .TOC (eq .TOCPanel "floating")}}<button class="tb-btn js-only" id="btn-toc" type="button" title="{{index .UI "toc_title"}}" aria-label="{{index .UI "toc_title"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-toc"></use></svg></button>{{end}}
+    {{if and .TOC (eq .TOCPanel "floating")}}<span class="tb-sep js-only"></span>{{end}}
+    <button class="tb-btn js-only" id="btn-zoom-out" type="button" title="{{index .UI "zoom_out"}}" aria-label="{{index .UI "zoom_out"}}"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
+    <span class="zoom-readout js-only" id="zoom-readout">100%</span>
+    <button class="tb-btn js-only" id="btn-zoom-in" type="button" title="{{index .UI "zoom_in"}}" aria-label="{{index .UI "zoom_in"}}"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+    <button class="tb-btn js-only" id="btn-width" type="button" title="{{index .UI "width"}}" aria-label="{{index .UI "width"}}"><svg class="icon" aria-hidden="true"><use href="#icon-width"></use></svg><span id="width-label">{{index .UI "width_default"}}</span></button>
+    <span class="tb-sep js-only"></span>
+    <span class="info-wrap js-only" id="info-wrap">
+      <button class="tb-btn" id="btn-info" type="button" title="{{index .UI "info"}}" aria-label="{{index .UI "info"}}" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
+      <div class="info-panel" role="dialog" aria-label="{{index .UI "info"}}">
+        <div class="info-row"><span>{{index .UI "path"}}</span><code data-page-path>{{.RepoPath}}</code></div>
+        <div class="info-row"><span>{{index .UI "type"}}</span><b>{{.KindLabel}}</b></div>
+        {{if .FileSize}}<div class="info-row"><span>{{index .UI "size"}}</span><b>{{formatSize .FileSize false}}</b></div>{{end}}
+        {{if .LastCommit}}<div class="info-row"><span>{{index .UI "last_updated"}}</span><b>{{formatInfoDate .LastCommit}}</b></div>
+        <div class="info-row"><span>{{index .UI "commit"}}</span><span class="info-commit"><svg class="icon" aria-hidden="true"><use href="#icon-commit"></use></svg><code>{{shortHash7 .LastCommit.Hash}}</code>{{if .LastCommit.Subject}}<small>{{.LastCommit.Subject}}</small>{{end}}</span></div>{{end}}
+        <div class="info-actions">{{if .MirrorHref}}<a href="{{.MirrorHref}}">{{index .UI "view_raw"}}</a>{{end}}{{if .RepoPath}}<a href="#" id="info-copy">{{index .UI "copy_path"}}</a>{{end}}</div>
+      </div>
+    </span>
+    {{if .SourceHref}}<a class="tb-btn" id="btn-source" href="{{.SourceHref}}" title="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}" aria-label="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}"><svg class="icon" aria-hidden="true"><use href="#icon-code"></use></svg></a>{{end}}
+    {{if .MirrorHref}}<span class="dl-wrap" id="dl-wrap">
+      <button class="tb-btn js-only" id="btn-dl" type="button" title="{{index .UI "download"}}" aria-label="{{index .UI "download"}}" aria-haspopup="menu" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></button>
+      <span class="dl-menu">
+        <a href="{{.MirrorHref}}" download><svg class="icon" aria-hidden="true"><use href="#icon-{{iconName .Kind false}}"></use></svg>{{index .UI "download_raw"}} {{baseName .RepoPath}}{{if .FileSize}}<small>{{formatSize .FileSize false}}</small>{{end}}</a>
+      </span>
+    </span>
+    <noscript><a class="tb-btn" href="{{.MirrorHref}}" download title="{{index .UI "download"}}" aria-label="{{index .UI "download"}}"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></a></noscript>{{end}}
+    <button class="tb-btn js-only" id="btn-search" type="button" title="{{index .UI "search"}}" aria-label="{{index .UI "search"}}"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>
+  </div>
 </header>
 <div class="shell">
   <aside class="sidebar" data-tree-scroll>
-    <nav class="tree-nav" id="tree-src" aria-label="Repository tree">{{template "tree" .Tree}}</nav>
+    <nav class="tree-nav" id="tree-src" aria-label="{{index .UI "tree"}}">{{template "tree" .Tree}}</nav>
   </aside>
   <main class="content" id="content">
-    <nav class="breadcrumbs" aria-label="Breadcrumbs">
-      {{range .Breadcrumbs}}{{if .Current}}<span aria-current="page">{{.Label}}</span>{{else}}<a href="{{.Href}}">{{.Label}}</a>{{end}}{{end}}
-    </nav>
     <h1>{{.Title}}</h1>
     {{template "page" .}}
-    {{if .LastCommit}}<footer class="meta">Last updated {{.LastCommit.Time.Format "2006-01-02 15:04"}} · {{shortHash .LastCommit.Hash}}</footer>{{end}}
   </main>
 </div>
 <div class="scrim" id="scrim" aria-hidden="true"></div>
-<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">
+<div class="overlay" id="tree-overlay" role="dialog" aria-label="{{index .UI "tree"}}">
   <div class="overlay-head">
-    <span>{{.SiteTitle}} · Tree</span>
-    <button class="tb-btn" id="btn-pin-tree" type="button" title="Pin as sidebar"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>Pin</button>
+    <span>{{.SiteTitle}} · {{index .UI "tree"}}</span>
+    <button class="tb-btn" id="btn-pin-tree" type="button" title="{{index .UI "pin_tree_title"}}"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>{{index .UI "pin_tree"}}</button>
   </div>
-  <nav class="overlay-tree" id="overlay-tree" data-tree-scroll aria-label="Repository tree"></nav>
+  <nav class="overlay-tree" id="overlay-tree" data-tree-scroll aria-label="{{index .UI "tree"}}"></nav>
 </div>
+{{if and .TOC (eq .TOCPanel "floating")}}<aside class="toc-panel" id="toc-panel" aria-label="{{index .UI "toc_title"}}">
+  <div class="toc-panel-head">{{index .UI "toc"}}</div>
+  <div class="toc-panel-body" id="toc-body">{{range .TOC}}{{template "toc-panel-item" .}}{{end}}</div>
+</aside>{{end}}
 {{if .HasMermaid}}<script defer src="{{.RelRoot}}_assets/mermaid.min.js"></script>{{end}}
 <script defer src="{{.RelRoot}}_assets/site.js"></script>
 </body>
 </html>{{end}}
+
+{{define "toc-panel-item"}}<a href="#{{.Anchor}}" data-lv="{{.Level}}">{{.Title}}</a>{{range .Children}}{{template "toc-panel-item" .}}{{end}}{{end}}

@@ -43,8 +43,8 @@ func TestBuildEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build() error = %v", err)
 	}
-	if stats.Files != 12 || stats.Pages != 18 {
-		t.Fatalf("stats = %#v, want 12 files and 18 pages", stats)
+	if stats.Files != 12 || stats.Pages != 24 {
+		t.Fatalf("stats = %#v, want 12 files and 24 pages", stats)
 	}
 
 	assertExists(t, outDir, ".repolens-build")
@@ -76,14 +76,18 @@ func TestBuildEndToEnd(t *testing.T) {
 	for _, p := range []string{
 		"view/index.html",
 		"view/README.md/index.html",
+		"view/README.md/source/index.html",
 		"view/page.html/index.html",
+		"view/page.html/source/index.html",
 		"view/direct.html/index.html",
+		"view/direct.html/source/index.html",
 		"view/source.html/index.html",
 		"view/code/main.go/index.html",
 		"view/assets/pixel.png/index.html",
 		"view/blob.bin/index.html",
 		"view/docs/index.html",
 		"view/docs/guide.md/index.html",
+		"view/docs/guide.md/source/index.html",
 		"view/code/index.html",
 		"view/plain/index.html",
 		"view/skip/index.html",
@@ -105,6 +109,17 @@ func TestBuildEndToEnd(t *testing.T) {
 
 	readmePage := readOutput(t, outDir, "view/README.md/index.html")
 	assertContains(t, readmePage, `<link rel="alternate" type="text/markdown" href="../../README.md">`)
+	assertContains(t, readmePage, `id="btn-source" href="source/"`)
+	assertContains(t, readmePage, `<span>大小</span><b>91 B</b>`)
+	assertContains(t, readmePage, `<code data-page-path>README.md</code>`)
+	assertContains(t, readmePage, `<small>initial</small>`)
+	assertNotContains(t, readmePage, `footer class="meta"`)
+
+	readmeSourcePage := readOutput(t, outDir, "view/README.md/source/index.html")
+	assertContains(t, readmeSourcePage, `class="page page-markdown-source"`)
+	assertContains(t, readmeSourcePage, `id="btn-source" href="../"`)
+	assertContains(t, readmeSourcePage, `Guide`)
+	assertContains(t, readmeSourcePage, `href="../../../README.md"`)
 
 	docsPage := readOutput(t, outDir, "view/docs/index.html")
 	assertContains(t, docsPage, "Docs")
@@ -128,20 +143,29 @@ func TestBuildEndToEnd(t *testing.T) {
 
 	directPage := readOutput(t, outDir, "view/direct.html/index.html")
 	assertContains(t, directPage, "Open HTML file")
+	assertContains(t, directPage, `id="btn-source" href="source/"`)
 	assertNotContains(t, directPage, "<iframe")
+
+	directSourcePage := readOutput(t, outDir, "view/direct.html/source/index.html")
+	assertContains(t, directSourcePage, `class="page page-html-source"`)
+	assertContains(t, directSourcePage, `id="btn-source" href="../"`)
 
 	sourcePage := readOutput(t, outDir, "view/source.html/index.html")
 	assertContains(t, sourcePage, "&lt;")
 	assertContains(t, sourcePage, "strong")
 	assertContains(t, sourcePage, "source")
 	assertNotContains(t, sourcePage, "<iframe")
+	assertNotContains(t, sourcePage, `id="btn-source"`)
+	assertMissing(t, outDir, "view/source.html/source/index.html")
 
 	imagePage := readOutput(t, outDir, "view/assets/pixel.png/index.html")
 	assertContains(t, imagePage, `<img class="preview" src="../../../assets/pixel.png"`)
+	assertNotContains(t, imagePage, `id="btn-source"`)
 
 	binaryPage := readOutput(t, outDir, "view/blob.bin/index.html")
 	assertContains(t, binaryPage, "Download")
 	assertContains(t, binaryPage, "blob.bin")
+	assertNotContains(t, binaryPage, `id="btn-source"`)
 
 	skipDirPage := readOutput(t, outDir, "view/skip/index.html")
 	assertContains(t, skipDirPage, `href="../../skip/hidden.md"`)
@@ -322,7 +346,55 @@ func TestBuildSiteHomeOverridesRootPage(t *testing.T) {
 	// README 专属内容不应再出现在根页正文。
 	assertNotContains(t, rootPage, "External")
 	// site.language 注入 <html lang>（默认 zh-CN）。
-	assertContains(t, rootPage, `<html lang="zh-CN">`)
+	assertContains(t, rootPage, `<html class="no-js" lang="zh-CN">`)
+}
+
+func TestTOCPanelModeAffectsMarkdownPages(t *testing.T) {
+	repo := newSiteTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Render.Markdown.TOCMinHeadings = 1
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	floating := readOutput(t, outDir, "view/README.md/index.html")
+	assertContains(t, floating, `<aside class="toc-panel" id="toc-panel"`)
+	assertContains(t, floating, `id="btn-toc"`)
+	assertNotContains(t, floating, `<nav class="toc"`)
+
+	outDir, _, err = buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Render.Markdown.TOCMinHeadings = 1
+		cfg.View.TOCPanel = "inline"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	inline := readOutput(t, outDir, "view/README.md/index.html")
+	assertContains(t, inline, `<nav class="toc" aria-label="Table of contents">`)
+	assertNotContains(t, inline, `<aside class="toc-panel"`)
+	assertNotContains(t, inline, `id="btn-toc"`)
+}
+
+func TestUILanguageUsesEnglishForNonChinese(t *testing.T) {
+	repo := newSiteTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Site.Language = "en"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	page := readOutput(t, outDir, "view/README.md/index.html")
+	for _, want := range []string{
+		`lang="en"`,
+		`title="Repository tree"`,
+		`title="Page information"`,
+		`<span>Last updated</span>`,
+		`View raw file`,
+		`Raw file README.md`,
+		`Search (/)`,
+	} {
+		assertContains(t, page, want)
+	}
 }
 
 func TestAgentEncryptWholeSiteWarningInStats(t *testing.T) {
@@ -345,8 +417,8 @@ func TestBuildMergesIndexHTMLIntoDirectoryPages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build() error = %v", err)
 	}
-	if stats.Files != 9 || stats.Pages != 10 {
-		t.Fatalf("stats = %#v, want 9 files and 10 pages", stats)
+	if stats.Files != 9 || stats.Pages != 14 {
+		t.Fatalf("stats = %#v, want 9 files and 14 pages", stats)
 	}
 
 	for _, p := range []string{
