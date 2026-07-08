@@ -1,0 +1,2062 @@
+<title>repolens 010+011 交互原型 · 混合树与工具栏</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #24292f;
+  --muted: #6e7781;
+  --subtle: #f6f8fa;
+  --subtle-strong: #eaeef2;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --accent-soft: #ddf4ff;
+  --danger: #cf222e;
+  --code-bg: #f6f8fa;
+  --shadow: 0 1px 2px rgb(31 35 40 / 8%);
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  --font-size: 15px;
+  --line-height: 1.6;
+  --sidebar-width: 300px;
+  --topbar-height: 52px;
+  --content-width: 980px;
+  --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --subtle: #161b22;
+    --subtle-strong: #21262d;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-soft: #10233f;
+    --danger: #ff7b72;
+    --code-bg: #161b22;
+    --shadow: none;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+  font: var(--font-size) / var(--line-height) var(--font-body);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+pre {
+  overflow: auto;
+  border-radius: var(--radius);
+  background: var(--code-bg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+
+th,
+td {
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--topbar-height);
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg);
+  background: var(--subtle);
+  font-size: 0.88rem;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--topbar-height);
+  height: calc(100vh - var(--topbar-height));
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  background: var(--subtle);
+}
+
+.tree-nav {
+  padding: 0.75rem;
+}
+
+.tree,
+.tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tree ul {
+  padding-left: 1rem;
+}
+
+.tree li {
+  margin: 0.08rem 0;
+}
+
+.tree details {
+  border-radius: var(--radius);
+}
+
+.tree summary {
+  display: block;
+  cursor: pointer;
+}
+
+.tree summary::-webkit-details-marker {
+  display: none;
+}
+
+.tree summary::before {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin: 0 0.5rem 0.12rem 0.15rem;
+  border-right: 1.6px solid var(--muted);
+  border-bottom: 1.6px solid var(--muted);
+  content: "";
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
+}
+
+.tree details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree summary::before { transition: none; }
+}
+
+.summary-row,
+.tree-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: calc(100% - 1.2rem);
+  padding: 0.22rem 0.35rem;
+  border-radius: var(--radius);
+  color: var(--fg);
+}
+
+.summary-row a,
+.tree-file span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-file {
+  max-width: 100%;
+}
+
+.tree a:hover,
+.tree summary:hover .summary-row {
+  background: var(--subtle-strong);
+  text-decoration: none;
+}
+
+.tree .current > a,
+.tree .current > details > summary .summary-row {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 650;
+}
+
+.content {
+  width: 100%;
+  max-width: var(--content-width);
+  padding: 2rem 2.25rem 4rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.breadcrumbs a::after {
+  margin-left: 0.35rem;
+  color: var(--muted);
+  content: "/";
+}
+
+h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.85rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+h2,
+h3,
+h4 {
+  margin-top: 1.7em;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.page {
+  overflow-wrap: anywhere;
+}
+
+.page > :first-child {
+  margin-top: 0;
+}
+
+.page a.heading-anchor {
+  color: var(--muted);
+}
+
+.page blockquote {
+  margin-left: 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.toc {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--subtle);
+}
+
+.toc-link {
+  color: var(--fg);
+  font-size: 0.9rem;
+}
+
+.toc-level-2 {
+  padding-left: 1rem;
+}
+
+.toc-level-3,
+.toc-level-4,
+.toc-level-5,
+.toc-level-6 {
+  padding-left: 2rem;
+}
+
+.readme {
+  margin-bottom: 2rem;
+}
+
+.dir-list {
+  margin-top: 1.25rem;
+}
+
+.dir-list h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.dir-entry-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  color: var(--fg);
+  font-weight: 560;
+}
+
+.dir-entry-name span {
+  overflow-wrap: anywhere;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.toolbar a,
+.page-binary a[download],
+.page-image > p > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg);
+  background: var(--subtle);
+}
+
+.html-preview {
+  width: 100%;
+  min-height: 70vh;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.page-image img.preview {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.page-binary {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--subtle);
+}
+
+.mermaid {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.meta {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    position: static;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    max-height: 42vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .content {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Background */ .bg { background-color: #f7f7f7; }
+/* PreWrapper */ .chroma { background-color: #f7f7f7; -webkit-text-size-adjust: none; }
+/* LineNumbers targeted by URL anchor */ .chroma .ln:target { background-color: #dedede }
+/* LineNumbersTable targeted by URL anchor */ .chroma .lnt:target { background-color: #dedede }
+/* Error */ .chroma .err { color: #f6f8fa; background-color: #82071e }
+/* LineLink */ .chroma .lnlinks { outline: none; text-decoration: none; color: inherit }
+/* LineTableTD */ .chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+/* LineTable */ .chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
+/* LineHighlight */ .chroma .hl { background-color: #dedede }
+/* LineNumbersTable */ .chroma .lnt { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
+/* LineNumbers */ .chroma .ln { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
+/* Line */ .chroma .line { display: flex; }
+/* Keyword */ .chroma .k { color: #cf222e }
+/* KeywordConstant */ .chroma .kc { color: #cf222e }
+/* KeywordDeclaration */ .chroma .kd { color: #cf222e }
+/* KeywordNamespace */ .chroma .kn { color: #cf222e }
+/* KeywordPseudo */ .chroma .kp { color: #cf222e }
+/* KeywordReserved */ .chroma .kr { color: #cf222e }
+/* KeywordType */ .chroma .kt { color: #cf222e }
+/* NameAttribute */ .chroma .na { color: #1f2328 }
+/* NameClass */ .chroma .nc { color: #1f2328 }
+/* NameConstant */ .chroma .no { color: #0550ae }
+/* NameDecorator */ .chroma .nd { color: #0550ae }
+/* NameEntity */ .chroma .ni { color: #6639ba }
+/* NameLabel */ .chroma .nl { color: #990000; font-weight: bold }
+/* NameNamespace */ .chroma .nn { color: #24292e }
+/* NameOther */ .chroma .nx { color: #1f2328 }
+/* NameTag */ .chroma .nt { color: #0550ae }
+/* NameBuiltin */ .chroma .nb { color: #6639ba }
+/* NameBuiltinPseudo */ .chroma .bp { color: #6a737d }
+/* NameVariable */ .chroma .nv { color: #953800 }
+/* NameVariableClass */ .chroma .vc { color: #953800 }
+/* NameVariableGlobal */ .chroma .vg { color: #953800 }
+/* NameVariableInstance */ .chroma .vi { color: #953800 }
+/* NameVariableMagic */ .chroma .vm { color: #953800 }
+/* NameFunction */ .chroma .nf { color: #6639ba }
+/* NameFunctionMagic */ .chroma .fm { color: #6639ba }
+/* LiteralString */ .chroma .s { color: #0a3069 }
+/* LiteralStringAffix */ .chroma .sa { color: #0a3069 }
+/* LiteralStringBacktick */ .chroma .sb { color: #0a3069 }
+/* LiteralStringChar */ .chroma .sc { color: #0a3069 }
+/* LiteralStringDelimiter */ .chroma .dl { color: #0a3069 }
+/* LiteralStringDoc */ .chroma .sd { color: #0a3069 }
+/* LiteralStringDouble */ .chroma .s2 { color: #0a3069 }
+/* LiteralStringEscape */ .chroma .se { color: #0a3069 }
+/* LiteralStringHeredoc */ .chroma .sh { color: #0a3069 }
+/* LiteralStringInterpol */ .chroma .si { color: #0a3069 }
+/* LiteralStringOther */ .chroma .sx { color: #0a3069 }
+/* LiteralStringRegex */ .chroma .sr { color: #0a3069 }
+/* LiteralStringSingle */ .chroma .s1 { color: #0a3069 }
+/* LiteralStringSymbol */ .chroma .ss { color: #032f62 }
+/* LiteralNumber */ .chroma .m { color: #0550ae }
+/* LiteralNumberBin */ .chroma .mb { color: #0550ae }
+/* LiteralNumberFloat */ .chroma .mf { color: #0550ae }
+/* LiteralNumberHex */ .chroma .mh { color: #0550ae }
+/* LiteralNumberInteger */ .chroma .mi { color: #0550ae }
+/* LiteralNumberIntegerLong */ .chroma .il { color: #0550ae }
+/* LiteralNumberOct */ .chroma .mo { color: #0550ae }
+/* Operator */ .chroma .o { color: #0550ae }
+/* OperatorWord */ .chroma .ow { color: #0550ae }
+/* OperatorReserved */ .chroma .or { color: #0550ae }
+/* Punctuation */ .chroma .p { color: #1f2328 }
+/* Comment */ .chroma .c { color: #57606a }
+/* CommentHashbang */ .chroma .ch { color: #57606a }
+/* CommentMultiline */ .chroma .cm { color: #57606a }
+/* CommentSingle */ .chroma .c1 { color: #57606a }
+/* CommentSpecial */ .chroma .cs { color: #57606a }
+/* CommentPreproc */ .chroma .cp { color: #57606a }
+/* CommentPreprocFile */ .chroma .cpf { color: #57606a }
+/* GenericDeleted */ .chroma .gd { color: #82071e; background-color: #ffebe9 }
+/* GenericEmph */ .chroma .ge { color: #1f2328 }
+/* GenericInserted */ .chroma .gi { color: #116329; background-color: #dafbe1 }
+/* GenericOutput */ .chroma .go { color: #1f2328 }
+/* GenericUnderline */ .chroma .gl { text-decoration: underline }
+/* TextWhitespace */ .chroma .w { color: #ffffff }
+
+@media (prefers-color-scheme: dark) {
+/* Background */ .bg { color: #e6edf3; background-color: #0d1117; }
+/* PreWrapper */ .chroma { color: #e6edf3; background-color: #0d1117; -webkit-text-size-adjust: none; }
+/* LineNumbers targeted by URL anchor */ .chroma .ln:target { color: #e6edf3; background-color: #6e7681 }
+/* LineNumbersTable targeted by URL anchor */ .chroma .lnt:target { color: #e6edf3; background-color: #6e7681 }
+/* Error */ .chroma .err { color: #f85149 }
+/* LineLink */ .chroma .lnlinks { outline: none; text-decoration: none; color: inherit }
+/* LineTableTD */ .chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+/* LineTable */ .chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
+/* LineHighlight */ .chroma .hl { background-color: #6e7681 }
+/* LineNumbersTable */ .chroma .lnt { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #737679 }
+/* LineNumbers */ .chroma .ln { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #6e7681 }
+/* Line */ .chroma .line { display: flex; }
+/* Keyword */ .chroma .k { color: #ff7b72 }
+/* KeywordConstant */ .chroma .kc { color: #79c0ff }
+/* KeywordDeclaration */ .chroma .kd { color: #ff7b72 }
+/* KeywordNamespace */ .chroma .kn { color: #ff7b72 }
+/* KeywordPseudo */ .chroma .kp { color: #79c0ff }
+/* KeywordReserved */ .chroma .kr { color: #ff7b72 }
+/* KeywordType */ .chroma .kt { color: #ff7b72 }
+/* NameClass */ .chroma .nc { color: #f0883e; font-weight: bold }
+/* NameConstant */ .chroma .no { color: #79c0ff; font-weight: bold }
+/* NameDecorator */ .chroma .nd { color: #d2a8ff; font-weight: bold }
+/* NameEntity */ .chroma .ni { color: #ffa657 }
+/* NameException */ .chroma .ne { color: #f0883e; font-weight: bold }
+/* NameLabel */ .chroma .nl { color: #79c0ff; font-weight: bold }
+/* NameNamespace */ .chroma .nn { color: #ff7b72 }
+/* NameProperty */ .chroma .py { color: #79c0ff }
+/* NameTag */ .chroma .nt { color: #7ee787 }
+/* NameVariable */ .chroma .nv { color: #79c0ff }
+/* NameVariableClass */ .chroma .vc { color: #79c0ff }
+/* NameVariableGlobal */ .chroma .vg { color: #79c0ff }
+/* NameVariableInstance */ .chroma .vi { color: #79c0ff }
+/* NameVariableMagic */ .chroma .vm { color: #79c0ff }
+/* NameFunction */ .chroma .nf { color: #d2a8ff; font-weight: bold }
+/* NameFunctionMagic */ .chroma .fm { color: #d2a8ff; font-weight: bold }
+/* Literal */ .chroma .l { color: #a5d6ff }
+/* LiteralDate */ .chroma .ld { color: #79c0ff }
+/* LiteralString */ .chroma .s { color: #a5d6ff }
+/* LiteralStringAffix */ .chroma .sa { color: #79c0ff }
+/* LiteralStringBacktick */ .chroma .sb { color: #a5d6ff }
+/* LiteralStringChar */ .chroma .sc { color: #a5d6ff }
+/* LiteralStringDelimiter */ .chroma .dl { color: #79c0ff }
+/* LiteralStringDoc */ .chroma .sd { color: #a5d6ff }
+/* LiteralStringDouble */ .chroma .s2 { color: #a5d6ff }
+/* LiteralStringEscape */ .chroma .se { color: #79c0ff }
+/* LiteralStringHeredoc */ .chroma .sh { color: #79c0ff }
+/* LiteralStringInterpol */ .chroma .si { color: #a5d6ff }
+/* LiteralStringOther */ .chroma .sx { color: #a5d6ff }
+/* LiteralStringRegex */ .chroma .sr { color: #79c0ff }
+/* LiteralStringSingle */ .chroma .s1 { color: #a5d6ff }
+/* LiteralStringSymbol */ .chroma .ss { color: #a5d6ff }
+/* LiteralNumber */ .chroma .m { color: #a5d6ff }
+/* LiteralNumberBin */ .chroma .mb { color: #a5d6ff }
+/* LiteralNumberFloat */ .chroma .mf { color: #a5d6ff }
+/* LiteralNumberHex */ .chroma .mh { color: #a5d6ff }
+/* LiteralNumberInteger */ .chroma .mi { color: #a5d6ff }
+/* LiteralNumberIntegerLong */ .chroma .il { color: #a5d6ff }
+/* LiteralNumberOct */ .chroma .mo { color: #a5d6ff }
+/* Operator */ .chroma .o { color: #ff7b72; font-weight: bold }
+/* OperatorWord */ .chroma .ow { color: #ff7b72; font-weight: bold }
+/* OperatorReserved */ .chroma .or { color: #ff7b72; font-weight: bold }
+/* Comment */ .chroma .c { color: #8b949e; font-style: italic }
+/* CommentHashbang */ .chroma .ch { color: #8b949e; font-style: italic }
+/* CommentMultiline */ .chroma .cm { color: #8b949e; font-style: italic }
+/* CommentSingle */ .chroma .c1 { color: #8b949e; font-style: italic }
+/* CommentSpecial */ .chroma .cs { color: #8b949e; font-weight: bold; font-style: italic }
+/* CommentPreproc */ .chroma .cp { color: #8b949e; font-weight: bold; font-style: italic }
+/* CommentPreprocFile */ .chroma .cpf { color: #8b949e; font-weight: bold; font-style: italic }
+/* GenericDeleted */ .chroma .gd { color: #ffa198; background-color: #490202 }
+/* GenericEmph */ .chroma .ge { font-style: italic }
+/* GenericError */ .chroma .gr { color: #ffa198 }
+/* GenericHeading */ .chroma .gh { color: #79c0ff; font-weight: bold }
+/* GenericInserted */ .chroma .gi { color: #56d364; background-color: #0f5323 }
+/* GenericOutput */ .chroma .go { color: #8b949e }
+/* GenericPrompt */ .chroma .gp { color: #8b949e }
+/* GenericStrong */ .chroma .gs { font-weight: bold }
+/* GenericSubheading */ .chroma .gu { color: #79c0ff }
+/* GenericTraceback */ .chroma .gt { color: #ff7b72 }
+/* GenericUnderline */ .chroma .gl { text-decoration: underline }
+/* TextWhitespace */ .chroma .w { color: #6e7681 }
+
+}
+
+
+/* ============ 010/011 原型层：全部基于既有 CSS 变量 ============ */
+:root { --rail-width: 44px; --toc-width: 240px; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --subtle: #161b22;
+  --subtle-strong: #21262d; --border: #30363d; --accent: #58a6ff;
+  --accent-soft: #10233f; --danger: #ff7b72; --code-bg: #161b22; --shadow: none;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff; --fg: #24292f; --muted: #6e7781; --subtle: #f6f8fa;
+  --subtle-strong: #eaeef2; --border: #d0d7de; --accent: #0969da;
+  --accent-soft: #ddf4ff; --danger: #cf222e; --code-bg: #f6f8fa;
+  --shadow: 0 1px 2px rgb(31 35 40 / 8%);
+}
+
+/* —— 顶部工具栏（PRD-102 九项）—— */
+.topbar { gap: 0.5rem; justify-content: flex-start; }
+.tb-group { display: flex; align-items: center; gap: 0.25rem; }
+.tb-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.3rem; min-width: 2rem; height: 2rem; padding: 0 0.4rem;
+  border: 1px solid transparent; border-radius: var(--radius);
+  color: var(--fg); background: transparent; font: inherit; font-size: 0.85rem;
+  cursor: pointer; white-space: nowrap;
+}
+.tb-btn:hover { background: var(--subtle-strong); }
+.tb-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tb-btn[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.tb-btn .icon { width: 1.05rem; height: 1.05rem; flex-basis: 1.05rem; }
+.tb-sep { width: 1px; height: 1.25rem; margin: 0 0.35rem; background: var(--border); }
+.tb-crumbs {
+  display: flex; flex: 1; gap: 0.35rem; align-items: baseline; min-width: 0;
+  margin: 0 0.5rem; color: var(--muted); font-size: 0.86rem;
+  overflow: hidden; white-space: nowrap;
+}
+.tb-crumbs a { color: var(--muted); }
+.tb-crumbs a::after { margin-left: 0.35rem; content: "/"; }
+.tb-crumbs .tb-file { overflow: hidden; color: var(--fg); font-weight: 650; text-overflow: ellipsis; }
+.zoom-readout { min-width: 3ch; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; text-align: center; }
+
+/* —— 混合树三态 —— */
+.shell { transition: grid-template-columns 0.18s ease; }
+body[data-tree="collapsed"] .shell { grid-template-columns: var(--rail-width) minmax(0, 1fr); }
+body[data-tree="collapsed"][data-variant="b"] .shell { grid-template-columns: 0 minmax(0, 1fr); }
+body[data-tree="collapsed"] .sidebar .tree-nav { display: none; }
+body[data-tree="collapsed"][data-variant="b"] .sidebar { border-right: 0; }
+.rail-btn {
+  display: none; width: 100%; padding: 0.6rem 0;
+  border: 0; color: var(--muted); background: transparent; cursor: pointer;
+}
+.rail-btn:hover { color: var(--accent); background: var(--subtle-strong); }
+.rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+body[data-tree="collapsed"][data-variant="a"] .rail-btn { display: block; }
+
+/* —— 浮动覆盖层树 —— */
+.scrim {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgb(0 0 0 / 32%); opacity: 0; visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s;
+}
+.overlay {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 31;
+  display: flex; flex-direction: column; width: min(320px, 88vw);
+  border-right: 1px solid var(--border); background: var(--bg);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
+  transform: translateX(-102%); transition: transform 0.18s ease;
+}
+body[data-overlay="open"] .scrim { opacity: 1; visibility: visible; }
+body[data-overlay="open"] .overlay { transform: none; }
+.overlay-head {
+  display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border);
+  color: var(--muted); font-size: 0.82rem;
+}
+.overlay-tree { flex: 1; padding: 0.75rem; overflow: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .shell, .overlay, .scrim { transition: none; }
+}
+
+/* —— TOC 浮动面板 —— */
+.page-toc { display: none; }
+.toc-panel {
+  position: fixed; top: calc(var(--topbar-height) + 12px); right: 12px; z-index: 20;
+  display: none; flex-direction: column; width: var(--toc-width);
+  max-height: calc(100vh - var(--topbar-height) - 24px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); box-shadow: 0 6px 24px rgb(0 0 0 / 12%);
+}
+body[data-toc="open"] .toc-panel { display: flex; }
+.toc-panel-head { padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; }
+.toc-panel-body { display: grid; gap: 0.1rem; padding: 0.5rem; overflow: auto; }
+.toc-panel-body a { padding: 0.2rem 0.45rem; border-radius: var(--radius); color: var(--fg); font-size: 0.85rem; }
+.toc-panel-body a:hover { background: var(--subtle-strong); text-decoration: none; }
+.toc-panel-body a.active { color: var(--accent); background: var(--accent-soft); }
+.toc-panel-body a[data-lv="2"] { padding-left: 1.1rem; }
+.toc-panel-body a[data-lv="3"] { padding-left: 1.9rem; }
+
+/* —— 布局宽度与缩放 —— */
+body[data-width="narrow"] .content { max-width: 72ch; }
+body[data-width="full"] .content { max-width: none; }
+.content { font-size: calc(1em * var(--zoom, 1)); }
+
+/* —— 搜索 —— */
+.search-modal {
+  position: fixed; top: 12vh; left: 50%; z-index: 40;
+  display: none; flex-direction: column; width: min(560px, 92vw);
+  max-height: 62vh; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg); box-shadow: 0 16px 48px rgb(0 0 0 / 24%);
+  transform: translateX(-50%);
+}
+body[data-search="open"] .search-modal { display: flex; }
+body[data-search="open"] .scrim { opacity: 1; visibility: visible; }
+.search-input {
+  padding: 0.85rem 1rem; border: 0; border-bottom: 1px solid var(--border);
+  border-radius: 10px 10px 0 0; color: var(--fg); background: transparent;
+  font: inherit; font-size: 1rem;
+}
+.search-input:focus { outline: none; }
+.search-results { flex: 1; padding: 0.4rem; overflow: auto; }
+.search-group { margin: 0.4rem 0.45rem 0.15rem; color: var(--muted); font-size: 0.72rem; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase; }
+.search-item {
+  display: flex; gap: 0.5rem; align-items: center; padding: 0.42rem 0.6rem;
+  border-radius: var(--radius); color: var(--fg); font-size: 0.88rem; cursor: pointer;
+}
+.search-item .icon { color: var(--muted); }
+.search-item small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.search-item.selected { color: var(--accent); background: var(--accent-soft); }
+.search-item mark { color: inherit; background: transparent; font-weight: 700; }
+.search-empty { padding: 1.2rem; color: var(--muted); font-size: 0.88rem; text-align: center; }
+.search-foot { display: flex; gap: 1rem; padding: 0.5rem 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.75rem; }
+kbd { padding: 0.05rem 0.35rem; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: var(--subtle); font-size: 0.78em; }
+
+/* —— 下载菜单 —— */
+.dl-wrap { position: relative; }
+.dl-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 25;
+  display: none; min-width: 220px; padding: 0.35rem;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); box-shadow: 0 6px 24px rgb(0 0 0 / 14%);
+}
+.dl-wrap[data-open="true"] .dl-menu { display: block; }
+.dl-menu button {
+  display: flex; gap: 0.5rem; align-items: center; width: 100%;
+  padding: 0.45rem 0.6rem; border: 0; border-radius: var(--radius);
+  color: var(--fg); background: transparent; font: inherit; font-size: 0.86rem;
+  cursor: pointer; text-align: left;
+}
+.dl-menu button:hover { background: var(--subtle-strong); }
+.dl-menu small { margin-left: auto; color: var(--muted); }
+
+/* —— git 元信息两种候选形态 —— */
+.content .meta { display: none; }
+.meta-badge {
+  position: fixed; right: 14px; bottom: 14px; z-index: 15;
+  display: none; gap: 0.4rem; align-items: center;
+  padding: 0.3rem 0.65rem; border: 1px solid var(--border);
+  border-radius: 999px; color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+body[data-meta="badge"] .meta-badge { display: inline-flex; }
+.meta-badge code { color: var(--muted); font-size: 0.95em; }
+.meta-footbar {
+  display: none; justify-content: flex-end; gap: 0.5rem; align-items: center;
+  padding: 0.55rem 2.25rem; margin-top: 2rem;
+  border-top: 1px solid var(--border); background: var(--subtle);
+  color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums;
+}
+body[data-meta="footbar"] .meta-footbar { display: flex; }
+.meta-footbar .icon, .meta-badge .icon { width: 0.85rem; height: 0.85rem; flex-basis: 0.85rem; }
+
+/* —— 页面信息面板（meta 形态三）—— */
+.info-wrap { position: relative; }
+.info-panel {
+  position: absolute; top: calc(100% + 6px); right: -80px; z-index: 25;
+  display: none; flex-direction: column; gap: 0.55rem; width: 330px;
+  padding: 0.85rem 1rem; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 16%); font-size: 0.84rem;
+}
+body[data-info="open"] .info-panel { display: flex; }
+.info-row { display: flex; gap: 0.75rem; align-items: baseline; }
+.info-row > span:first-child { flex: 0 0 4.2em; color: var(--muted); font-size: 0.78rem; }
+.info-row code { overflow-wrap: anywhere; font-size: 0.85em; }
+.info-commit { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; min-width: 0; }
+.info-commit .icon { width: 0.9rem; height: 0.9rem; flex-basis: 0.9rem; color: var(--muted); }
+.info-commit small { flex-basis: 100%; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.info-actions { display: flex; gap: 1rem; margin-top: 0.2rem; padding-top: 0.6rem; border-top: 1px solid var(--border); font-size: 0.82rem; }
+
+/* —— 原型控制与提示 —— */
+.proto-chip {
+  position: fixed; bottom: 14px; left: 14px; z-index: 50;
+  display: grid; gap: 0.45rem; padding: 0.7rem 0.85rem;
+  border: 1px dashed var(--accent); border-radius: 10px;
+  background: var(--bg); box-shadow: 0 6px 24px rgb(0 0 0 / 14%);
+  font-size: 0.8rem;
+}
+.proto-chip strong { color: var(--accent); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.proto-chip label { display: flex; gap: 0.4rem; align-items: flex-start; cursor: pointer; }
+.proto-chip input { margin-top: 0.15rem; accent-color: var(--accent); }
+.proto-chip small { color: var(--muted); }
+.toast {
+  position: fixed; bottom: 18px; left: 50%; z-index: 60;
+  max-width: 80vw; padding: 0.55rem 1rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--fg); background: var(--bg); box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+  font-size: 0.86rem; opacity: 0; transform: translate(-50%, 8px);
+  transition: opacity 0.15s ease, transform 0.15s ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>
+  <symbol id="icon-markdown" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/><path d="M5.3 8.2h5.4M5.3 10.7h5.4"/></symbol>
+  <symbol id="icon-html" viewBox="0 0 16 16"><path d="M2 3l1.1 10L8 14.5l4.9-1.5L14 3z"/><path d="M5.5 6.2h5M5.8 8.2h4.4l-.3 2.3L8 11.1l-1.9-.6"/></symbol>
+  <symbol id="icon-code" viewBox="0 0 16 16"><path d="M6.2 4.2L3 8l3.2 3.8M9.8 4.2L13 8l-3.2 3.8"/></symbol>
+  <symbol id="icon-image" viewBox="0 0 16 16"><path d="M2.5 3.5h11v9h-11z"/><path d="M4 11l3-3 2 2 1.2-1.2L13 11"/><circle cx="10.8" cy="5.8" r=".8"/></symbol>
+  <symbol id="icon-binary" viewBox="0 0 16 16"><path d="M3 1.5h10v13H3z"/><path d="M5 5h2v2H5zM9 5h2v2H9zM5 9h2v2H5zM9 9h2v2H9z"/></symbol>
+  <symbol id="icon-tree" viewBox="0 0 16 16"><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h11"/></symbol>
+  <symbol id="icon-back" viewBox="0 0 16 16"><path d="M9.5 3.5L5 8l4.5 4.5"/></symbol>
+  <symbol id="icon-fwd" viewBox="0 0 16 16"><path d="M6.5 3.5L11 8l-4.5 4.5"/></symbol>
+  <symbol id="icon-toc" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="2.8" cy="4" r=".9"/><circle cx="2.8" cy="8" r=".9"/><circle cx="2.8" cy="12" r=".9"/></symbol>
+  <symbol id="icon-minus" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+  <symbol id="icon-width" viewBox="0 0 16 16"><path d="M2 2.5v11M14 2.5v11M5 8h6M5 8l1.6-1.6M5 8l1.6 1.6M11 8L9.4 6.4M11 8l-1.6 1.6"/></symbol>
+  <symbol id="icon-download" viewBox="0 0 16 16"><path d="M8 2.5v7.5M4.8 7l3.2 3 3.2-3M3 13h10"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></symbol>
+  <symbol id="icon-pin" viewBox="0 0 16 16"><path d="M6 2.5h4l.5 5 2 2h-9l2-2z"/><path d="M8 9.5V14"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.2l2.2 1.3"/></symbol>
+  <symbol id="icon-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.7"/><path d="M8 7.2V11"/><circle cx="8" cy="5" r=".35"/></symbol>
+  <symbol id="icon-commit" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M1.5 8h4.3M10.2 8h4.3"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="tb-group">
+    <button class="tb-btn" id="btn-tree" title="文件树（收起/浮出）" aria-pressed="true"><svg class="icon"><use href="#icon-tree"/></svg></button>
+    <button class="tb-btn" id="btn-back" title="后退"><svg class="icon"><use href="#icon-back"/></svg></button>
+    <button class="tb-btn" id="btn-fwd" title="前进"><svg class="icon"><use href="#icon-fwd"/></svg></button>
+  </div>
+  <nav class="tb-crumbs" aria-label="Breadcrumbs">
+    <a href="#">root</a><a href="#">docs</a><a href="#">design</a><span class="tb-file">architecture.md</span>
+  </nav>
+  <div class="tb-group">
+    <button class="tb-btn" id="btn-toc" title="目录面板" aria-pressed="false"><svg class="icon"><use href="#icon-toc"/></svg></button>
+    <span class="tb-sep"></span>
+    <button class="tb-btn" id="btn-zoom-out" title="缩小"><svg class="icon"><use href="#icon-minus"/></svg></button>
+    <span class="zoom-readout" id="zoom-readout">100%</span>
+    <button class="tb-btn" id="btn-zoom-in" title="放大"><svg class="icon"><use href="#icon-plus"/></svg></button>
+    <button class="tb-btn" id="btn-width" title="布局宽度"><svg class="icon"><use href="#icon-width"/></svg><span id="width-label">默认</span></button>
+    <span class="tb-sep"></span>
+    <span class="info-wrap" id="info-wrap">
+      <button class="tb-btn" id="btn-info" title="页面信息" aria-pressed="false"><svg class="icon"><use href="#icon-info"/></svg></button>
+      <div class="info-panel" role="dialog" aria-label="页面信息">
+        <div class="info-row"><span>路径</span><code>docs/design/architecture.md</code></div>
+        <div class="info-row"><span>类型</span><b>Markdown</b></div>
+        <div class="info-row"><span>大小</span><b>7.6 KB</b></div>
+        <div class="info-row"><span>最后更新</span><b>2026-07-04 10:56</b></div>
+        <div class="info-row"><span>Commit</span><span class="info-commit"><svg class="icon"><use href="#icon-commit"/></svg><code>04a0a60</code><small>docs(specs): add v1 implementation specs 001-008…</small></span></div>
+        <div class="info-actions"><a href="#" id="info-raw">查看原始文件</a><a href="#" id="info-copy">复制路径</a></div>
+      </div>
+    </span>
+    <button class="tb-btn" id="btn-source" title="查看 Markdown 源码"><svg class="icon"><use href="#icon-code"/></svg></button>
+    <span class="dl-wrap" id="dl-wrap">
+      <button class="tb-btn" id="btn-dl" title="下载"><svg class="icon"><use href="#icon-download"/></svg></button>
+      <span class="dl-menu">
+        <button id="dl-raw"><svg class="icon"><use href="#icon-markdown"/></svg>原始文件 architecture.md<small>7.1 KB</small></button>
+      </span>
+    </span>
+    <button class="tb-btn" id="btn-search" title="搜索（/）"><svg class="icon"><use href="#icon-search"/></svg></button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar">
+    <button class="rail-btn" id="rail-btn" title="浮出文件树"><svg class="icon"><use href="#icon-tree"/></svg></button>
+    <nav class="tree-nav" id="tree-src" aria-label="Repository tree"><ul class="tree">
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="cmd" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../cmd/">cmd</a></span></summary>
+    <ul>
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="cmd/repolens" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../cmd/repolens/">repolens</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../cmd/repolens/main.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>main.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="docs" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../">docs</a></span></summary>
+    <ul>
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="docs/decisions" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../decisions/">decisions</a></span></summary>
+    <ul>
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/ADR-001-two-layer-output.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>ADR-001-two-layer-output.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/ADR-002-prerendered-mpa.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>ADR-002-prerendered-mpa.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/ADR-003-tech-stack.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>ADR-003-tech-stack.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/ADR-004-system-git.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>ADR-004-system-git.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/ADR-005-config-trust-domains.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>ADR-005-config-trust-domains.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/README.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>README.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../decisions/template.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>template.md</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="docs/design" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../">design</a></span></summary>
+    <ul>
+<li class="current file" data-kind="markdown">
+
+  <a class="tree-file" href="."><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>architecture.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../config.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>config.md</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="docs/specs" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../specs/">specs</a></span></summary>
+    <ul>
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/001-git-source.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>001-git-source.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/002-config-loading.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>002-config-loading.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/003-markdown-pipeline.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>003-markdown-pipeline.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/004-code-and-file-classification.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>004-code-and-file-classification.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/005-site-assembly.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>005-site-assembly.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/006-theme-and-templates.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>006-theme-and-templates.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/007-serve.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>007-serve.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/008-agent-surface.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>008-agent-surface.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/009-release-distribution.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>009-release-distribution.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/010-hybrid-tree.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>010-hybrid-tree.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/011-toolbar-and-pjax.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>011-toolbar-and-pjax.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/012-site-search.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>012-site-search.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/013-config-ui.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>013-config-ui.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/README.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>README.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../specs/template.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>template.md</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../README.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>README.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../deploy.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>deploy.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../roadmap.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>roadmap.md</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/">internal</a></span></summary>
+    <ul>
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/cli" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/cli/">cli</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/cli/root.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>root.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/cli/root_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>root_test.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/cli/version.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>version.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/config" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/config/">config</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/config/config.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>config.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/config/config_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>config_test.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/config/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/render" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/render/">render</a></span></summary>
+    <ul>
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/render/testdata" >
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/render/testdata/">testdata</a></span></summary>
+    <ul>
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/render/testdata/code_go.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>code_go.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/render/testdata/code_js.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>code_js.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/render/testdata/code_yaml.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>code_yaml.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/render/testdata/full.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>full.html</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../internal/render/testdata/full.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>full.md</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/code.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>code.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/code_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>code_test.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/links.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>links.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/links_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>links_test.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/markdown.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>markdown.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/render/markdown_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>markdown_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/server" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/server/">server</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/server/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/server/server.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>server.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/server/server_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>server_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/site" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/site/">site</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/site/agent.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>agent.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/site/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/site/site.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>site.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/site/site_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>site_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/source" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/source/">source</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/source/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/source/source.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>source.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/source/source_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>source_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/theme" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/theme/">theme</a></span></summary>
+    <ul>
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/theme/assets" >
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/theme/assets/">assets</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/assets/mermaid.min.js/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>mermaid.min.js</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/assets/site.css/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>site.css</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/assets/site.js/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>site.js</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/theme/templates" >
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/theme/templates/">templates</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/templates/dirlist.tmpl/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>dirlist.tmpl</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/templates/layout.tmpl/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>layout.tmpl</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/templates/page.tmpl/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>page.tmpl</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/templates/tree.tmpl/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>tree.tmpl</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/theme/testdata" >
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/theme/testdata/">testdata</a></span></summary>
+    <ul>
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/dirlist.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>dirlist.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_binary.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_binary.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_code.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_code.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_html-direct.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_html-direct.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_html-embed.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_html-embed.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_image.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_image.golden.html</span></a>
+
+</li>
+
+<li class="file" data-kind="html">
+
+  <a class="tree-file" href="../../../internal/theme/testdata/kind_markdown.golden.html/"><svg class="icon icon-html" aria-hidden="true"><use href="#icon-html"></use></svg><span>kind_markdown.golden.html</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/doc.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>doc.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/theme.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>theme.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/theme/theme_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>theme_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="dir" data-kind="dir">
+
+  <details data-tree-path="internal/update" open>
+    <summary><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="../../../internal/update/">update</a></span></summary>
+    <ul>
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/update/update.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>update.go</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../internal/update/update_test.go/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>update_test.go</span></a>
+
+</li>
+</ul>
+  </details>
+
+</li>
+</ul>
+  </details>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../.editorconfig/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>.editorconfig</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../.gitignore/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>.gitignore</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../.goreleaser.yaml/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>.goreleaser.yaml</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../AGENTS.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>AGENTS.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../CHANGELOG.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>CHANGELOG.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../CLAUDE.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>CLAUDE.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../CONTRIBUTING.en.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>CONTRIBUTING.en.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../CONTRIBUTING.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>CONTRIBUTING.md</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../LICENSE/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>LICENSE</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../README.en.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>README.en.md</span></a>
+
+</li>
+
+<li class="file" data-kind="markdown">
+
+  <a class="tree-file" href="../../../README.md/"><svg class="icon icon-markdown" aria-hidden="true"><use href="#icon-markdown"></use></svg><span>README.md</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../go.mod/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>go.mod</span></a>
+
+</li>
+
+<li class="file" data-kind="code">
+
+  <a class="tree-file" href="../../../go.sum/"><svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg><span>go.sum</span></a>
+
+</li>
+</ul></nav>
+  </aside>
+  <main class="content" id="content">
+    <h1>架构总览</h1>
+
+    
+    
+    
+<nav class="toc" aria-label="Table of contents"><a class="toc-link toc-level-1" href="#heading">架构总览</a><a class="toc-link toc-level-2" href="#heading-1">定位</a><a class="toc-link toc-level-2" href="#adr-001">双层输出（ADR-001）</a><a class="toc-link toc-level-2" href="#url-">URL 约定</a><a class="toc-link toc-level-2" href="#adr-002">浏览层交互（ADR-002）</a><a class="toc-link toc-level-2" href="#adr-003">渲染管线（ADR-003）</a><a class="toc-link toc-level-2" href="#agent-">Agent 视图</a><a class="toc-link toc-level-2" href="#heading-2">访问控制</a><a class="toc-link toc-level-2" href="#adr-003--adr-004">技术栈（ADR-003 / ADR-004）</a><a class="toc-link toc-level-2" href="#heading-3">包结构</a></nav>
+
+  <article class="page page-markdown"><h1 id="heading">架构总览 <a class="anchor" href="#heading">¶</a></h1>
+<blockquote>
+<p>状态：已定稿（2026-07-04）。变更本文档描述的约定需先补充或修订 ADR。</p>
+</blockquote>
+<h2 id="heading-1">定位 <a class="anchor" href="#heading-1">¶</a></h2>
+<p>repolens 是一个&quot;仓库 → 静态输出目录&quot;的<strong>构建器</strong>（不是运行时服务）：以任意 Git 仓库为内容源，不要求仓库做任何配合，生成可部署到任意静态托管（Cloudflare Pages、GitHub Pages、对象存储、nginx）的浏览站点。部署由用户自行完成，repolens 只保证输出在各平台上开箱可用。</p>
+<p>三个核心价值，单独看均有已有方案，组合是空白：</p>
+<ol>
+<li><strong>零配置、仓库原样渲染</strong>——区别于 MkDocs / Docusaurus 等&quot;仓库为工具而组织&quot;的文档站生成器；</li>
+<li><strong>HTML 文件可直接预览</strong>——GitHub 只展示 HTML 源码，现有方案（htmlpreview / raw.githack）临时且不体面；</li>
+<li><strong>Agent 友好</strong>——每个文件有稳定纯文本 URL，站点自带机器可读索引。</li>
+</ol>
+<p>非目标：商业化、参与部署流程、多租户托管服务。</p>
+<h2 id="adr-001">双层输出（ADR-001） <a class="anchor" href="#adr-001">¶</a></h2>
+<pre><code>dist/
+├── &lt;repo 原样路径&gt;            # 镜像层：文件原样复制，路径一字不改
+├── view/&lt;repo 路径&gt;[/]        # 浏览层：生成的阅读页面
+├── llms.txt / llms-full.txt   # Agent 视图
+├── index.json                 # 机器可读站点索引
+├── _assets/                   # 站点自身的 CSS / JS / 字体（非仓库内容）
+└── robots.txt
+</code></pre>
+<ul>
+<li><strong>镜像层</strong>：仓库文件逐字节复制。<code>docs/report.html</code> 位于 <code>/docs/report.html</code>，其相对引用的资源和内链天然成立——&quot;HTML 内链可跳转&quot;靠<strong>不破坏</strong>实现，而非改写。镜像层同时就是 Agent / curl 的 raw 访问层。</li>
+<li><strong>浏览层</strong>：带站点框架（文件树侧栏、面包屑、顶栏）的生成页面。Markdown 渲染为 HTML，代码文件带行号高亮展示，HTML 文件以 iframe 嵌入（指向镜像层原路径），目录生成 listing 页。</li>
+<li>为什么不能单层：渲染后的 HTML 若放在 <code>foo.md</code> 原路径，静态托管按扩展名返回 <code>text/markdown</code>，浏览器行为不可控。路径镜像给原始内容、前缀路径给渲染视图，是唯一在所有静态平台一致成立的方案。代价是内容存两份，对文档类仓库可接受。</li>
+</ul>
+<h2 id="url-">URL 约定 <a class="anchor" href="#url-">¶</a></h2>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>URL</th>
+<th>落地文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原始文件（镜像层）</td>
+<td><code>/&lt;repo 路径&gt;</code></td>
+<td><code>dist/&lt;repo 路径&gt;</code></td>
+</tr>
+<tr>
+<td>文件浏览页</td>
+<td><code>/view/&lt;repo 路径&gt;/</code>（保留原扩展名 ＋ 尾斜杠，如 <code>/view/docs/foo.md/</code>）</td>
+<td><code>view/&lt;repo 路径&gt;/index.html</code></td>
+</tr>
+<tr>
+<td>目录页</td>
+<td><code>/view/&lt;目录&gt;/</code></td>
+<td><code>view/&lt;目录&gt;/index.html</code></td>
+</tr>
+<tr>
+<td>站点根</td>
+<td><code>/</code> 跳转 <code>/view/</code>，渲染 <code>site.home</code>（默认根 README）</td>
+<td>meta-refresh 页</td>
+</tr>
+</tbody>
+</table>
+<p>浏览页落地为 <code>index.html</code> 而非裸文件：若 <code>view/docs/foo.md</code> 作为文件输出，静态托管同样按 <code>.md</code> 扩展名给错 Content-Type——镜像层遇到的问题在浏览层同样存在，尾斜杠目录形式是唯一可移植解（2026-07-04 细化，见 ADR-001）。</p>
+<p>全站<strong>只使用相对链接</strong>，不烧录 base URL——部署在任意子路径、任意反代之后都成立。</p>
+<h2 id="adr-002">浏览层交互（ADR-002） <a class="anchor" href="#adr-002">¶</a></h2>
+<p><strong>预渲染 MPA ＋ 薄增强层</strong>。交互形态参照 docu.md（文件树侧栏 + 内容区即时切换 + HTML 带样式直出），但渲染发生在构建期而非浏览器：</p>
+<ul>
+<li>每个文件预渲染为独立页面，无 JS 也可读，每页是真实 URL；</li>
+<li>共享一份手写原生 JS（无框架、无打包器）：sessionStorage 保持文件树展开状态、可选 pjax 式内容区局部替换；</li>
+<li>文件树带类型图标、当前文件高亮、目录折叠，位置可配置（默认左侧）；</li>
+<li>HTML 浏览页 = iframe 指向镜像层原路径，样式与站点框架互不污染；工具栏提供&quot;全屏打开原文件&quot;与&quot;查看源码&quot;。单仓库单租户，iframe 默认同源不加 sandbox，配置留禁脚本选项；</li>
+<li>目录页：有 README 渲染 README，无则显示文件列表（名称、类型、大小、git 最后修改时间）；</li>
+<li>Mermaid 例外：构建期渲染需拖 headless browser，不值得。vendor 一份本地 mermaid.js，仅含图表页面懒加载（不违背零外部请求约束，含图表页面的无 JS 可读性打折，接受）。</li>
+</ul>
+<h2 id="adr-003">渲染管线（ADR-003） <a class="anchor" href="#adr-003">¶</a></h2>
+<p>内容集合来自 <code>git ls-tree</code>（而非工作目录）：<code>.gitignore</code> 天然生效，构建结果只由 <code>repo + ref</code> 决定，可复现。本地未提交内容预览走 <code>serve --worktree</code> 显式开关。</p>
+<p>规则模型：<strong>(glob 匹配 → 处理管线 → 参数)</strong>，按序级联、后者覆盖前者（editorconfig 语义），全局默认等价第 0 条规则。详见 <a href="../config.md/">config.md</a>。</p>
+<ul>
+<li>Markdown：goldmark ＋ 扩展（GFM、脚注、TOC、标题锚点、front-matter、Mermaid）。指向仓库内 <code>.md</code> 的相对链接在 <strong>AST 层</strong>（ASTTransformer）改写为 <code>/view/</code> 路径，不做渲染后文本替换；</li>
+<li>代码：chroma 构建期高亮，Markdown 代码块与独立代码文件页共用；</li>
+<li>用户 HTML：不解析不修改，镜像原样 + iframe 浏览页；</li>
+<li>超过 <code>max_file_size</code> 的文件与二进制文件：只进镜像层，浏览页给下载链接；</li>
+<li>git 元数据：一次 <code>git log --name-status</code> 全量建映射（禁止逐文件 git log），每页注入最后修改时间，可选 commit 链接。</li>
+</ul>
+<h2 id="agent-">Agent 视图 <a class="anchor" href="#agent-">¶</a></h2>
+<ul>
+<li><code>llms.txt</code>：站点说明 ＋ 路径约定（浏览页在 <code>/view/</code>，原始文件在原路径）＋ 按目录树组织的内容清单；</li>
+<li><code>llms-full.txt</code>（可选）：全部文本内容拼接，有大小上限；</li>
+<li><code>index.json</code>：文件树 ＋ 类型 ＋ 大小 ＋ git 最后修改时间，一次请求拿全貌；</li>
+<li>每个浏览页 <code>&lt;head&gt;</code> 含 <code>&lt;link rel=&quot;alternate&quot; type=&quot;text/markdown&quot;&gt;</code> 指向镜像层原文件。</li>
+</ul>
+<h2 id="heading-2">访问控制 <a class="anchor" href="#heading-2">¶</a></h2>
+<p>生成器本身认证无关，但输出为&quot;被保护&quot;而设计：</p>
+<ol>
+<li><strong>平台层（推荐主方案）</strong>：Cloudflare Access、Vercel 密码、nginx basic auth、内网。落成两条硬约束：全相对链接；<strong>零外部请求</strong>（字体、脚本、样式全部 embed 并随站点输出，私有站点不向任何 CDN 泄露访问痕迹）。Agent 访问私有站走平台 service token；</li>
+<li><strong>项目自带（可选）</strong>：客户端加密（PageCrypt 思路：构建期密码派生密钥加密页面，浏览器 WebCrypto 解密）。与 Agent 视图<strong>互斥</strong>——加密路径与 agent 输出的交集在构建时检测并告警；</li>
+<li><strong>软保护（默认开）</strong>：<code>noindex</code> meta ＋ robots.txt。</li>
+</ol>
+<h2 id="adr-003--adr-004">技术栈（ADR-003 / ADR-004） <a class="anchor" href="#adr-003--adr-004">¶</a></h2>
+<p>Go 单二进制，全部资源 go:embed。直接依赖控制在个位数，每个都有大型项目背书：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>选型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Markdown</td>
+<td>yuin/goldmark（＋ abhinav 系扩展）</td>
+</tr>
+<tr>
+<td>高亮</td>
+<td>alecthomas/chroma</td>
+</tr>
+<tr>
+<td>CLI</td>
+<td>spf13/cobra</td>
+</tr>
+<tr>
+<td>YAML</td>
+<td>goccy/go-yaml（gopkg.in/yaml.v3 已归档）</td>
+</tr>
+<tr>
+<td>文件监听</td>
+<td>fsnotify/fsnotify</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>shell out 系统 git（认证复用用户已有配置，见 ADR-004）</td>
+</tr>
+<tr>
+<td>前端</td>
+<td>手写原生 JS/CSS，零 Node 工具链</td>
+</tr>
+</tbody>
+</table>
+<h2 id="heading-3">包结构 <a class="anchor" href="#heading-3">¶</a></h2>
+<table>
+<thead>
+<tr>
+<th>包</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cmd/repolens</code></td>
+<td>main 入口</td>
+</tr>
+<tr>
+<td><code>internal/cli</code></td>
+<td>cobra 命令：build / serve / init / version</td>
+</tr>
+<tr>
+<td><code>internal/config</code></td>
+<td>配置加载、双信任域合并、规则级联求值</td>
+</tr>
+<tr>
+<td><code>internal/source</code></td>
+<td>git 操作：clone / fetch / ls-tree / log 映射</td>
+</tr>
+<tr>
+<td><code>internal/render</code></td>
+<td>goldmark 管线、chroma、链接改写</td>
+</tr>
+<tr>
+<td><code>internal/site</code></td>
+<td>站点组装：镜像层、浏览层、llms.txt、index.json、robots.txt</td>
+</tr>
+<tr>
+<td><code>internal/theme</code></td>
+<td>内置模板（layout / page / dirlist / tree）与静态资源，go:embed</td>
+</tr>
+<tr>
+<td><code>internal/server</code></td>
+<td>本地预览：net/http ＋ fsnotify 重建</td>
+</tr>
+</tbody>
+</table>
+<p>主题定制三级：CSS 变量 → 追加 CSS → 模板覆盖（逃生舱）。内置模板保持少而稳定，模板名即公开 API。</p>
+</article>
+
+
+    <footer class="meta">Last updated 2026-07-04 10:56 · 04a0a60e1508</footer>
+  
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="overlay" id="overlay" role="dialog" aria-label="文件树">
+  <div class="overlay-head">
+    <span>repolens · 文件树</span>
+    <button class="tb-btn" id="btn-pin" title="固定为侧栏"><svg class="icon"><use href="#icon-pin"/></svg>固定</button>
+  </div>
+  <nav class="overlay-tree" id="overlay-tree"></nav>
+</div>
+
+<aside class="toc-panel" id="toc-panel" aria-label="Table of contents">
+  <div class="toc-panel-head">本页目录</div>
+  <div class="toc-panel-body" id="toc-body"></div>
+</aside>
+
+<div class="search-modal" id="search-modal" role="dialog" aria-label="站内搜索">
+  <input class="search-input" id="search-input" type="text" placeholder="搜索文件与章节…" autocomplete="off">
+  <div class="search-results" id="search-results"><div class="search-empty">输入以搜索本站文件名与标题</div></div>
+  <div class="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>Enter</kbd> 跳转</span><span><kbd>Esc</kbd> 关闭</span></div>
+</div>
+
+<div class="proto-chip">
+  <strong>原型控制</strong>
+  <span style="font-size:0.76rem;color:var(--muted)">树收起形态：变体 B（已定稿，完全隐藏）</span>
+  <label><input type="radio" name="metaform" value="panel" checked>
+    <span>meta 形态三：工具栏 ⓘ 信息面板<br><small>页面信息统一入口，无常驻展示</small></span></label>
+  <label><input type="radio" name="metaform" value="badge">
+    <span>meta 形态一：右下浮动徽标<br><small>悬浮在框架层，明确不属于文档</small></span></label>
+  <label><input type="radio" name="metaform" value="footbar">
+    <span>meta 形态二：全宽页脚条<br><small>底色区隔，跟随页面滚动到底部</small></span></label>
+  <small>快捷键：<kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭</small>
+</div>
+
+<div class="meta-badge" id="meta-badge"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var body = document.body;
+  body.dataset.tree = "expanded";
+  body.dataset.variant = "b";
+  body.dataset.width = "default";
+  body.dataset.meta = "panel";
+  var $ = function (id) { return document.getElementById(id); };
+
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  /* —— meta 形态切换 —— */
+  document.querySelectorAll('input[name="metaform"]').forEach(function (r) {
+    r.addEventListener("change", function () { body.dataset.meta = r.value; });
+  });
+
+  /* —— git 元信息：从正文 .meta 抽出，改挂到框架层 —— */
+  var srcMeta = document.querySelector(".content .meta");
+  var metaText = srcMeta ? srcMeta.textContent.replace(/^Last updated\s*/, "").trim() : "";
+  var metaIcon = '<svg class="icon"><use href="#icon-clock"/></svg>';
+  $("meta-badge").innerHTML = metaIcon + "<span>" + metaText + "</span>";
+  var footbar = document.createElement("div");
+  footbar.className = "meta-footbar";
+  footbar.innerHTML = metaIcon + "<span>最后更新 " + metaText + "</span>";
+  document.querySelector(".shell").insertAdjacentElement("afterend", footbar);
+
+  /* —— 混合树 —— */
+  $("overlay-tree").innerHTML = $("tree-src").innerHTML;
+  function openOverlay() { body.dataset.overlay = "open"; }
+  function closeOverlay() { delete body.dataset.overlay; }
+  $("btn-tree").addEventListener("click", function () {
+    if (body.dataset.tree === "expanded") {
+      body.dataset.tree = "collapsed";
+      this.setAttribute("aria-pressed", "false");
+    } else { openOverlay(); }
+  });
+  $("rail-btn").addEventListener("click", openOverlay);
+  $("btn-pin").addEventListener("click", function () {
+    closeOverlay();
+    body.dataset.tree = "expanded";
+    $("btn-tree").setAttribute("aria-pressed", "true");
+  });
+  $("scrim").addEventListener("click", function () { closeOverlay(); closeSearch(); });
+  $("overlay-tree").addEventListener("click", function (e) {
+    var a = e.target.closest("a");
+    if (!a) { return; }
+    e.preventDefault();
+    closeOverlay();
+    toast("跳转 " + (a.textContent || "").trim() + "（原型示意，pjax 切换内容区）");
+  });
+  $("tree-src").addEventListener("click", function (e) {
+    var a = e.target.closest("a");
+    if (!a) { return; }
+    e.preventDefault();
+    toast("跳转 " + (a.textContent || "").trim() + "（原型示意，pjax 切换内容区）");
+  });
+
+  /* —— 前进后退 —— */
+  $("btn-back").addEventListener("click", function () { toast("后退：浏览器 History（pjax 下不整页刷新）"); });
+  $("btn-fwd").addEventListener("click", function () { toast("前进：浏览器 History（pjax 下不整页刷新）"); });
+
+  /* —— TOC 面板：吸收正文内联 TOC —— */
+  var inlineToc = document.querySelector(".content .toc");
+  var tocBody = $("toc-body");
+  if (inlineToc) {
+    inlineToc.querySelectorAll("a").forEach(function (a) {
+      var lv = (a.className.match(/toc-level-(\d)/) || [0, 1])[1];
+      var link = document.createElement("a");
+      link.href = a.getAttribute("href");
+      link.textContent = a.textContent;
+      link.dataset.lv = Math.min(lv, 3);
+      tocBody.appendChild(link);
+    });
+    inlineToc.classList.add("page-toc");
+  }
+  $("btn-toc").addEventListener("click", function () {
+    var open = body.dataset.toc === "open";
+    if (open) { delete body.dataset.toc; } else { body.dataset.toc = "open"; }
+    this.setAttribute("aria-pressed", String(!open));
+  });
+  var headings = Array.prototype.slice.call(document.querySelectorAll(".content h2[id], .content h3[id], .content h1[id]"));
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    headings.forEach(function (h) { if (h.getBoundingClientRect().top < 90) { cur = h.id; } });
+    tocBody.querySelectorAll("a").forEach(function (a) {
+      a.classList.toggle("active", a.getAttribute("href") === "#" + cur);
+    });
+  }, { passive: true });
+
+  /* —— 缩放 —— */
+  var zooms = [0.9, 1, 1.1, 1.25];
+  var zi = 1;
+  function applyZoom() {
+    $("content").style.setProperty("--zoom", zooms[zi]);
+    $("zoom-readout").textContent = Math.round(zooms[zi] * 100) + "%";
+  }
+  $("btn-zoom-out").addEventListener("click", function () { zi = Math.max(0, zi - 1); applyZoom(); });
+  $("btn-zoom-in").addEventListener("click", function () { zi = Math.min(zooms.length - 1, zi + 1); applyZoom(); });
+
+  /* —— 布局宽度 —— */
+  var widths = [["narrow", "窄栏"], ["default", "默认"], ["full", "全宽"]];
+  var wi = 1;
+  $("btn-width").addEventListener("click", function () {
+    wi = (wi + 1) % widths.length;
+    body.dataset.width = widths[wi][0];
+    $("width-label").textContent = widths[wi][1];
+  });
+
+  /* —— 页面信息面板 —— */
+  $("btn-info").addEventListener("click", function (e) {
+    e.stopPropagation();
+    var open = body.dataset.info === "open";
+    if (open) { delete body.dataset.info; } else { body.dataset.info = "open"; }
+    this.setAttribute("aria-pressed", String(!open));
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#info-wrap")) {
+      delete body.dataset.info;
+      $("btn-info").setAttribute("aria-pressed", "false");
+    }
+  });
+  $("info-raw").addEventListener("click", function (e) {
+    e.preventDefault();
+    toast("打开镜像原始文件 docs/design/architecture.md");
+  });
+  $("info-copy").addEventListener("click", function (e) {
+    e.preventDefault();
+    toast("已复制路径 docs/design/architecture.md");
+  });
+
+  /* —— 源码与下载 —— */
+  $("btn-source").addEventListener("click", function () {
+    toast("跳转 view/docs/design/architecture.md/source/（chroma 高亮源码页）");
+  });
+  $("btn-dl").addEventListener("click", function (e) {
+    e.stopPropagation();
+    var w = $("dl-wrap");
+    w.dataset.open = w.dataset.open === "true" ? "false" : "true";
+  });
+  $("dl-raw").addEventListener("click", function () {
+    $("dl-wrap").dataset.open = "false";
+    toast("下载镜像原始文件 docs/design/architecture.md");
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#dl-wrap")) { $("dl-wrap").dataset.open = "false"; }
+  });
+
+  /* —— 搜索：索引来自页面真实 DOM（文件树 + 本页标题）—— */
+  var index = [];
+  document.querySelectorAll("#tree-src .tree-file").forEach(function (a) {
+    var name = (a.querySelector("span") || a).textContent.trim();
+    index.push({ type: "file", label: name, hint: a.getAttribute("href") || "", icon: "icon-file" });
+  });
+  headings.forEach(function (h) {
+    index.push({ type: "heading", label: h.textContent.replace(/¶\s*$/, "").trim(), hint: "本页 · 架构总览", icon: "icon-toc", anchor: h.id });
+  });
+  var results = [];
+  var sel = 0;
+  function openSearch() { body.dataset.search = "open"; $("search-input").focus(); }
+  function closeSearch() { delete body.dataset.search; $("search-input").value = ""; renderResults(""); }
+  function renderResults(q) {
+    var box = $("search-results");
+    q = q.trim().toLowerCase();
+    if (!q) { box.innerHTML = '<div class="search-empty">输入以搜索本站文件名与标题</div>'; results = []; return; }
+    results = index.filter(function (it) { return it.label.toLowerCase().indexOf(q) !== -1; }).slice(0, 24);
+    sel = 0;
+    if (!results.length) { box.innerHTML = '<div class="search-empty">无匹配结果</div>'; return; }
+    var html = "";
+    var lastType = "";
+    results.forEach(function (it, i) {
+      if (it.type !== lastType) {
+        html += '<div class="search-group">' + (it.type === "file" ? "文件" : "本页章节") + "</div>";
+        lastType = it.type;
+      }
+      var esc = it.label.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      var pos = it.label.toLowerCase().indexOf(q);
+      var marked = pos < 0 ? esc : esc.slice(0, pos) + "<mark>" + esc.slice(pos, pos + q.length) + "</mark>" + esc.slice(pos + q.length);
+      html += '<div class="search-item' + (i === sel ? " selected" : "") + '" data-i="' + i + '">' +
+        '<svg class="icon"><use href="#' + it.icon + '"/></svg><span>' + marked + "</span><small>" + it.hint + "</small></div>";
+    });
+    box.innerHTML = html;
+  }
+  function go(it) {
+    closeSearch();
+    if (it.type === "heading") {
+      var h = document.getElementById(it.anchor);
+      if (h) { h.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    } else {
+      toast("跳转 " + it.label + " 的浏览页（原型示意）");
+    }
+  }
+  $("btn-search").addEventListener("click", openSearch);
+  $("search-input").addEventListener("input", function () { renderResults(this.value); });
+  $("search-results").addEventListener("click", function (e) {
+    var item = e.target.closest(".search-item");
+    if (item) { go(results[Number(item.dataset.i)]); }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && body.dataset.search !== "open" && !/input|textarea/i.test(e.target.tagName)) {
+      e.preventDefault();
+      openSearch();
+    } else if (e.key === "Escape") {
+      closeSearch();
+      closeOverlay();
+      delete body.dataset.toc;
+      $("btn-toc").setAttribute("aria-pressed", "false");
+    } else if (body.dataset.search === "open" && results.length) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        sel = (sel + (e.key === "ArrowDown" ? 1 : results.length - 1)) % results.length;
+        var items = document.querySelectorAll(".search-item");
+        items.forEach(function (el, i) { el.classList.toggle("selected", i === sel); });
+        items[sel].scrollIntoView({ block: "nearest" });
+      } else if (e.key === "Enter") { go(results[sel]); }
+    }
+  });
+})();
+</script>
