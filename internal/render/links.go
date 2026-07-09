@@ -75,7 +75,13 @@ func rewriteLink(raw string, ref PageRef, image bool) string {
 	if image || mode == "mirror" {
 		targetURL = mirrorURL(target)
 	} else if mode == "view" {
-		targetURL = viewURL(target)
+		// 可渲染的 index.html 没有独立浏览页——它按 Web 惯例并入目录页
+		// （Issue #9），链接须落到父目录的 view URL。
+		if path.Base(target) == "index.html" {
+			targetURL = viewURL(path.Dir(target))
+		} else {
+			targetURL = viewURL(target)
+		}
 	} else {
 		return raw
 	}

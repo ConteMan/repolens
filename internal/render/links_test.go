@@ -13,7 +13,8 @@ func TestLinkRewriteBranches(t *testing.T) {
 		Path: "docs/guide/current.md",
 		Resolve: func(target string) string {
 			switch target {
-			case "docs/README.md", "docs/guide/other.md", "docs/a/d/e.md", "docs/guide/my file.md":
+			case "docs/README.md", "docs/guide/other.md", "docs/a/d/e.md", "docs/guide/my file.md",
+				"docs/guide/wireframes/index.html", "index.html":
 				return "view"
 			case "docs/guide/download.zip", "docs/guide/picture.png":
 				return "mirror"
@@ -43,6 +44,9 @@ func TestLinkRewriteBranches(t *testing.T) {
 		{name: "unknown target", raw: "missing.md", want: "missing.md"},
 		{name: "escape repo root", raw: "../../../secret.md", want: "../../../secret.md"},
 		{name: "query and fragment", raw: "other.md?raw=1#sec", want: "../other.md/?raw=1#sec"},
+		// 可渲染 index.html 并入目录页（Issue #9），链接落到目录 view URL。
+		{name: "dir index.html merges to dir page", raw: "wireframes/index.html", want: "../wireframes/"},
+		{name: "root index.html merges to view root", raw: "../../index.html", want: "../../../"},
 	}
 
 	for _, tt := range tests {
