@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-09
+
+### Fixed
+
+- Markdown 站内链接显式指向 `<目录>/index.html` 时被改写成不存在的 `view/<目录>/index.html/`（404）；现正确落到该目录的浏览页 `view/<目录>/`（index.html 按 Web 惯例并入目录页，#9 规则）。
+
 ## [1.1.0] - 2026-07-09
 
 ### Added
