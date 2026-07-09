@@ -785,6 +785,50 @@ func TestBuildRootIndexHTMLKeepsMirror(t *testing.T) {
 	assertUnavailable(t, outDir, "view/index.html/index.html")
 }
 
+func TestBuildGenerates404Page(t *testing.T) {
+	repo := newAgentTestRepo(t)
+
+	// 默认（zh-CN）：站点根生成自包含 404 页，noindex、无站内资源引用。
+	outDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	page := readOutput(t, outDir, "404.html")
+	assertContains(t, page, "页面不存在")
+	assertContains(t, page, `<meta name="robots" content="noindex">`)
+	assertNotContains(t, page, `href=`)
+	assertNotContains(t, page, `src=`)
+
+	// site.language: en 时输出英文文案。
+	outDir, _, err = buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Site.Language = "en"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	page = readOutput(t, outDir, "404.html")
+	assertContains(t, page, "Page not found")
+	assertContains(t, page, ` lang="en"`)
+}
+
+func TestBuildRoot404HTMLKeepsMirror(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+	writeFile(t, repo, "404.html", "<!doctype html><p>custom not found</p>\n")
+	writeFile(t, repo, "README.md", "# Home\n")
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+
+	outDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	// 仓库自带根 404.html 时不覆盖镜像。
+	assertMirrorEqual(t, repo, outDir, "404.html")
+}
+
 func newIndexHTMLDirectoryRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
