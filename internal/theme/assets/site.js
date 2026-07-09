@@ -12,6 +12,8 @@
   var widths = ["narrow", "default", "full"];
   var floatingQuery = window.matchMedia ? window.matchMedia("(max-width: 1023px)") : null;
   var boundScrollContainers = typeof WeakSet === "function" ? new WeakSet() : null;
+  var searchIndex = null, searchLoading = null, searchUnavailable = false, searchTrigger = null;
+  var searchResults = [], searchSelected = 0;
 
   function $(id) {
     return document.getElementById(id);
@@ -164,6 +166,7 @@
       bindDetails(document);
     }
     Array.prototype.forEach.call(document.querySelectorAll("[data-tree-scroll]"), bindScroll);
+    initTreeSearchEntrypoints(document);
     applyTreeMode(savedTreePreference());
   }
 
@@ -303,6 +306,151 @@
     }
   }
 
+  function searchModal() { return $("search-modal"); }
+  function searchText(key) {
+    var modal = searchModal();
+    return modal ? modal.getAttribute("data-search-" + key) || "" : "";
+  }
+  function emptySearch(text) {
+    var box = $("search-results");
+    if (!box) { return; }
+    box.textContent = "";
+    var empty = document.createElement("div");
+    empty.className = "search-empty"; empty.textContent = text; box.appendChild(empty);
+  }
+  function icon(name) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    var use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true");
+    use.setAttribute("href", "#" + name); svg.appendChild(use);
+    return svg;
+  }
+  function markText(parent, text, query) {
+    var start = text.toLowerCase().indexOf(query.toLowerCase());
+    if (!query || start < 0) { parent.appendChild(document.createTextNode(text)); return; }
+    parent.appendChild(document.createTextNode(text.slice(0, start)));
+    var mark = document.createElement("mark");
+    mark.textContent = text.slice(start, start + query.length); parent.appendChild(mark);
+    parent.appendChild(document.createTextNode(text.slice(start + query.length)));
+  }
+  function basename(repoPath) {
+    var parts = String(repoPath || "").split("/");
+    return parts[parts.length - 1] || repoPath;
+  }
+  function loadSearchIndex() {
+    var modal = searchModal();
+    if (!modal) { return Promise.reject(new Error("search disabled")); }
+    if (searchIndex) { return Promise.resolve(searchIndex); }
+    if (searchLoading) { return searchLoading; }
+    searchLoading = window.fetch(modal.getAttribute("data-search-src"), { credentials: "same-origin" }).then(function (response) {
+      if (!response.ok) { throw new Error("HTTP " + response.status); }
+      return response.json();
+    }).then(function (data) {
+      searchIndex = data && Array.isArray(data.docs) ? data : { docs: [] };
+      searchIndex.docs.sort(function (a, b) { return String(a.path).localeCompare(String(b.path)); });
+      // 上次失败后的重试成功要解除"不可用"标记，否则搜索永久失效。
+      searchUnavailable = false;
+      return searchIndex;
+    }).catch(function (error) {
+      searchUnavailable = true;
+      searchLoading = null;
+      throw error;
+    });
+    return searchLoading;
+  }
+  function buildSearchResults(query) {
+    var lower = query.toLowerCase(), files = [], headings = [];
+    (searchIndex ? searchIndex.docs : []).forEach(function (doc) {
+      var base = basename(doc.path);
+      var label = doc.title && doc.title !== base ? base + " · " + doc.title : base;
+      if ((label + " " + doc.path).toLowerCase().indexOf(lower) >= 0) { files.push({ type: "file", label: label, hint: doc.path, view: doc.view }); }
+      (doc.headings || []).forEach(function (heading) {
+        if (String(heading.text || "").toLowerCase().indexOf(lower) >= 0) { headings.push({ type: "heading", label: heading.text, hint: doc.path, view: doc.view, anchor: heading.anchor }); }
+      });
+    });
+    return files.concat(headings);
+  }
+  function renderSearchResults(query) {
+    var box = $("search-results");
+    query = query.trim();
+    if (!box) { return; }
+    if (searchUnavailable || !query) {
+      searchResults = []; searchSelected = 0;
+      emptySearch(searchText(searchUnavailable ? "unavailable" : "intro"));
+      return;
+    }
+    searchResults = buildSearchResults(query);
+    searchSelected = 0; box.textContent = "";
+    if (!searchResults.length) { emptySearch(searchText("empty")); return; }
+    var lastType = "";
+    searchResults.forEach(function (item, index) {
+      if (item.type !== lastType) {
+        var group = document.createElement("div");
+        group.className = "search-group"; group.textContent = item.type === "file" ? searchText("files") : searchText("headings"); box.appendChild(group);
+        lastType = item.type;
+      }
+      var row = document.createElement("div");
+      var label = document.createElement("span"), hint = document.createElement("small");
+      row.className = "search-item" + (index === searchSelected ? " selected" : ""); row.setAttribute("data-search-index", String(index));
+      row.appendChild(icon(item.type === "file" ? "icon-file" : "icon-toc"));
+      markText(label, item.label, query); hint.textContent = item.hint;
+      row.appendChild(label); row.appendChild(hint); box.appendChild(row);
+    });
+  }
+  function selectSearch(delta) {
+    if (!searchResults.length) { return; }
+    searchSelected = (searchSelected + delta + searchResults.length) % searchResults.length;
+    Array.prototype.forEach.call(document.querySelectorAll(".search-item"), function (item, index) {
+      item.classList.toggle("selected", index === searchSelected);
+      if (index === searchSelected) { item.scrollIntoView({ block: "nearest" }); }
+    });
+  }
+  function closeSearch() {
+    var input = $("search-input");
+    body.removeAttribute("data-search");
+    searchResults = []; searchSelected = 0;
+    if (input) { input.value = ""; }
+    emptySearch(searchText("intro"));
+    if (searchTrigger && document.body.contains(searchTrigger) && searchTrigger.focus) { searchTrigger.focus(); }
+    searchTrigger = null;
+  }
+  function openSearch(trigger) {
+    var input = $("search-input");
+    if (!input) { return; }
+    searchTrigger = trigger || document.activeElement;
+    body.setAttribute("data-search", "open");
+    setOverlay(false); closeInfo(); closeDownload();
+    input.disabled = false;
+    input.placeholder = searchText("placeholder");
+    input.focus();
+    loadSearchIndex().then(function () { renderSearchResults(input.value); }).catch(function () {
+      input.value = ""; input.placeholder = searchText("unavailable"); input.disabled = true;
+      emptySearch(searchText("unavailable"));
+    });
+  }
+  function goSearchResult(item) {
+    if (!item) { return; }
+    var modal = searchModal();
+    var target = (modal ? modal.getAttribute("data-search-root") || "" : "") + item.view + (item.anchor ? "#" + item.anchor : "");
+    var url = sameOriginURL(target);
+    closeSearch();
+    if (!url) {
+      window.location.href = target;
+      return;
+    }
+    fetchPage(url, true).catch(function () { window.location.href = url.href; });
+  }
+  function initTreeSearchEntrypoints(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("[data-tree-search-placeholder]"), function (entry) {
+      var label = document.createElement("span"), key = document.createElement("kbd");
+      entry.hidden = false; entry.setAttribute("role", "button"); entry.setAttribute("tabindex", "0");
+      entry.setAttribute("aria-label", searchText("label"));
+      entry.textContent = "";
+      label.textContent = searchText("placeholder"); key.textContent = "/";
+      entry.appendChild(icon("icon-search")); entry.appendChild(label); entry.appendChild(key);
+    });
+  }
+
   function applyToolbarState() {
     applyZoom();
     applyWidth();
@@ -351,6 +499,7 @@
       $("content").outerHTML = nextContent.outerHTML;
       $("tree-src").innerHTML = nextTree.innerHTML;
       replaceOptional("#toc-panel", doc);
+      replaceOptional("#search-modal", doc);
       loadMermaidIfNeeded(doc);
       setupTreeDOM();
       applyToolbarState();
@@ -358,7 +507,19 @@
       if (push) {
         window.history.pushState({ pjax: true }, "", url.href);
       }
+      scrollAfterPjax(url);
     });
+  }
+
+  // pjax 换页后手动定位：带 fragment 滚到锚点（含搜索章节跳转），否则回页顶。
+  function scrollAfterPjax(url) {
+    var hash = url.hash ? decodeURIComponent(url.hash.slice(1)) : "";
+    var target = hash ? document.getElementById(hash) : null;
+    if (target && target.scrollIntoView) {
+      target.scrollIntoView();
+    } else {
+      window.scrollTo(0, 0);
+    }
   }
 
   function replaceOptional(selector, doc) {
@@ -410,6 +571,7 @@
     if (link && isPjaxLink(link) && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       event.preventDefault();
       setOverlay(false);
+      closeSearch();
       fetchPage(sameOriginURL(link.href), true).catch(function () {
         window.location.href = link.href;
       });
@@ -458,6 +620,13 @@
         button.setAttribute("aria-expanded", String(!dlOpen));
       }
     } else if (button && button.id === "btn-search") {
+      openSearch(button);
+      return;
+    } else if (target.closest && target.closest("[data-tree-search-placeholder]")) {
+      openSearch(target.closest("[data-tree-search-placeholder]"));
+      return;
+    } else if (target.closest && target.closest(".search-item")) {
+      goSearchResult(searchResults[Number(target.closest(".search-item").getAttribute("data-search-index"))]);
       return;
     } else if (link && link.id === "info-copy") {
       event.preventDefault();
@@ -471,11 +640,36 @@
     }
     if (target === $("scrim")) {
       setOverlay(false);
+      closeSearch();
+    }
+  });
+
+  document.addEventListener("input", function (event) {
+    if (event.target && event.target.id === "search-input") {
+      renderSearchResults(event.target.value);
     }
   });
 
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
+    var tag = event.target && event.target.tagName;
+    var editable = /^(INPUT|TEXTAREA|SELECT)$/.test(tag) || event.target.isContentEditable;
+    if (event.key === "/" && body.getAttribute("data-search") !== "open" && !editable) {
+      event.preventDefault();
+      openSearch(document.activeElement);
+    } else if ((event.key === "Enter" || event.key === " ") && event.target.closest && event.target.closest("[data-tree-search-placeholder]")) {
+      // 树顶搜索入口是 role="button" 的 div，键盘激活需自行处理。
+      event.preventDefault();
+      openSearch(event.target.closest("[data-tree-search-placeholder]"));
+    } else if (body.getAttribute("data-search") === "open" && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      selectSearch(event.key === "ArrowDown" ? 1 : -1);
+    } else if (body.getAttribute("data-search") === "open" && event.key === "Enter") {
+      event.preventDefault();
+      goSearchResult(searchResults[searchSelected]);
+    } else if (body.getAttribute("data-search") === "open" && event.key === "Escape") {
+      event.preventDefault();
+      closeSearch();
+    } else if (event.key === "Escape") {
       var infoWasOpen = body.getAttribute("data-info") === "open";
       setOverlay(false);
       setTOC(false);

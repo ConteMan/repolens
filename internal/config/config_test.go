@@ -50,7 +50,7 @@ func TestLoadTable(t *testing.T) {
 				if !cfg.Render.Code.LineNumbers || cfg.Render.Code.Theme != "github" {
 					t.Fatalf("code defaults = %#v", cfg.Render.Code)
 				}
-				if cfg.View.TreePosition != "left" || cfg.View.TreeExpandDepth != 2 || cfg.View.TOCPanel != "floating" {
+				if cfg.View.TreePosition != "left" || cfg.View.TreeExpandDepth != 2 || cfg.View.TOCPanel != "floating" || !cfg.View.Search {
 					t.Fatalf("view defaults = %#v", cfg.View)
 				}
 				if !cfg.Agent.LLMSTxt || !cfg.Agent.LLMSFull.Enabled ||
@@ -196,13 +196,14 @@ access:
 			extYAML: `
 view:
   toc_panel: inline
+  search: false
 `,
 			assert: func(t *testing.T, cfg *Config, warnings []Warning) {
 				if len(warnings) != 0 {
 					t.Fatalf("warnings = %v, want none", warnings)
 				}
-				if cfg.View.TOCPanel != "inline" {
-					t.Fatalf("toc_panel = %q, want inline", cfg.View.TOCPanel)
+				if cfg.View.TOCPanel != "inline" || cfg.View.Search {
+					t.Fatalf("view = %#v, want toc_panel inline and search false", cfg.View)
 				}
 			},
 		},

@@ -7,4 +7,5 @@
 // Render rules cascade in order, later rules overriding earlier ones.
 // View.TOCPanel accepts "floating" or "inline"; invalid values are reported
 // as warnings and rendered with the floating fallback by site assembly.
+// View.Search is a site-level browser UI switch and does not cascade.
 package config

@@ -46,7 +46,9 @@ type TreeNode struct {
 	IsDir    bool
 	Current  bool
 	Expanded bool
-	Children []*TreeNode
+	// SearchEnabled controls the tree-top search entry on the root node.
+	SearchEnabled bool
+	Children      []*TreeNode
 }
 
 // DirEntry is one child row rendered by the "dirlist" template. Href is
@@ -78,6 +80,7 @@ type PageData struct {
 	UI                  map[string]string
 	LastCommit          *source.Commit
 	HasMermaid, NoIndex bool
+	SearchEnabled       bool
 	HeadExtra           template.HTML
 	DirEntries          []DirEntry
 	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
@@ -386,6 +389,14 @@ var uiZH = map[string]string{
 	"search":               "搜索（/）",
 	"search_label":         "站内搜索",
 	"search_placeholder":   "搜索文件与章节...",
+	"search_intro":         "输入以搜索本站文件名与标题",
+	"search_empty":         "无匹配结果",
+	"search_unavailable":   "搜索不可用",
+	"search_files":         "文件",
+	"search_headings":      "章节",
+	"search_select":        "选择",
+	"search_open":          "跳转",
+	"search_escape":        "关闭",
 	"kind_markdown":        "Markdown",
 	"kind_markdown_source": "Markdown 源码",
 	"kind_html":            "HTML",
@@ -427,6 +438,14 @@ var uiEN = map[string]string{
 	"search":               "Search (/)",
 	"search_label":         "Site search",
 	"search_placeholder":   "Search files and headings...",
+	"search_intro":         "Type to search files and headings",
+	"search_empty":         "No matching results",
+	"search_unavailable":   "Search unavailable",
+	"search_files":         "Files",
+	"search_headings":      "Headings",
+	"search_select":        "Select",
+	"search_open":          "Open",
+	"search_escape":        "Close",
 	"kind_markdown":        "Markdown",
 	"kind_markdown_source": "Markdown source",
 	"kind_html":            "HTML",

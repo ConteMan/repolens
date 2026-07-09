@@ -122,6 +122,8 @@ type View struct {
 	TreeExpandDepth int    `yaml:"tree_expand_depth"`
 	// TOCPanel controls Markdown TOC placement: "floating" or "inline".
 	TOCPanel string `yaml:"toc_panel"`
+	// Search controls the browser-layer filename and heading search UI.
+	Search bool `yaml:"search"`
 }
 
 // Agent configures machine-readable outputs.
@@ -250,6 +252,7 @@ func defaultConfig() Config {
 			TreePosition:    "left",
 			TreeExpandDepth: 2,
 			TOCPanel:        "floating",
+			Search:          true,
 		},
 		Agent: Agent{
 			LLMSTxt: true,
@@ -513,6 +516,7 @@ type viewPatch struct {
 	TreePosition    *string `yaml:"tree_position"`
 	TreeExpandDepth *int    `yaml:"tree_expand_depth"`
 	TOCPanel        *string `yaml:"toc_panel"`
+	Search          *bool   `yaml:"search"`
 }
 
 type agentPatch struct {
@@ -727,6 +731,9 @@ func applyViewPatch(dst *View, patch *viewPatch) {
 	}
 	if patch.TOCPanel != nil {
 		dst.TOCPanel = *patch.TOCPanel
+	}
+	if patch.Search != nil {
+		dst.Search = *patch.Search
 	}
 }
 

@@ -135,6 +135,11 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 			return stats, err
 		}
 	}
+	if b.cfg.View.Search {
+		if err := b.writeSearchJSON(outDir, model); err != nil {
+			return stats, err
+		}
+	}
 	if err := b.writeAgentOutputs(outDir, model, time.Now()); err != nil {
 		return stats, err
 	}
@@ -558,9 +563,13 @@ func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
 	data.SiteTitle = b.siteTitle()
 	data.RelRoot = relRoot(currentURL)
 	data.NoIndex = b.cfg.Access.NoIndex
+	data.SearchEnabled = b.cfg.View.Search
 	data.Lang = b.cfg.Site.Language
 	data.TOCPanel = tocPanelMode(b.cfg.View.TOCPanel)
 	data.UI = theme.UIStrings(b.cfg.Site.Language)
+	if data.Tree != nil {
+		data.Tree.SearchEnabled = b.cfg.View.Search
+	}
 }
 
 func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTML, []render.TOCItem, string, bool, *source.Commit, error) {

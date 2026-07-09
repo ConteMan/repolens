@@ -55,6 +55,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertExists(t, outDir, "llms.txt")
 	assertExists(t, outDir, "llms-full.txt")
 	assertExists(t, outDir, "index.json")
+	assertExists(t, outDir, "search.json")
 	assertMissing(t, outDir, ".repolens.yml")
 
 	for _, p := range []string{
@@ -317,6 +318,112 @@ func TestAgentOutputSwitches(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSearchJSONIndexesBrowseableFilesAndAllMarkdownHeadings(t *testing.T) {
+	repo := t.TempDir()
+	runGit(t, repo, "init", "-b", "main")
+	runGit(t, repo, "config", "user.email", "test@example.com")
+	runGit(t, repo, "config", "user.name", "Test User")
+	writeFile(t, repo, "README.md", "# 首页\n\n## 第一节\n\n## 第二节\n")
+	writeFile(t, repo, "docs/中文指南.md", "# 使用指南\n\n## 安装\n\n## 配置\n\n## 部署\n")
+	writeFile(t, repo, "plain.txt", "plain text\n")
+	writeFile(t, repo, ".repolens.yml", `
+render:
+  markdown:
+    toc_min_headings: 99
+`)
+	runGit(t, repo, "add", ".")
+	runGit(t, repo, "commit", "-m", "initial")
+
+	outDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	raw := []byte(readOutput(t, outDir, "search.json"))
+	if !json.Valid(raw) {
+		t.Fatalf("search.json is not valid JSON:\n%s", raw)
+	}
+	var index struct {
+		Docs []struct {
+			Path     string `json:"path"`
+			Title    string `json:"title"`
+			Kind     string `json:"kind"`
+			View     string `json:"view"`
+			Headings []struct {
+				Text   string `json:"text"`
+				Anchor string `json:"anchor"`
+				Level  int    `json:"level"`
+			} `json:"headings"`
+		} `json:"docs"`
+	}
+	if err := json.Unmarshal(raw, &index); err != nil {
+		t.Fatalf("Unmarshal(search.json): %v", err)
+	}
+	if len(index.Docs) != 3 {
+		t.Fatalf("search docs length = %d, want 3: %#v", len(index.Docs), index.Docs)
+	}
+	var guide *struct {
+		Path     string `json:"path"`
+		Title    string `json:"title"`
+		Kind     string `json:"kind"`
+		View     string `json:"view"`
+		Headings []struct {
+			Text   string `json:"text"`
+			Anchor string `json:"anchor"`
+			Level  int    `json:"level"`
+		} `json:"headings"`
+	}
+	for i := range index.Docs {
+		if index.Docs[i].Path == "docs/中文指南.md" {
+			guide = &index.Docs[i]
+		}
+		if strings.HasPrefix(index.Docs[i].View, "/") {
+			t.Fatalf("search view path must be relative: %#v", index.Docs[i])
+		}
+	}
+	if guide == nil {
+		t.Fatalf("Chinese path missing from search index: %#v", index.Docs)
+	}
+	if guide.Title != "使用指南" || guide.Kind != "markdown" || guide.View != "view/docs/中文指南.md/" {
+		t.Fatalf("guide search entry = %#v", guide)
+	}
+	gotHeadings := make([]string, 0, len(guide.Headings))
+	for _, heading := range guide.Headings {
+		gotHeadings = append(gotHeadings, heading.Text)
+		if heading.Anchor == "" || heading.Level <= 0 {
+			t.Fatalf("heading missing anchor or level: %#v", heading)
+		}
+	}
+	if !slices.Equal(gotHeadings, []string{"使用指南", "安装", "配置", "部署"}) {
+		t.Fatalf("guide headings = %v", gotHeadings)
+	}
+	guidePage := readOutput(t, outDir, "view/docs/中文指南.md/index.html")
+	assertNotContains(t, guidePage, `<aside class="toc-panel"`)
+}
+
+func TestSearchSwitchAndAgentIndexIndependence(t *testing.T) {
+	repo := newAgentTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Agent.IndexJSON = false
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	assertMissing(t, outDir, "index.json")
+	assertExists(t, outDir, "search.json")
+
+	outDir, _, err = buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.View.Search = false
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	assertMissing(t, outDir, "search.json")
+	page := readOutput(t, outDir, "view/README.md/index.html")
+	assertNotContains(t, page, `id="btn-search"`)
+	assertNotContains(t, page, `data-tree-search-placeholder`)
+	assertNotContains(t, page, `id="search-modal"`)
 }
 
 func TestAgentEncryptOverlapWarningInStats(t *testing.T) {
