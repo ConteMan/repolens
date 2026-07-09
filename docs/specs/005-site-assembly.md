@@ -22,6 +22,7 @@
 4. **站点框架数据**（传给 theme 模板，契约见 spec 006）：完整文件树（当前路径的祖先展开、当前项高亮）、面包屑、页面标题、git 元信息、到镜像层原文件的相对链接、`rel=alternate` head 标签。
 5. **相对链接不变量**：所有生成页面中的 href/src（含树、面包屑、CSS/JS 资源 `_assets/`）一律相对路径；**禁止**以 `/` 开头。深度由页面 URL 计算。构建后自检：扫描产物中 `href="/`、`src="/`，以及**会发起资源加载的外部引用**（`src="http(s)://`、CSS `url(http(s)://)`），命中即构建失败（零外部请求约束的机器化）。普通超链接 `<a href="http(s)://">` 允许——仓库文档本就含正常外部链接，导航跳转不违反零外部请求约束（实现时确认，2026-07-04）。
 6. **根与杂项**：`dist/index.html` 为 meta-refresh ＋ 链接指向 `view/`（静态托管重定向不可移植）；例外：仓库根目录本身含 `index.html` 文件时**镜像优先**，不生成跳转页（镜像层逐字节不变量高于跳转便利；该镜像文件不纳入相对链接自检——它是用户内容非生成产物。Issue #9 连带确认，2026-07-05）；`access.noindex: true` 时输出 robots.txt（`Disallow: /`）并在每页注入 `<meta name="robots" content="noindex">`。
+   - **`dist/404.html`**（2026-07-09 补充）：站点根恒生成自包含 not-found 页（无站内资源引用、无站内链接——它会被任意深度的未命中路径命中；恒带 noindex；文案随 `site.language` zh/en）。动机：Cloudflare Pages 等托管在缺少 404.html 时把未命中路径回退成根 index.html，与跳转页的相对 `view/` 叠加产生无限重定向（跨仓相对链接实测踩坑）。仓库根自带 `404.html` 时镜像优先、不生成（同 index.html 例外规则）。
 7. **build 命令接线**：`repolens build [repo|path]`，flags 与现有脚手架一致（`--config` / `--ref` / `-o`）。输出目录不存在则创建；已存在时清空重建（仅当目录含上次构建的哨兵文件 `.repolens-build` 才允许清空，否则报错拒绝——防误删）。结束打印统计（文件数、页面数、耗时、Warning 列表）。
 
 ## 接口契约

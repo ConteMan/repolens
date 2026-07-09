@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 站点根生成自包含 `404.html`：修复 Cloudflare Pages 等托管对未命中路径回退根 index.html 时产生的 `view/view/…` 无限重定向（常见诱因：文档里指向仓库之外的相对链接）；仓库自带根 404.html 时镜像优先。
+
+### Changed
+
+- README 不再硬编码版本号，指向 Releases 页（避免随发版遗漏更新）。
+
 ## [1.1.1] - 2026-07-09
 
 ### Fixed

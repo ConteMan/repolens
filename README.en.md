@@ -6,7 +6,7 @@
 
 repolens takes a Git repository as-is and builds a static website from it: Markdown rendered with TOC and Mermaid, HTML files previewed directly, code files with syntax highlighting, all navigable through a persistent file tree. Visitors read everything in the browser — no cloning, no local tooling. AI agents get clean plaintext views of every file.
 
-**Status: v1.0.0.** `build` and `serve` are usable; architecture and roadmap live in [`docs/`](docs/README.md).
+`build` and `serve` are usable — see [Releases](https://github.com/ConteMan/repolens/releases/latest) for the current version; architecture and roadmap live in [`docs/`](docs/README.md).
 
 ## Why
 

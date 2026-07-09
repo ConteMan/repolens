@@ -130,6 +130,13 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 			return stats, err
 		}
 	}
+	_, hasRoot404 := model.fileByPath["404.html"]
+	generated404 := !hasRoot404
+	if generated404 {
+		if err := b.write404Page(outDir); err != nil {
+			return stats, err
+		}
+	}
 	if b.cfg.Access.NoIndex {
 		if err := os.WriteFile(filepath.Join(outDir, "robots.txt"), []byte("User-agent: *\nDisallow: /\n"), 0o644); err != nil {
 			return stats, err
@@ -144,7 +151,7 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 		return stats, err
 	}
 	stats.Warnings = append(stats.Warnings, agentWarnings(b.cfg)...)
-	if err := checkRelativeLinks(outDir, generatedRootIndex); err != nil {
+	if err := checkRelativeLinks(outDir, generatedRootIndex, generated404); err != nil {
 		return stats, err
 	}
 	stats.Duration = time.Since(start)
@@ -652,6 +659,31 @@ func (b *Builder) writeRootIndex(outDir string) error {
 	return os.WriteFile(filepath.Join(outDir, "index.html"), []byte(html), 0o644)
 }
 
+// write404Page emits a standalone not-found page at the site root. Static
+// hosts serve it for unmatched paths；没有它时 Cloudflare Pages 会把任意未命中
+// 路径回退成根 index.html，与根跳转页的相对 view/ 链接叠加成无限重定向。
+// 页面会被任意深度的路径命中，因此不引用任何站点资源、不放站内链接。
+// 仓库自带根 404.html 时让位（镜像层已占该输出路径）。
+func (b *Builder) write404Page(outDir string) error {
+	lang := strings.TrimSpace(b.cfg.Site.Language)
+	heading, hint := "Page not found", "This path has no content on this site. The link may point outside the repository."
+	if strings.HasPrefix(strings.ToLower(lang), "zh") {
+		heading, hint = "页面不存在", "你访问的路径在本站没有对应内容，可能来自指向仓库之外的链接。"
+	}
+	langAttr := ""
+	if lang != "" {
+		langAttr = ` lang="` + template.HTMLEscapeString(lang) + `"`
+	}
+	html := "<!doctype html>\n<html" + langAttr + "><head><meta charset=\"utf-8\">\n" +
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
+		"<meta name=\"robots\" content=\"noindex\">\n" +
+		"<title>404 - " + template.HTMLEscapeString(b.siteTitle()) + "</title>\n" +
+		"<style>body{margin:0;display:grid;min-height:100vh;place-items:center;font:15px/1.6 ui-sans-serif,system-ui,sans-serif;color:#24292f;background:#fff}main{padding:2rem;text-align:center}h1{margin:0 0 .4rem;font-size:2.6rem}p{margin:.2rem 0;color:#6e7781}@media(prefers-color-scheme:dark){body{color:#e6edf3;background:#0d1117}p{color:#8b949e}}</style></head>\n" +
+		"<body><main><h1>404</h1><p><b>" + template.HTMLEscapeString(heading) + "</b></p><p>" +
+		template.HTMLEscapeString(hint) + "</p><p>" + template.HTMLEscapeString(b.siteTitle()) + "</p></main></body></html>\n"
+	return os.WriteFile(filepath.Join(outDir, "404.html"), []byte(html), 0o644)
+}
+
 func (b *Builder) siteTitle() string {
 	if strings.TrimSpace(b.cfg.Site.Title) != "" {
 		return b.cfg.Site.Title
@@ -897,7 +929,7 @@ func breadcrumbs(currentURL, repoPath string, dir bool) []theme.Crumb {
 	return crumbs
 }
 
-func checkRelativeLinks(outDir string, generatedRootIndex bool) error {
+func checkRelativeLinks(outDir string, generatedRootIndex, generated404 bool) error {
 	var hits []string
 	err := filepath.WalkDir(outDir, func(filePath string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -911,7 +943,7 @@ func checkRelativeLinks(outDir string, generatedRootIndex bool) error {
 			return err
 		}
 		rel = filepath.ToSlash(rel)
-		if !isGeneratedText(rel, generatedRootIndex) {
+		if !isGeneratedText(rel, generatedRootIndex, generated404) {
 			return nil
 		}
 		data, err := os.ReadFile(filePath)
@@ -944,8 +976,9 @@ func generatedLinkNeedles(rel string) []string {
 	return needles
 }
 
-func isGeneratedText(rel string, generatedRootIndex bool) bool {
+func isGeneratedText(rel string, generatedRootIndex, generated404 bool) bool {
 	return generatedRootIndex && rel == "index.html" ||
+		generated404 && rel == "404.html" ||
 		strings.HasPrefix(rel, "view/") && strings.HasSuffix(rel, ".html") ||
 		strings.HasPrefix(rel, "_assets/") && (strings.HasSuffix(rel, ".css") || strings.HasSuffix(rel, ".js"))
 }

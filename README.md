@@ -6,7 +6,7 @@
 
 repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（TOC、Mermaid）、HTML 文件直接预览、代码文件语法高亮，全部通过常驻文件树导航。访问者在浏览器里阅读一切——无需 clone、无需本地工具。AI Agent 则获得每个文件的干净纯文本视图。
 
-**状态：v1.0.0。** `build` 与 `serve` 可用；架构与路线图见 [`docs/`](docs/README.md)。
+`build` 与 `serve` 可用，当前版本见 [Releases](https://github.com/ConteMan/repolens/releases/latest)；架构与路线图见 [`docs/`](docs/README.md)。
 
 ## 为什么
 
