@@ -70,7 +70,7 @@
       </span>
     </span>
     <noscript><a class="tb-btn" href="{{.MirrorHref}}" download title="{{index .UI "download"}}" aria-label="{{index .UI "download"}}"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></a></noscript>{{end}}
-    <button class="tb-btn js-only" id="btn-search" type="button" title="{{index .UI "search"}}" aria-label="{{index .UI "search"}}"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>
+    {{if .SearchEnabled}}<button class="tb-btn js-only" id="btn-search" type="button" title="{{index .UI "search"}}" aria-label="{{index .UI "search"}}"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>{{end}}
   </div>
 </header>
 <div class="shell">
@@ -83,6 +83,11 @@
   </main>
 </div>
 <div class="scrim" id="scrim" aria-hidden="true"></div>
+{{if .SearchEnabled}}<div class="search-modal" id="search-modal" role="dialog" aria-label="{{index .UI "search_label"}}" data-search-label="{{index .UI "search_label"}}" data-search-root="{{.RelRoot}}" data-search-src="{{.RelRoot}}search.json" data-search-placeholder="{{index .UI "search_placeholder"}}" data-search-intro="{{index .UI "search_intro"}}" data-search-empty="{{index .UI "search_empty"}}" data-search-unavailable="{{index .UI "search_unavailable"}}" data-search-files="{{index .UI "search_files"}}" data-search-headings="{{index .UI "search_headings"}}" data-search-select="{{index .UI "search_select"}}" data-search-open="{{index .UI "search_open"}}" data-search-escape="{{index .UI "search_escape"}}">
+  <input class="search-input" id="search-input" type="text" placeholder="{{index .UI "search_placeholder"}}" autocomplete="off">
+  <div class="search-results" id="search-results"><div class="search-empty">{{index .UI "search_intro"}}</div></div>
+  <div class="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> {{index .UI "search_select"}}</span><span><kbd>Enter</kbd> {{index .UI "search_open"}}</span><span><kbd>Esc</kbd> {{index .UI "search_escape"}}</span></div>
+</div>{{end}}
 <div class="overlay" id="tree-overlay" role="dialog" aria-label="{{index .UI "tree"}}">
   <div class="overlay-head">
     <span>{{.SiteTitle}} · {{index .UI "tree"}}</span>

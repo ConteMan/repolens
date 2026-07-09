@@ -1,4 +1,4 @@
-{{define "tree"}}{{if .}}<div class="tree-search" data-tree-search-placeholder hidden></div><ul class="tree">{{range .Children}}{{template "tree-node" .}}{{end}}</ul>{{end}}{{end}}
+{{define "tree"}}{{if .}}{{if .SearchEnabled}}<div class="tree-search" data-tree-search-placeholder hidden></div>{{end}}<ul class="tree">{{range .Children}}{{template "tree-node" .}}{{end}}</ul>{{end}}{{end}}
 
 {{define "tree-node"}}
 <li class="{{if .Current}}current {{end}}{{if .IsDir}}dir{{else}}file{{end}}" data-kind="{{.Kind}}">

@@ -70,6 +70,7 @@ view:
   tree_position: left                # left / right
   tree_expand_depth: 2
   toc_panel: floating                # floating / inline；默认 floating
+  search: true                       # 站内搜索入口与 search.json；默认 true
 
 agent:
   llms_txt: true
@@ -83,5 +84,6 @@ agent:
 
 - **`ignore` vs `rules[].render: false`**：前者"文件当不存在"（两层都排除），后者"可访问但无阅读页"（镜像层保留）。`ignore` 同时是安全功能，文档按此定位撰写；
 - **加密与 Agent 视图互斥**：`access.encrypt.paths` 与 agent 输出的交集构建时检测并告警（lint 规则）。私有站点优先推荐平台层认证（Agent 可走 service token），客户端加密仅留给托管平台完全不可控的场景；
+- **站内搜索是浏览层能力**：`view.search: true` 时输出站点根 `search.json` 并渲染工具栏 / 树顶搜索入口；设为 `false` 时两者都不生成。该开关不参与 `rules` 级联，且不受 `agent.index_json` 影响；
 - **密码只引用环境变量名**，配置文件可安全提交；
 - 主题定制三级：`theme.vars`（90% 需求）→ `theme.css` → `theme.templates`（逃生舱，模板名是公开 API，宁缺毋滥）。

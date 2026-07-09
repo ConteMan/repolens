@@ -125,12 +125,13 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 
 	var out bytes.Buffer
 	err = renderer.Page(&out, PageData{
-		Title:     "guide.md",
-		SiteTitle: "test",
-		RelRoot:   "../../",
-		Kind:      "markdown",
-		Body:      html("<p>Guide</p>"),
-		Tree: &TreeNode{IsDir: true, Children: []*TreeNode{
+		Title:         "guide.md",
+		SiteTitle:     "test",
+		RelRoot:       "../../",
+		Kind:          "markdown",
+		Body:          html("<p>Guide</p>"),
+		SearchEnabled: true,
+		Tree: &TreeNode{IsDir: true, SearchEnabled: true, Children: []*TreeNode{
 			{
 				Name:     "docs",
 				Path:     "docs",
@@ -160,6 +161,7 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<button class="tb-btn js-only" id="btn-width" type="button"`,
 		`<span class="info-wrap js-only" id="info-wrap">`,
 		`<button class="tb-btn js-only" id="btn-search" type="button"`,
+		`<div class="search-modal" id="search-modal" role="dialog" aria-label="Site search"`,
 		`<use href="#icon-tree"></use>`,
 		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
 		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
@@ -206,6 +208,9 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`body[data-width="narrow"] .content`,
 		`.info-panel`,
 		`.dl-menu`,
+		`.search-modal`,
+		`body[data-search="open"] .scrim`,
+		`.search-item mark`,
 	} {
 		if !strings.Contains(css, want) {
 			t.Fatalf("site.css missing %q\n%s", want, css)
@@ -224,6 +229,8 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`window.fetch(url.href, { credentials: "same-origin" })`,
 		`window.history.pushState({ pjax: true }, "", url.href);`,
 		`navigator.clipboard.writeText(text)`,
+		`window.fetch(modal.getAttribute("data-search-src"), { credentials: "same-origin" })`,
+		`markText(label, item.label, query);`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Fatalf("site.js missing %q\n%s", want, js)
@@ -241,17 +248,18 @@ func TestToolbarPageDataAndLanguage(t *testing.T) {
 
 	var out bytes.Buffer
 	err = renderer.Page(&out, PageData{
-		Title:      "guide.md",
-		SiteTitle:  "test",
-		Lang:       "en",
-		RelRoot:    "../../",
-		Kind:       "markdown",
-		RepoPath:   "docs/guide.md",
-		FileSize:   1536,
-		MirrorHref: "../../docs/guide.md",
-		SourceHref: "source/",
-		TOCPanel:   "floating",
-		TOC:        []render.TOCItem{{Level: 2, Anchor: "intro", Title: "Intro"}},
+		Title:         "guide.md",
+		SiteTitle:     "test",
+		Lang:          "en",
+		RelRoot:       "../../",
+		Kind:          "markdown",
+		RepoPath:      "docs/guide.md",
+		FileSize:      1536,
+		MirrorHref:    "../../docs/guide.md",
+		SourceHref:    "source/",
+		TOCPanel:      "floating",
+		TOC:           []render.TOCItem{{Level: 2, Anchor: "intro", Title: "Intro"}},
+		SearchEnabled: true,
 		LastCommit: &source.Commit{
 			Hash:    "0123456789abcdef",
 			Time:    time.Date(2026, 7, 8, 9, 30, 0, 0, time.UTC),
