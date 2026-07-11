@@ -20,6 +20,35 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: internal/ui/frontend/pnpm-lock.yaml
+
+      - name: frontend install
+        working-directory: internal/ui/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: frontend checks and build
+        working-directory: internal/ui/frontend
+        run: pnpm check
+
+      - name: embedded frontend is current
+        run: test -z "$(git status --porcelain -- internal/ui/dist)"
+
+      - name: install browser for UI smoke test
+        working-directory: internal/ui/frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: UI browser smoke test
+        working-directory: internal/ui/frontend
+        run: pnpm test:e2e
+
       - name: go mod tidy check
         run: go mod tidy -diff
 

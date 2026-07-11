@@ -6,20 +6,24 @@
 
 ## 开发环境
 
-要求：Go ≥ 1.25，PATH 上有 `git`（repolens 调用系统 git）。
+要求：Go ≥ 1.25，PATH 上有 `git`（repolens 调用系统 git）。修改 `repolens ui` 前端时还需要 Node.js 24 与 pnpm 10。
 
 ```sh
 git clone git@github.com:ConteMan/repolens.git
 cd repolens
 go build ./...
 go test ./...
+pnpm --dir internal/ui/frontend install --frozen-lockfile
+pnpm --dir internal/ui/frontend check
+pnpm --dir internal/ui/frontend exec playwright install chromium
+pnpm --dir internal/ui/frontend test:e2e
 ```
 
 ## 动手之前
 
 - **先看路线图。** [docs/roadmap.md](docs/roadmap.md) 中标记 "Out of v1" 的功能是有意排除的；实现前请先开 Issue 讨论。
 - **文档与代码同行。** 涉及架构、配置 schema、URL 约定或公开 CLI 行为的变更，必须在同一 PR 内更新对应设计文档（或新增 ADR）。
-- **新增依赖需要论证。** 直接依赖保持个位数；候选库必须主流且在维护。永远不引入 Node 工具链。
+- **新增依赖需要论证。** Go 直接依赖保持个位数；候选库必须主流且在维护。Node/pnpm 仅用于 `repolens ui` 前端开发构建，最终产物仍是单二进制。
 
 ## Commit 规范 — Conventional Commits
 
@@ -39,7 +43,7 @@ go test ./...
 
 1. 从 `main` 拉分支：`feat/<short-name>`、`fix/<short-name>` 或 `docs/<short-name>`。
 2. 保持 PR 聚焦——一个 PR 一个逻辑变更。
-3. 质量门禁本地与 CI 都必须通过：`gofmt -l .`（无输出）、`go vet ./...`、`go test ./...`、`go build ./...`。
+3. 质量门禁本地与 CI 都必须通过：`pnpm --dir internal/ui/frontend check`、`pnpm --dir internal/ui/frontend test:e2e`、`gofmt -l .`（无输出）、`go vet ./...`、`go test ./...`、`go build ./...`。
 4. 用户可见的变更在 `CHANGELOG.md` 的 **Unreleased** 下登记。
 
 ## 报告问题

@@ -21,7 +21,7 @@ repolens 是一个 Go 编写的单二进制 CLI 工具：把任意 Git 仓库原
 1. **文档先行**：改变架构、配置 schema、URL 约定、公开 CLI 行为之前，先更新对应 design 文档或新增 ADR，同一 PR 内文档与代码联动。
 2. **ADR 不可静默推翻**：要推翻已有 ADR，新增一条 ADR 声明取代关系，说明理由。
 3. **Commit 遵循 Conventional Commits**（见 CONTRIBUTING.md），一个 commit 一个逻辑变更。
-4. **新增依赖需要论证**：直接依赖控制在个位数，候选库必须主流且在维护（参照 ADR-003 的选型标准）。禁止引入 Node 工具链。
+4. **新增依赖需要论证**：Go 直接依赖控制在个位数，候选库必须主流且在维护（参照 ADR-003 / ADR-006）。Node 工具链仅允许用于 `repolens ui` 的开发构建；最终发布仍须是无需 Node 的单二进制。
 5. **质量门禁**：提交前 `gofmt -l .` 无输出、`go vet ./...`、`go test ./...`、`go build ./...` 全部通过；CI 红灯的 PR 不合并。
 6. **范围纪律**：roadmap 中标记 Out of v1 的能力（搜索、多仓库聚合、主题市场等）不做，除非 roadmap 先修订。
 7. **零外部请求约束**：生成站点的任何页面不得引用外部 CDN / 字体 / 脚本，所有资源 embed 进二进制并输出到站点内。
@@ -56,4 +56,5 @@ go vet ./...          # 静态检查
 - `internal/site/` — 站点组装：镜像层 + 浏览层 + Agent 视图
 - `internal/theme/` — 内置模板与静态资源（go:embed）
 - `internal/server/` — 本地预览 serve + watch
+- `internal/ui/` — React + TypeScript + Base UI 本地管理界面，静态产物 go:embed
 - `docs/` — 设计文档 / ADR / spec / roadmap（也是 repolens 自己的 dogfood 语料）

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `repolens ui` 已删除原生单文件前端，迁移到 React、TypeScript、Vite 与 Base UI；生产资源继续由 Go embed 进入单二进制，最终用户无需安装 Node。
+
+### Security
+
+- 本地 UI 的 CSP 不再允许内联脚本或内联样式，仅加载单二进制内嵌的同源哈希资源。
+
+## [1.2.0] - 2026-07-11
+
+### Added
+
+- 本地回环图形化管理界面：`repolens ui` 可打开本机 Git 工作树，编辑仓库配置域、校验并预览 YAML diff、确认原子写入，以及构建到用户缓存目录。
+- UI 配置编辑覆盖 `site`、`ignore`、`render`、有序 `rules`、`theme`、`view` 和 `agent`；规则支持新增、删除与上下移动，`source`、`output`、`access` 不会暴露或改写。
+
+### Security
+
+- UI 仅接受 loopback 监听地址，变更 API 需要启动时生成并注入页面的 CSRF token。
+
 ## [1.1.2] - 2026-07-09
 
 ### Added
@@ -69,6 +88,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/ConteMan/repolens/compare/v1.1.2...v1.2.0
+[1.1.2]: https://github.com/ConteMan/repolens/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/ConteMan/repolens/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/ConteMan/repolens/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/ConteMan/repolens/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ConteMan/repolens/releases/tag/v1.0.0

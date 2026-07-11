@@ -15,6 +15,7 @@ import (
 	"github.com/ConteMan/repolens/internal/site"
 	"github.com/ConteMan/repolens/internal/source"
 	"github.com/ConteMan/repolens/internal/theme"
+	"github.com/ConteMan/repolens/internal/ui"
 	"github.com/ConteMan/repolens/internal/update"
 	"github.com/spf13/cobra"
 )
@@ -30,8 +31,27 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newBuildCmd(), newServeCmd(), newVersionCmd(), newUpgradeCmd())
+	root.AddCommand(newBuildCmd(), newServeCmd(), newUICmd(), newVersionCmd(), newUpgradeCmd())
 	return root
+}
+
+func newUICmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ui",
+		Short: "Start the local configuration interface",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			addr, err := cmd.Flags().GetString("addr")
+			if err != nil {
+				return err
+			}
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+			return ui.Run(ctx, ui.Options{Addr: addr})
+		},
+	}
+	cmd.Flags().String("addr", "127.0.0.1:8799", "loopback address to listen on")
+	return cmd
 }
 
 // Execute runs the root command and reports any error to stderr.

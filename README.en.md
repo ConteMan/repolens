@@ -15,7 +15,7 @@ Documentation often already lives in a Git repository, but reading it comfortabl
 ## Design highlights
 
 - **Two-layer output** — a byte-for-byte *mirror* of the repository (relative links in your HTML just work; every file has a stable raw URL) plus a generated *view* layer with navigation chrome under `/view/`.
-- **Pre-rendered MPA** — every page is a real URL that works on any static host, enhanced by a thin vanilla-JS layer for file-tree state and smooth navigation. No Node toolchain anywhere.
+- **Pre-rendered MPA** — every page is a real URL that works on any static host, enhanced by a thin vanilla-JS layer for file-tree state and smooth navigation. Generated sites require no frontend framework or Node runtime.
 - **Rule-based rendering** — an ordered, cascading rule model (`glob → pipeline options`) customizes rendering per path; sensible defaults need no config at all.
 - **Agent-friendly** — `llms.txt`, optional `llms-full.txt`, and a machine-readable JSON site index generated on every build.
 - **Deploy anywhere** — output is a plain static directory: Cloudflare Pages, GitHub Pages, object storage, nginx. Fully relative links, zero external requests, works behind any auth proxy.
