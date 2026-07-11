@@ -63,6 +63,38 @@ func TestRootServesEmbeddedShell(t *testing.T) {
 	if body := recorder.Body.String(); !strings.Contains(body, `content="test-token"`) {
 		t.Fatalf("root body does not contain injected token: %q", body)
 	}
+	if csp := recorder.Header().Get("Content-Security-Policy"); strings.Contains(csp, "unsafe-inline") {
+		t.Fatalf("root CSP permits inline assets: %q", csp)
+	}
+}
+
+func TestEmbeddedFrontendAsset(t *testing.T) {
+	assetPath := embeddedAssetPath(t, shellHTML, `src="`, `"`)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, assetPath, nil)
+
+	newHandler("test-token").ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("asset status = %d, want %d", recorder.Code, http.StatusOK)
+	}
+	if contentType := recorder.Header().Get("Content-Type"); !strings.Contains(contentType, "javascript") {
+		t.Fatalf("asset Content-Type = %q, want JavaScript", contentType)
+	}
+}
+
+func embeddedAssetPath(t *testing.T, html, prefix, suffix string) string {
+	t.Helper()
+	start := strings.Index(html, prefix)
+	if start < 0 {
+		t.Fatalf("embedded HTML does not contain %q", prefix)
+	}
+	start += len(prefix)
+	end := strings.Index(html[start:], suffix)
+	if end < 0 {
+		t.Fatalf("embedded HTML asset after %q does not contain %q", prefix, suffix)
+	}
+	return html[start : start+end]
 }
 
 func TestConfigAPIsRejectMissingOrWrongToken(t *testing.T) {

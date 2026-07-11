@@ -11,7 +11,7 @@
 
 第一期只交付本地仓库的最短闭环：输入绝对本地工作树路径 → 编辑仓库配置域 → 确认 YAML diff → 写入 → 构建并查看结果。远程仓库、最近项目、目录浏览器、预览服务和外部可信配置均在后续独立收口。
 
-1. **入口**：`repolens ui [--addr 127.0.0.1:8799]`。仅接受 loopback 地址；启动后打开浏览器。界面资源 `go:embed`，手写 HTML/CSS/JS，无 Node 运行时。
+1. **入口**：`repolens ui [--addr 127.0.0.1:8799]`。仅接受 loopback 地址；启动后打开浏览器。界面使用 React、TypeScript、Vite 与 Base UI；构建后的静态资源通过 `go:embed` 编入二进制，用户运行时不需要 Node。
 2. **项目选择**：用户输入或粘贴绝对本地目录路径；服务端验证目录可由 `source.Open(..., Worktree: true)` 读取。第一期不实现目录树、主目录限制或远程 URL，因此不伪造尚不存在的文件系统浏览 API。
 3. **配置表单**：读取仓库根 `.repolens.yml`，编辑仓库内可写的真实字段：`site`、`ignore`、`render`、`rules`、`theme`、`view`、`agent`。表单同时标示“仓库配置”与“有效默认值”，不得将合并后的有效值当作原始文件写回。`source`、`output`、`access` 完全不提供可编辑控件：`config.Load` 已将仓库内三段忽略并告警。加载、空配置、字段校验失败和写入失败均须在页面内可见。
 4. **规则编辑**：`rules` 是保序列表，可新增、删除、上移和下移；每条只允许 schema 已有字段 `match`、`render`、`markdown`、`html`、`code`、`max_file_size`。窄屏用独立子页，不提供 drag-and-drop。主题字段仅允许 `vars`、`css`、`templates`。

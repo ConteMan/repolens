@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
-	_ "embed"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -29,8 +30,13 @@ const (
 
 var errNonLoopbackAddress = errors.New("ui: address must use a loopback IP")
 
-//go:embed assets/index.html
-var shellHTML string
+//go:embed dist
+var frontendFS embed.FS
+
+var (
+	shellHTML      = mustReadFrontendFile("dist/index.html")
+	frontendAssets = http.FileServer(http.FS(mustFrontendSub("dist/assets")))
+)
 
 // Options configures the local UI HTTP server.
 type Options struct {
@@ -114,6 +120,7 @@ func newHandler(token string) http.Handler {
 
 func newHandlerWithBuildService(token string, builds *buildService) http.Handler {
 	mux := http.NewServeMux()
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", frontendAssets))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
@@ -190,7 +197,23 @@ func buildResponseFromOperation(op buildOperation) buildResponse {
 
 func serveShell(w http.ResponseWriter, token string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(strings.ReplaceAll(shellHTML, "{{CSRF_TOKEN}}", token)))
+	_, _ = w.Write([]byte(strings.ReplaceAll(shellHTML, "__REPOLENS_CSRF_TOKEN__", token)))
+}
+
+func mustReadFrontendFile(name string) string {
+	content, err := frontendFS.ReadFile(name)
+	if err != nil {
+		panic(fmt.Sprintf("ui: read embedded frontend file %q: %v", name, err))
+	}
+	return string(content)
+}
+
+func mustFrontendSub(directory string) fs.FS {
+	root, err := fs.Sub(frontendFS, directory)
+	if err != nil {
+		panic(fmt.Sprintf("ui: open embedded frontend directory %q: %v", directory, err))
+	}
+	return root
 }
 
 func health(w http.ResponseWriter, _ *http.Request) {
@@ -471,7 +494,7 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; connect-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; connect-src 'self'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'self'")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		next.ServeHTTP(w, r)

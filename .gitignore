@@ -8,6 +8,13 @@ repolens
 *.test
 coverage.out
 
+# Frontend development artifacts
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
 # Editors / OS
 .idea/
 .vscode/
