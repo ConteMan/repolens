@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repolens-csrf-token" content="{{CSRF_TOKEN}}">
+  <title>repolens ui</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f4f6f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input, select, textarea { font: inherit; }
+    button { border: 1px solid #24324a; border-radius: 5px; background: #24324a; color: #fff; padding: 9px 13px; cursor: pointer; font-weight: 600; }
+    button:hover:not(:disabled) { background: #18243a; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #78a9e6; outline-offset: 2px; }
+    button.secondary { border-color: #b6c0cf; background: #fff; color: #24324a; }
+    button.secondary:hover:not(:disabled) { background: #eef2f6; }
+    button.small { padding: 6px 9px; font-size: 12px; }
+    button:disabled { cursor: not-allowed; opacity: .52; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; }
+    .app { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; border-bottom: 1px solid #d7dee8; padding-bottom: 18px; }
+    h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0; }
+    .subtitle { margin: 4px 0 0; color: #58677d; font-size: 14px; }
+    .project-name { max-width: 52ch; overflow: hidden; color: #43536a; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .panel { margin-top: 20px; border: 1px solid #d7dee8; border-radius: 6px; background: #fff; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #e3e8ef; }
+    .panel-header h2 { margin: 0; font-size: 16px; }
+    .panel-body { padding: 16px; }
+    .field-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .form-grid.single { grid-template-columns: 1fr; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-bottom: 12px; color: #43536a; font-size: 13px; font-weight: 700; }
+    label { display: grid; gap: 6px; color: #43536a; font-size: 13px; font-weight: 600; }
+    input, select, textarea { width: 100%; min-height: 38px; border: 1px solid #b6c0cf; border-radius: 4px; background: #fff; color: #172033; padding: 8px 10px; }
+    textarea { min-height: 96px; resize: vertical; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; line-height: 1.45; }
+    input:disabled, select:disabled, textarea:disabled { background: #f4f6f8; color: #69788d; }
+    .help { margin: 7px 0 0; color: #66758a; font-size: 12px; line-height: 1.5; }
+    .notice { display: none; margin-top: 16px; border-left: 4px solid #8695aa; padding: 10px 12px; background: #f4f6f8; color: #35445a; font-size: 14px; line-height: 1.5; }
+    .notice.visible { display: block; }
+    .notice.loading { border-color: #2563a8; background: #eef6ff; color: #174b7a; }
+    .notice.success { border-color: #25724e; background: #edf8f1; color: #1b583b; }
+    .notice.error { border-color: #b4232d; background: #fff0f1; color: #8c1720; }
+    .notice.warning { border-color: #a66700; background: #fff8e8; color: #754b00; }
+    .form-section + .form-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid #e3e8ef; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .section-heading legend, .section-heading h3 { margin: 0; }
+    .rule-list { display: grid; gap: 12px; }
+    .rule-card { border: 1px solid #c9d2df; border-radius: 5px; padding: 14px; }
+    .rule { border: 1px solid #c9d2df; border-radius: 5px; padding: 14px; }
+    .rule-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .rule-card h4 { margin: 0; color: #24324a; font-size: 14px; }
+    .rule-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rule-subsection { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e3e8ef; }
+    .rule-subsection h5 { margin: 0 0 10px; color: #58677d; font-size: 12px; }
+    .empty-list { margin: 0; color: #66758a; font-size: 13px; }
+    .form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .state { color: #66758a; font-size: 13px; }
+    .state.changed { color: #a66700; font-weight: 700; }
+    .diff { max-height: 360px; overflow: auto; margin: 0; border: 1px solid #c9d2df; border-radius: 4px; background: #101827; color: #e8eef7; padding: 14px; font-size: 12px; line-height: 1.55; white-space: pre; }
+    .warning-list, .summary-list { margin: 0; padding-left: 20px; }
+    .warning-list { color: #754b00; }
+    .summary-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 24px; padding: 0; list-style: none; }
+    .summary-list li { border-left: 3px solid #b6c0cf; padding-left: 9px; color: #43536a; font-size: 13px; }
+    .summary-list strong { display: block; color: #172033; font-size: 17px; }
+    .build-stage { margin: 0 0 14px; color: #43536a; font-size: 14px; }
+    .muted { color: #66758a; }
+    .hidden { display: none !important; }
+    .rule { margin: 10px 0; padding: 12px; border: 1px solid #d7dee8; border-radius: 5px; background: #fafcff; }
+    .rule-actions { display:flex; gap:8px; margin-top:10px; }
+    @media (max-width: 680px) { .app { padding: 16px; } .topbar { display: block; } .project-name { margin-top: 10px; } .field-row, .form-grid { grid-template-columns: 1fr; } .field-row button { justify-self: start; } .summary-list { grid-template-columns: 1fr; } .rule-card-header { align-items: flex-start; flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>repolens ui</h1>
+        <p class="subtitle">本地仓库配置与构建</p>
+      </div>
+      <div id="project-name" class="project-name" title="">未打开项目</div>
+    </header>
+
+    <section class="panel" aria-labelledby="project-heading">
+      <div class="panel-header"><h2 id="project-heading">打开项目</h2></div>
+      <div class="panel-body">
+        <div class="field-row">
+          <label for="project-path">仓库绝对路径
+            <input id="project-path" type="text" autocomplete="off" spellcheck="false" placeholder="/Users/name/Projects/repository">
+          </label>
+          <button id="open-project" type="button">打开配置</button>
+        </div>
+        <p class="help">仅接受本机存在的 Git 工作树目录。不会浏览或上传仓库内容。</p>
+      </div>
+    </section>
+
+    <div id="status" class="notice" role="status" aria-live="polite"></div>
+
+    <section id="settings-panel" class="panel" aria-labelledby="settings-heading" aria-busy="false">
+      <div class="panel-header">
+        <h2 id="settings-heading">仓库配置</h2>
+        <span id="edit-state" class="state">请先打开项目</span>
+      </div>
+      <div class="panel-body">
+        <p class="help">仅编辑仓库域的 site、ignore、render、rules、theme、view、agent。留空或选择“使用默认值”会从仓库配置中移除该字段；不会写入 source、output、access。</p>
+        <form id="settings-form">
+          <fieldset id="settings-fields" disabled>
+            <section class="form-section"><legend>站点</legend><div class="form-grid"><label>标题<input id="site-title" type="text"></label><label>语言<input id="site-language" type="text"></label><label>首页文件<input id="site-home" type="text"></label></div></section>
+            <section class="form-section"><legend>忽略路径</legend><label>忽略模式（每行一条）<textarea id="ignore-paths" spellcheck="false" placeholder="generated/**"></textarea></label><p class="help">未编辑的空列表保持未设置；清空已存在的列表会写入空列表。</p></section>
+            <section class="form-section"><legend>全局渲染</legend><div class="form-grid"><label>生成阅读页<select id="render-enabled"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>最大文件大小（字节）<input id="render-max-file-size" type="number" min="0" step="1"></label></div><div class="rule-subsection"><h5>Markdown</h5><div class="form-grid"><label>目录<select id="render-toc"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>目录最少标题数<input id="render-toc-min-headings" type="number" min="0" step="1"></label><label>标题锚点<select id="render-anchors"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>Mermaid<select id="render-mermaid"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>数学公式<select id="render-math"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>Frontmatter 标题<select id="render-frontmatter-title"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label></div></div><div class="rule-subsection"><h5>HTML 与代码</h5><div class="form-grid"><label>HTML 视图<select id="render-html"><option value="">使用默认值</option><option value="embed">嵌入</option><option value="direct">直接显示</option><option value="source">显示源码</option></select></label><label>代码行号<select id="render-line-numbers"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>代码主题<input id="render-code-theme" type="text"></label></div></div></section>
+            <section class="form-section"><div class="section-heading"><legend>路径规则</legend><button id="add-rule" class="secondary small" type="button">新增规则</button></div><div id="rules-list" class="rule-list"></div><p class="help">规则按顺序应用。每条规则仅含 match、render、markdown、html、code 和 max_file_size。</p></section>
+            <section class="form-section"><legend>主题</legend><div class="form-grid single"><label>变量（每行 <code>名称: 值</code>）<textarea id="theme-vars" spellcheck="false"></textarea></label><label>附加 CSS<textarea id="theme-css" spellcheck="false"></textarea></label><label>模板目录<textarea id="theme-templates" spellcheck="false"></textarea></label></div></section>
+            <section class="form-section"><legend>浏览</legend><div class="form-grid"><label>文件树位置<select id="view-tree-position"><option value="">使用默认值</option><option value="left">左侧</option><option value="right">右侧</option></select></label><label>文件树展开层级<input id="view-tree-expand-depth" type="number" min="0" step="1"></label><label>目录面板<select id="view-toc-panel"><option value="">使用默认值</option><option value="floating">浮动</option><option value="inline">内联</option></select></label><label>站内搜索<select id="view-search"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label></div></section>
+            <section class="form-section"><legend>Agent 视图</legend><div class="form-grid"><label>生成 llms.txt<select id="agent-llms-txt"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>生成 llms-full.txt<select id="agent-llms-full-enabled"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label><label>llms-full.txt 最大大小（字节）<input id="agent-llms-full-max-size" type="number" min="0" step="1"></label><label>生成 index.json<select id="agent-index-json"><option value="">使用默认值</option><option value="true">启用</option><option value="false">关闭</option></select></label></div></section>
+          </fieldset>
+          <div class="form-actions">
+            <button id="validate-config" class="secondary" type="submit" disabled>校验配置</button>
+            <button id="prepare-write" type="button" disabled>预览写入 diff</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="diff-panel" class="panel hidden" aria-labelledby="diff-heading">
+      <div class="panel-header"><h2 id="diff-heading">确认写入</h2></div>
+      <div class="panel-body">
+        <p id="diff-target" class="help"></p>
+        <p class="help">写入会规范化 YAML，因此不会保留注释、空行、原键顺序或未知字段。</p>
+        <pre id="diff-content" class="diff"></pre>
+        <div class="form-actions">
+          <button id="cancel-write" class="secondary" type="button">返回编辑</button>
+          <button id="confirm-write" type="button">确认写入</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="build-panel" class="panel" aria-labelledby="build-heading">
+      <div class="panel-header">
+        <h2 id="build-heading">构建</h2>
+        <button id="start-build" type="button" disabled>开始构建</button>
+      </div>
+      <div class="panel-body">
+        <p id="build-stage" class="build-stage muted">确认写入配置后，可以构建到本机缓存目录。</p>
+        <div id="build-results" class="hidden">
+          <ul id="build-summary" class="summary-list"></ul>
+          <p id="build-output" class="help"></p>
+        </div>
+        <div id="warnings-box" class="notice warning" role="status" aria-live="polite"></div>
+        <div id="last-success" class="notice success" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const csrfToken = document.querySelector('meta[name="repolens-csrf-token"]').content;
+      const $ = (id) => document.getElementById(id);
+      const state = { path: "", revision: "", settings: null, dirty: false, pendingWrite: null, buildTimer: null, buildID: "", lastSuccess: null, busy: false };
+      const stageLabels = { opening: "正在打开工作树", loading_config: "正在读取配置", loading_theme: "正在加载主题", building: "正在构建站点", completed: "构建完成", failed: "构建失败" };
+
+      function showStatus(kind, message) {
+        const element = $("status");
+        element.className = `notice visible ${kind}`;
+        element.textContent = message;
+      }
+
+      function clearStatus() {
+        $("status").className = "notice";
+        $("status").textContent = "";
+      }
+
+      async function request(path, body) {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Repolens-CSRF-Token": csrfToken },
+          body: JSON.stringify(body)
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.message || `请求失败（HTTP ${response.status}）`);
+        }
+        return payload;
+      }
+
+      async function get(path) {
+        const response = await fetch(path);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || `请求失败（HTTP ${response.status}）`);
+        return payload;
+      }
+
+      function isRecord(value) {
+        return value !== null && typeof value === "object" && !Array.isArray(value);
+      }
+
+      function normalizeSettings(value) {
+        const settings = isRecord(value) ? value : {};
+        const agent = isRecord(settings.agent) ? settings.agent : {};
+        return {
+          site: isRecord(settings.site) ? settings.site : {},
+          view: isRecord(settings.view) ? settings.view : {},
+          ignore: Array.isArray(settings.ignore) ? settings.ignore : null, rules: Array.isArray(settings.rules) ? settings.rules.map(normalizeRule) : null, render: isRecord(settings.render) ? settings.render : {}, theme: isRecord(settings.theme) ? settings.theme : {},
+          agent: { ...agent, llms_full: isRecord(agent.llms_full) ? agent.llms_full : {} }
+        };
+      }
+
+      function normalizeRule(value) {
+        const rule = isRecord(value) ? value : {};
+        const markdown = isRecord(rule.markdown) ? rule.markdown : {};
+        const html = isRecord(rule.html) ? rule.html : {};
+        const code = isRecord(rule.code) ? rule.code : {};
+        return {
+          match: typeof rule.match === "string" ? rule.match : null,
+          render: typeof rule.render === "boolean" ? rule.render : null,
+          markdown: {
+            toc: typeof markdown.toc === "boolean" ? markdown.toc : null,
+            toc_min_headings: typeof markdown.toc_min_headings === "number" ? markdown.toc_min_headings : null,
+            anchors: typeof markdown.anchors === "boolean" ? markdown.anchors : null,
+            mermaid: typeof markdown.mermaid === "boolean" ? markdown.mermaid : null,
+            math: typeof markdown.math === "boolean" ? markdown.math : null,
+            frontmatter_title: typeof markdown.frontmatter_title === "boolean" ? markdown.frontmatter_title : null
+          },
+          html: { view: typeof html.view === "string" ? html.view : null },
+          code: {
+            line_numbers: typeof code.line_numbers === "boolean" ? code.line_numbers : null,
+            theme: typeof code.theme === "string" ? code.theme : null
+          },
+          max_file_size: typeof rule.max_file_size === "number" ? rule.max_file_size : null
+        };
+      }
+
+      function textValue(id, value) {
+        $(id).value = typeof value === "string" || typeof value === "number" ? String(value) : "";
+      }
+
+      function boolValue(id, value) {
+        // `false` is an explicit repository setting; only null or an absent key means default.
+        $(id).value = value === true ? "true" : value === false ? "false" : "";
+      }
+
+      function optionalText(id) {
+        const value = $(id).value.trim();
+        return value === "" ? null : value;
+      }
+
+      function optionalInteger(id) {
+        const input = $(id);
+        return input.value === "" ? null : input.valueAsNumber;
+      }
+
+      function optionalBoolean(id) {
+        const value = $(id).value;
+        return value === "" ? null : value === "true";
+      }
+
+      function setForm(settings) {
+        settings = normalizeSettings(settings);
+        textValue("site-title", settings.site.title); $("ignore-paths").value=(settings.ignore || []).join("\n"); $("ignore-paths").dataset.present = Array.isArray(settings.ignore) ? "true" : "false"; boolValue("render-enabled",settings.render.render); for(const key of [["toc","render-toc"],["toc_min_headings","render-toc-min-headings"],["anchors","render-anchors"],["mermaid","render-mermaid"],["math","render-math"],["frontmatter_title","render-frontmatter-title"]]) { if(key[0]==="toc_min_headings") textValue(key[1],settings.render.markdown?.[key[0]]); else boolValue(key[1],settings.render.markdown?.[key[0]]); } textValue("render-html",settings.render.html?.view); boolValue("render-line-numbers",settings.render.code?.line_numbers); textValue("render-code-theme",settings.render.code?.theme); textValue("render-max-file-size",settings.render.max_file_size); $("theme-vars").value=Object.entries(settings.theme.vars||{}).map(([k,v])=>`${k}: ${v}`).join("\n"); textValue("theme-css",settings.theme.css); textValue("theme-templates",settings.theme.templates);
+        textValue("site-language", settings.site.language);
+        textValue("site-home", settings.site.home);
+        textValue("view-tree-expand-depth", settings.view.tree_expand_depth);
+        textValue("view-tree-position", settings.view.tree_position);
+        textValue("view-toc-panel", settings.view.toc_panel);
+        boolValue("view-search", settings.view.search);
+        boolValue("agent-llms-txt", settings.agent.llms_txt);
+        boolValue("agent-llms-full-enabled", settings.agent.llms_full.enabled);
+        textValue("agent-llms-full-max-size", settings.agent.llms_full.max_size);
+        boolValue("agent-index-json", settings.agent.index_json);
+        renderRules(settings.rules);
+      }
+
+      function triStateSelect(field) {
+        const select = document.createElement("select");
+        select.dataset.field = field;
+        [["", "使用默认值"], ["true", "启用"], ["false", "关闭"]].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          select.append(option);
+        });
+        return select;
+      }
+
+      function ruleField(labelText, control) {
+        const label = document.createElement("label");
+        label.append(document.createTextNode(labelText), control);
+        return label;
+      }
+
+      function ruleControl(card, field) {
+        return card.querySelector(`[data-field="${field}"]`);
+      }
+
+      function ruleTextValue(card, field, value) {
+        ruleControl(card, field).value = typeof value === "string" || typeof value === "number" ? String(value) : "";
+      }
+
+      function ruleBooleanValue(card, field, value) {
+        ruleControl(card, field).value = value === true ? "true" : value === false ? "false" : "";
+      }
+
+      function renumberRules() {
+        const cards = Array.from($("rules-list").children);
+        cards.forEach((card, index) => {
+          card.dataset.rule = String(index);
+          card.querySelector("h4").textContent = `规则 ${index + 1}`;
+          card.querySelector('[data-action="up"]').disabled = index === 0;
+          card.querySelector('[data-action="down"]').disabled = index === cards.length - 1;
+        });
+      }
+
+      function appendRule(value = {}) {
+        const rule = normalizeRule(value);
+        const card = document.createElement("article");
+        card.className = "rule";
+        const header = document.createElement("div");
+        header.className = "rule-card-header";
+        const heading = document.createElement("h4");
+        const actions = document.createElement("div");
+        actions.className = "rule-actions";
+        [["up", "上移"], ["down", "下移"], ["remove", "删除"]].forEach(([action, label]) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "secondary";
+          button.dataset.action = action;
+          button.textContent = label;
+          actions.append(button);
+        });
+        header.append(heading, actions);
+
+        const fields = document.createElement("div");
+        fields.className = "form-grid";
+        const match = document.createElement("input");
+        match.type = "text";
+        match.required = true;
+        match.placeholder = "例如 docs/**/*.md";
+        match.dataset.field = "match";
+        const htmlView = document.createElement("select");
+        htmlView.dataset.field = "html-view";
+        [["", "使用默认值"], ["embed", "嵌入"], ["direct", "直接链接"], ["source", "源码展示"]].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          htmlView.append(option);
+        });
+        const codeTheme = document.createElement("input");
+        codeTheme.type = "text";
+        codeTheme.placeholder = "使用默认主题";
+        codeTheme.dataset.field = "code-theme";
+        const maxFileSize = document.createElement("input");
+        maxFileSize.type = "number";
+        maxFileSize.min = "0";
+        maxFileSize.step = "1";
+        maxFileSize.placeholder = "使用默认值";
+        maxFileSize.dataset.field = "max-file-size";
+        fields.append(
+          ruleField("匹配路径", match),
+          ruleField("是否渲染", triStateSelect("render")),
+          ruleField("HTML 视图", htmlView),
+          ruleField("代码行号", triStateSelect("code-line-numbers")),
+          ruleField("代码主题", codeTheme),
+          ruleField("最大文件大小（字节）", maxFileSize)
+        );
+        const markdownFields = document.createElement("div");
+        markdownFields.className = "form-grid rule-subsection";
+        const tocMinHeadings = document.createElement("input");
+        tocMinHeadings.type = "number";
+        tocMinHeadings.min = "0";
+        tocMinHeadings.step = "1";
+        tocMinHeadings.dataset.field = "markdown-toc-min-headings";
+        markdownFields.append(
+          ruleField("Markdown 目录", triStateSelect("markdown-toc")),
+          ruleField("目录最少标题数", tocMinHeadings),
+          ruleField("标题锚点", triStateSelect("markdown-anchors")),
+          ruleField("Mermaid", triStateSelect("markdown-mermaid")),
+          ruleField("Markdown 数学公式", triStateSelect("markdown-math")),
+          ruleField("Frontmatter 标题", triStateSelect("markdown-frontmatter-title"))
+        );
+        card.append(header, fields, markdownFields);
+        ruleTextValue(card, "match", rule.match);
+        ruleBooleanValue(card, "render", rule.render);
+        ruleBooleanValue(card, "markdown-toc", rule.markdown.toc);
+        ruleTextValue(card, "markdown-toc-min-headings", rule.markdown.toc_min_headings);
+        ruleBooleanValue(card, "markdown-anchors", rule.markdown.anchors);
+        ruleBooleanValue(card, "markdown-mermaid", rule.markdown.mermaid);
+        ruleBooleanValue(card, "markdown-math", rule.markdown.math);
+        ruleBooleanValue(card, "markdown-frontmatter-title", rule.markdown.frontmatter_title);
+        ruleTextValue(card, "html-view", rule.html.view);
+        ruleBooleanValue(card, "code-line-numbers", rule.code.line_numbers);
+        ruleTextValue(card, "code-theme", rule.code.theme);
+        ruleTextValue(card, "max-file-size", rule.max_file_size);
+        $("rules-list").append(card);
+      }
+
+      function renderRules(rules) {
+        const list = $("rules-list");
+        list.replaceChildren();
+        list.dataset.present = Array.isArray(rules) ? "true" : "false";
+        (rules || []).forEach(appendRule);
+        renumberRules();
+      }
+
+      function optionalRuleBoolean(card, field) {
+        const value = ruleControl(card, field).value;
+        return value === "" ? null : value === "true";
+      }
+
+      function optionalRuleText(card, field) {
+        const value = ruleControl(card, field).value.trim();
+        return value === "" ? null : value;
+      }
+
+      function rulesFromForm() {
+        const rules = [];
+        for (const card of $("rules-list").children) {
+          const maxFileSizeControl = ruleControl(card, "max-file-size");
+          const maxFileSize = maxFileSizeControl.value === "" ? null : maxFileSizeControl.valueAsNumber;
+          const tocMinHeadingsControl = ruleControl(card, "markdown-toc-min-headings");
+          const tocMinHeadings = tocMinHeadingsControl.value === "" ? null : tocMinHeadingsControl.valueAsNumber;
+          if (maxFileSize !== null && (!Number.isSafeInteger(maxFileSize) || maxFileSize < 0)) {
+            showStatus("error", "规则的最大文件大小必须是非负整数（字节）。");
+            return null;
+          }
+          if (tocMinHeadings !== null && (!Number.isSafeInteger(tocMinHeadings) || tocMinHeadings < 0)) {
+            showStatus("error", "规则的目录最少标题数必须是非负整数。");
+            return null;
+          }
+          rules.push({
+            match: optionalRuleText(card, "match"),
+            render: optionalRuleBoolean(card, "render"),
+            markdown: { toc: optionalRuleBoolean(card, "markdown-toc"), toc_min_headings: tocMinHeadings, anchors: optionalRuleBoolean(card, "markdown-anchors"), mermaid: optionalRuleBoolean(card, "markdown-mermaid"), math: optionalRuleBoolean(card, "markdown-math"), frontmatter_title: optionalRuleBoolean(card, "markdown-frontmatter-title") },
+            html: { view: optionalRuleText(card, "html-view") },
+            code: {
+              line_numbers: optionalRuleBoolean(card, "code-line-numbers"),
+              theme: optionalRuleText(card, "code-theme")
+            },
+            max_file_size: maxFileSize
+          });
+        }
+        return rules;
+      }
+
+      function formSettings() {
+        if (!$("settings-form").reportValidity()) return null;
+        for (const input of document.querySelectorAll('input[type="number"]')) {
+          if (input.value !== "" && !Number.isSafeInteger(input.valueAsNumber)) {
+            showStatus("error", "所有字节数和数量必须是安全整数。");
+            return null;
+          }
+        }
+        const treeExpandDepth = optionalInteger("view-tree-expand-depth");
+        if (treeExpandDepth !== null && !Number.isSafeInteger(treeExpandDepth)) {
+          showStatus("error", "文件树展开层级必须是整数。");
+          return null;
+        }
+        const vars={}; for(const line of $("theme-vars").value.split("\n")){const i=line.indexOf(":");if(line.trim()!==""&&i<=0){showStatus("error", "主题变量每行必须为“名称: 值”。");return null;}if(i>0)vars[line.slice(0,i).trim()]=line.slice(i+1).trim();} const maxFileSize=optionalInteger("render-max-file-size");
+        const rules = rulesFromForm();
+        if (rules === null) return null;
+        return {
+          site: { title: optionalText("site-title"), language: optionalText("site-language"), home: optionalText("site-home") },
+          ignore: $("ignore-paths").dataset.present === "true" ? $("ignore-paths").value.split("\n").map(s=>s.trim()).filter(Boolean) : null, render:{render:optionalBoolean("render-enabled"),markdown:{toc:optionalBoolean("render-toc"),toc_min_headings:optionalInteger("render-toc-min-headings"),anchors:optionalBoolean("render-anchors"),mermaid:optionalBoolean("render-mermaid"),math:optionalBoolean("render-math"),frontmatter_title:optionalBoolean("render-frontmatter-title")},html:{view:optionalText("render-html")},code:{line_numbers:optionalBoolean("render-line-numbers"),theme:optionalText("render-code-theme")},max_file_size:maxFileSize}, theme:{vars:Object.keys(vars).length?vars:null,css:optionalText("theme-css"),templates:optionalText("theme-templates")},
+          view: { tree_position: optionalText("view-tree-position"), tree_expand_depth: treeExpandDepth, toc_panel: optionalText("view-toc-panel"), search: optionalBoolean("view-search") },
+          rules: $("rules-list").dataset.present === "true" ? rules : null,
+          agent: {
+            llms_txt: optionalBoolean("agent-llms-txt"),
+            llms_full: { enabled: optionalBoolean("agent-llms-full-enabled"), max_size: optionalInteger("agent-llms-full-max-size") },
+            index_json: optionalBoolean("agent-index-json")
+          }
+        };
+      }
+
+      $("add-rule").addEventListener("click", () => {
+        $("rules-list").dataset.present = "true";
+        appendRule();
+        renumberRules();
+        markDirty();
+      });
+      $("ignore-paths").addEventListener("input", () => { $("ignore-paths").dataset.present = "true"; });
+      $("rules-list").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        const card = button && button.closest("[data-rule]");
+        if (!card) return;
+        const list = $("rules-list");
+        if (button.dataset.action === "up" && card.previousElementSibling) list.insertBefore(card, card.previousElementSibling);
+        if (button.dataset.action === "down" && card.nextElementSibling) list.insertBefore(card.nextElementSibling, card);
+        if (button.dataset.action === "remove") card.remove();
+        list.dataset.present = "true";
+        renumberRules();
+        markDirty();
+      });
+
+      function updateButtons() {
+        const open = Boolean(state.path && state.settings);
+        $("project-path").disabled = state.busy;
+        $("open-project").disabled = state.busy;
+        $("settings-fields").disabled = !open || state.busy;
+        $("validate-config").disabled = !open || state.busy;
+        $("prepare-write").disabled = !open || state.busy;
+        $("start-build").disabled = !open || state.dirty || state.busy || Boolean(state.buildID);
+        const editState = $("edit-state");
+        editState.textContent = !open ? "请先打开项目" : state.dirty ? "有未保存修改" : "已保存";
+        editState.className = `state${state.dirty ? " changed" : ""}`;
+      }
+
+      function markDirty() {
+        if (!state.settings) return;
+        state.dirty = true;
+        state.pendingWrite = null;
+        $("diff-panel").classList.add("hidden");
+        updateButtons();
+      }
+
+      function resetBuildDisplay() {
+        $("build-stage").textContent = "确认写入配置后，可以构建到本机缓存目录。";
+        $("build-stage").className = "build-stage muted";
+        $("build-results").classList.add("hidden");
+        $("warnings-box").className = "notice warning";
+        $("last-success").className = "notice success";
+      }
+
+      function setBusy(busy) {
+        state.busy = busy;
+        updateButtons();
+      }
+
+      function stopBuildPolling() {
+        if (state.buildTimer !== null) clearTimeout(state.buildTimer);
+        state.buildTimer = null;
+        state.buildID = "";
+      }
+
+      async function openProject() {
+        if (state.busy) return;
+        const path = $("project-path").value.trim();
+        if (!path) {
+          showStatus("error", "请输入仓库的绝对路径。");
+          return;
+        }
+        clearStatus();
+        setBusy(true);
+        $("settings-panel").setAttribute("aria-busy", "true");
+        showStatus("loading", "正在读取仓库配置...");
+        try {
+          const result = await request("/api/project/open", { path });
+          stopBuildPolling();
+          state.path = path;
+          state.revision = result.revision;
+          state.settings = normalizeSettings(result.settings);
+          state.dirty = false;
+          state.pendingWrite = null;
+          state.lastSuccess = null;
+          setForm(state.settings);
+          $("project-name").textContent = path;
+          $("project-name").title = path;
+          $("diff-panel").classList.add("hidden");
+          resetBuildDisplay();
+          updateButtons();
+          showStatus("success", "配置已加载。可以编辑字段并先进行校验。");
+        } catch (error) {
+          showStatus("error", `无法打开项目：${error.message}`);
+        } finally {
+          $("settings-panel").setAttribute("aria-busy", "false");
+          setBusy(false);
+        }
+      }
+
+      async function validateConfig(event) {
+        event.preventDefault();
+        if (!state.settings) return;
+        const settings = formSettings();
+        if (!settings) return;
+        setBusy(true);
+        showStatus("loading", "正在校验配置...");
+        try {
+          const result = await request("/api/config/validate", { path: state.path, settings, revision: state.revision });
+          state.settings = normalizeSettings(result.settings);
+          state.revision = result.revision;
+          setForm(state.settings);
+          state.dirty = true;
+          updateButtons();
+          showStatus("success", "配置校验通过。请预览 diff 后确认写入。");
+        } catch (error) {
+          showStatus("error", `配置校验失败：${error.message}`);
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function prepareWrite() {
+        if (!state.settings) return;
+        const settings = formSettings();
+        if (!settings) return;
+        setBusy(true);
+        showStatus("loading", "正在生成 YAML diff...");
+        try {
+          const result = await request("/api/config/prepare-write", { path: state.path, settings, revision: state.revision });
+          if (!result.diff) {
+            state.settings = normalizeSettings(result.settings);
+            state.revision = result.revision;
+            setForm(state.settings);
+            state.dirty = false;
+            updateButtons();
+            $("diff-panel").classList.add("hidden");
+            showStatus("success", "没有需要写入的配置变更。");
+            return;
+          }
+          state.pendingWrite = { revision: result.revision, settings: normalizeSettings(result.settings) };
+          $("diff-target").textContent = `目标文件：${state.path}/.repolens.yml`;
+          $("diff-content").textContent = result.diff;
+          $("diff-panel").classList.remove("hidden");
+          $("diff-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+          showStatus("warning", "请检查下方 diff。确认后才会写入磁盘。");
+        } catch (error) {
+          showStatus("error", `无法生成 diff：${error.message}`);
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function commitWrite() {
+        if (!state.pendingWrite) return;
+        const pendingWrite = state.pendingWrite;
+        setBusy(true);
+        showStatus("loading", "正在写入仓库配置...");
+        try {
+          const result = await request("/api/config/commit", { path: state.path, settings: pendingWrite.settings, revision: pendingWrite.revision, confirm: true });
+          state.settings = normalizeSettings(result.settings);
+          state.revision = result.revision;
+          state.dirty = false;
+          state.pendingWrite = null;
+          setForm(state.settings);
+          $("diff-panel").classList.add("hidden");
+          updateButtons();
+          showStatus("success", "配置已写入。现在可以开始构建。");
+        } catch (error) {
+          showStatus("error", `写入失败：${error.message}`);
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function displayWarnings(warnings) {
+        const box = $("warnings-box");
+        if (!warnings || warnings.length === 0) {
+          box.className = "notice warning";
+          box.textContent = "";
+          return;
+        }
+        box.className = "notice visible warning";
+        box.replaceChildren();
+        const heading = document.createElement("strong");
+        heading.textContent = `警告（${warnings.length}）`;
+        const list = document.createElement("ul");
+        list.className = "warning-list";
+        warnings.forEach((warning) => { const item = document.createElement("li"); item.textContent = warning; list.append(item); });
+        box.append(heading, list);
+      }
+
+      function formatDuration(value) {
+        if (typeof value !== "number") return "-";
+        if (value < 1000000) return `${Math.round(value / 1000)} 微秒`;
+        if (value < 1000000000) return `${(value / 1000000).toFixed(1)} 毫秒`;
+        return `${(value / 1000000000).toFixed(2)} 秒`;
+      }
+
+      function displayBuild(result) {
+        const stage = stageLabels[result.stage] || result.stage || "等待中";
+        $("build-stage").textContent = stage;
+        $("build-stage").className = `build-stage${result.stage === "failed" ? "" : " muted"}`;
+        displayWarnings(result.warnings);
+        if (result.stats) {
+          const values = [["文件", result.stats.Files ?? result.stats.files ?? "-"], ["页面", result.stats.Pages ?? result.stats.pages ?? "-"], ["耗时", formatDuration(result.stats.Duration ?? result.stats.duration)]];
+          const summary = $("build-summary");
+          summary.replaceChildren();
+          values.forEach(([label, value]) => {
+            const item = document.createElement("li");
+            const strong = document.createElement("strong");
+            strong.textContent = String(value);
+            item.append(strong, document.createTextNode(label));
+            summary.append(item);
+          });
+          $("build-results").classList.remove("hidden");
+        }
+        if (result.output_path) $("build-output").textContent = `缓存输出目录：${result.output_path}`;
+        if (result.stage === "failed") showStatus("error", `构建失败：${result.error || "未知错误"}`);
+      }
+
+      async function pollBuild(id) {
+        if (state.buildID !== id) return;
+        try {
+          const result = await get(`/api/build/${encodeURIComponent(id)}`);
+          if (state.buildID !== id) return;
+          displayBuild(result);
+          if (result.stage === "completed" || result.stage === "failed") {
+            stopBuildPolling();
+            if (result.stage === "completed") {
+              state.lastSuccess = result;
+              showStatus("success", "构建完成。输出保存在本机缓存目录。 ");
+            } else if (state.lastSuccess) {
+              const last = $("last-success");
+              last.className = "notice visible success";
+              last.textContent = `最近一次成功构建仍可用：${state.lastSuccess.output_path}`;
+            }
+            updateButtons();
+            return;
+          }
+          state.buildTimer = setTimeout(() => pollBuild(id), 900);
+        } catch (error) {
+          stopBuildPolling();
+          updateButtons();
+          showStatus("error", `无法读取构建状态：${error.message}`);
+        }
+      }
+
+      async function startBuild() {
+        if (!state.path || state.dirty) return;
+        setBusy(true);
+        showStatus("loading", "正在启动构建...");
+        try {
+          const result = await request("/api/build", { path: state.path });
+          state.buildID = result.id;
+          displayBuild(result);
+          setBusy(false);
+          await pollBuild(result.id);
+        } catch (error) {
+          showStatus("error", `无法启动构建：${error.message}`);
+        } finally {
+          if (state.busy) setBusy(false);
+        }
+      }
+
+      $("open-project").addEventListener("click", openProject);
+      $("project-path").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); openProject(); } });
+      $("settings-form").addEventListener("submit", validateConfig);
+      $("prepare-write").addEventListener("click", prepareWrite);
+      $("cancel-write").addEventListener("click", () => { state.pendingWrite = null; $("diff-panel").classList.add("hidden"); showStatus("warning", "已返回编辑。尚未写入磁盘。"); });
+      $("confirm-write").addEventListener("click", commitWrite);
+      $("start-build").addEventListener("click", startBuild);
+      $("settings-fields").addEventListener("input", markDirty);
+      $("settings-fields").addEventListener("change", markDirty);
+      updateButtons();
+    })();
+</script>
+</body>
+</html>
