@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-07-17
+
 ### Changed
 
 - `repolens ui` 已删除原生单文件前端，迁移到 React、TypeScript、Vite 与 Base UI；生产资源继续由 Go embed 进入单二进制，最终用户无需安装 Node。
@@ -92,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/ConteMan/repolens/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/ConteMan/repolens/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/ConteMan/repolens/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/ConteMan/repolens/compare/v1.1.0...v1.1.1
