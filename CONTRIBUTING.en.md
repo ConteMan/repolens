@@ -22,8 +22,20 @@ pnpm --dir internal/ui/frontend test:e2e
 ## Before you code
 
 - **Check the roadmap.** Features marked "Out of v1" in [docs/roadmap.md](docs/roadmap.md) are intentionally excluded; open an issue to discuss before implementing.
+- **Search existing issues first.** Add evidence to an existing issue instead of filing a duplicate, and do not maintain a second task list in repository documents.
 - **Docs move with code.** Changes to architecture, the config schema, URL conventions, or public CLI behavior must update the corresponding design doc (or add an ADR) in the same PR.
 - **New dependencies need justification.** Go direct dependencies stay in the single digits; candidates must be mainstream and actively maintained. Node/pnpm is limited to the `repolens ui` frontend build; releases remain a single binary.
+
+## Issue and design tracking
+
+Use these labels to route work:
+
+- `bug`: behavior that does not work as documented;
+- `design-gap`: an implementation mismatch with a reviewed and frozen Pencil design baseline;
+- `enhancement`: an improvement that fits the current Specs and roadmap;
+- `spec-needed`: work that requires a new or revised Spec, ADR, or roadmap decision before implementation.
+
+Do not implement `spec-needed` work until a maintainer confirms the direction and the document contract is updated. Attach staged delivery to the relevant milestone. A UI `design-gap` must include the `.pen` path, node ID, screen/state/viewport, and screenshot. An exploratory Pencil file that cannot be closed and reopened or lacks node mapping is not a design source of truth.
 
 ## Commit messages — Conventional Commits
 
@@ -45,10 +57,11 @@ Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`
 2. Keep PRs focused — one logical change per PR.
 3. Quality gate must pass locally and in CI: `pnpm --dir internal/ui/frontend check`, `pnpm --dir internal/ui/frontend test:e2e`, `gofmt -l .` (no output), `go vet ./...`, `go test ./...`, `go build ./...`.
 4. Update `CHANGELOG.md` under **Unreleased** for user-visible changes.
+5. Use `Closes #N` to link and close the issue, or explain in the PR why no issue is associated.
 
 ## Reporting issues
 
-Use the issue templates. For bugs, include the repository (or a minimal reproduction), the command you ran, and the output. For feature requests, describe the problem before the solution.
+Use the issue templates. For bugs, include the repository (or a minimal reproduction), the command you ran, and the output. For feature requests, describe the problem before the solution. Use the `spec-needed` template for large requests and the `design-gap` template for mismatches against a confirmed UI baseline.
 
 ## License
 

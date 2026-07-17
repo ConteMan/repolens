@@ -16,7 +16,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [008](008-agent-surface.md) | Agent 视图 | internal/site | M4 | 已实现 |
 | [009](009-release-distribution.md) | 发布流水线与分发 | .github, cli | M7 | 已实现 |
 | [010](010-hybrid-tree.md) | 文件树混合形态 | internal/theme | M5 | 已实现 |
-| [011](011-toolbar-and-pjax.md) | 顶部工具栏与 pjax | internal/theme, site | M5 | 已确认 |
+| [011](011-toolbar-and-pjax.md) | 顶部工具栏与 pjax | internal/theme, site | M5 | 已实现 |
 | [012](012-site-search.md) | 站内搜索 | internal/site, theme | M5 | 已实现 |
 | [013](013-config-ui.md) | 图形化管理界面 | internal/ui | M6 | 已实现 |
 
@@ -40,5 +40,9 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 3. spec 与 design/ADR 冲突、或发现 spec 遗漏关键行为时：**停下来在 PR / Issue 中报告**，不自行拍板；
 4. 完成定义 = spec 全部验收项通过 ＋ 质量门禁绿 ＋ spec 状态改为"已实现"（同一 PR）；
 5. 一份 spec 一个 PR，commit 遵循 Conventional Commits。
+6. UI 探索、设计基线和实现分阶段验收；探索稿不直接产生 `design-gap`。
+7. UI 假设必须关联已实现的接口合同，或明确引用 `docs/design/ui/contract-gaps.md` 中的缺口。
+8. Pencil 设计验收必须包含：可关闭重开的 `.pen`、节点 ID、固定 fixture、桌面/窄屏证据、布局检查和逐张导出检查。
+9. 只有评审冻结的设计基线才能约束实现；实现 PR 必须引用对应 `.pen` 节点与状态。
 
 新增功能仍复制 [template.md](template.md)，编号递增。
