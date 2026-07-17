@@ -97,6 +97,43 @@ table {
   font-size: 0.94rem;
 }
 
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.table-scroll > table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.table-scroll th,
+.table-scroll td {
+  min-width: 8rem;
+  max-width: 36rem;
+  overflow-wrap: anywhere;
+}
+
+.table-scroll td code {
+  overflow-wrap: anywhere;
+}
+
+.table-scroll td pre {
+  width: max-content;
+  min-width: 100%;
+  max-width: min(36rem, calc(100vw - 4rem));
+  margin: 0;
+  white-space: pre;
+}
+
 th,
 td {
   padding: 0.55rem 0.7rem;
@@ -474,6 +511,7 @@ body[data-overlay="open"] .overlay {
 
 .content {
   width: 100%;
+  min-width: 0;
   max-width: var(--content-width);
   padding: 2rem 2.25rem 4rem;
   font-size: calc(1em * var(--zoom, 1));
@@ -976,5 +1014,10 @@ body[data-info="open"] .info-panel {
   table {
     display: block;
     overflow-x: auto;
+  }
+
+  .table-scroll > table {
+    display: table;
+    overflow: visible;
   }
 }

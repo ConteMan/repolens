@@ -238,6 +238,51 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	}
 }
 
+func TestMarkdownTableAssetsExposeOverflowContract(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	outDir := t.TempDir()
+	if err := renderer.WriteAssets(outDir); err != nil {
+		t.Fatalf("WriteAssets() error = %v", err)
+	}
+
+	css := readTestOutput(t, outDir, "_assets/site.css")
+	for _, want := range []string{
+		`.table-scroll {`,
+		`max-width: 100%;`,
+		`overflow-x: auto;`,
+		`overscroll-behavior-inline: contain;`,
+		`.table-scroll:focus-visible {`,
+		`outline: 2px solid var(--accent);`,
+		`.table-scroll > table {`,
+		`width: max-content;`,
+		`min-width: 100%;`,
+		`.table-scroll th,`,
+		`max-width: 36rem;`,
+		`overflow-wrap: anywhere;`,
+		`.table-scroll td code {`,
+		`.table-scroll td pre {`,
+		`max-width: min(36rem, calc(100vw - 4rem));`,
+		`white-space: pre;`,
+		`.content {`,
+		`min-width: 0;`,
+		`.table-scroll > table {`,
+		`display: table;`,
+		`overflow: visible;`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Fatalf("site.css missing %q\n%s", want, css)
+		}
+	}
+	if !strings.Contains(css, "table {\n    display: block;\n    overflow-x: auto;\n  }") {
+		t.Fatalf("site.css missing narrow-screen fallback for unwrapped tables\n%s", css)
+	}
+}
+
 func TestToolbarPageDataAndLanguage(t *testing.T) {
 	t.Parallel()
 

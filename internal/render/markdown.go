@@ -11,6 +11,7 @@ import (
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
 	goldhtml "github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
@@ -158,7 +159,14 @@ func newGoldmark(withAnchors, withMermaid bool) goldmark.Markdown {
 			parser.WithAutoHeadingID(),
 			parser.WithASTTransformers(util.Prioritized(linkTransformer{}, 500)),
 		),
-		goldmark.WithRendererOptions(goldhtml.WithUnsafe()),
+		goldmark.WithRendererOptions(
+			goldhtml.WithUnsafe(),
+			renderer.WithNodeRenderers(
+				// GFM's table renderer uses priority 500. A lower priority is
+				// registered later and only overrides KindTable.
+				util.Prioritized(markdownTableRenderer{}, 400),
+			),
+		),
 	)
 }
 
