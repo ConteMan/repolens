@@ -14,7 +14,7 @@
    - `page` —— 文件页正文（Markdown / Code / HTML iframe / Image / Binary 五种形态的分支在此）；
    - `dirlist` —— 目录页（README 正文来自 `PageData.Body`，子项表格来自 `PageData.DirEntries`）；
    - `tree` —— 文件树侧栏（递归 partial：目录可折叠、类型图标、当前项高亮、祖先默认展开、其余按 `tree_expand_depth`）。
-2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。
+2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
    - 文件树折叠状态持久化（sessionStorage，key 为目录路径）；
    - 树滚动位置保持；
@@ -78,7 +78,7 @@ func (r *Renderer) WriteAssets(outDir string) error
 
 ## 验收
 
-- 模板渲染单测：五种 Kind ＋ 目录页的 golden HTML；vars 覆盖生效；模板覆盖生效；
+- 模板渲染单测：五种 Kind ＋ 目录页的 golden HTML；vars 覆盖生效；模板覆盖生效；主题 CSS 合同覆盖 GFM 表格的容器滚动、长内容断行、代码块边界与键盘焦点；
 - 产物中无任何外部 origin 引用（配合 spec 005 自检）；
 - 禁 JS 环境下手工验证树可导航、内容可读；
 - 视觉验收：对本仓库构建，维护者认可默认主题观感（docu.md 级整洁度）；

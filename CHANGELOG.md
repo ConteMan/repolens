@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `repolens ui` 已删除原生单文件前端，迁移到 React、TypeScript、Vite 与 Base UI；生产资源继续由 Go embed 进入单二进制，最终用户无需安装 Node。
 
+### Fixed
+
+- GFM 表格包含长 JSON、URL、token 或代码内容时不再撑坏页面与其他列布局，并支持在可聚焦区域内横向滚动。
+
 ### Security
 
 - 本地 UI 的 CSP 不再允许内联脚本或内联样式，仅加载单二进制内嵌的同源哈希资源。
