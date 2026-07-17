@@ -12,6 +12,6 @@ Pencil 阻塞复盘（2026-07-11）：旧环境曾把问题归因于 Orca runtim
 
 评审资产排除：`kJ6aB.png`、`XKVIY.png`、`JD91b.png` 与 `zbGBK.png` 经逐张检查为空白或纯黑，不代表有效画板，均已删除。`bi8Au.png`、`Hday5.png`、`NuC1D.png` 与 `L2W5X.png` 可作为历史线框证据，但不能用于实施验收：`Hday5` 缺少真实控件和值，`NuC1D` 把 diff 与构建合并成一步，`L2W5X` 的菜单和规则子页尚无实现对应。
 
-下一步不继续润色这些 PNG。先按 `exploration-brief.md` 使用同一 fixture 完成结构 A/B，再依 `screen-inventory.md` 建立 Foundations、Core Components、Project Open 三个 P0 画板。字段错误、open warnings/effective defaults/source、日志尾部和最近成功恢复范围先按 `contract-gaps.md` 收口，原型不得提前发明合同。
+后续结构 A/B 已按 `exploration-brief.md` 使用同一 fixture 完成，结果见 [2026-07-17 结构 A/B 评审](2026-07-17-structure-ab.md)：A 86/100、B 89/100，选择持续上下文工作台为骨架。下一步不再润色本目录的历史 PNG；先按 `contract-gaps.md` 收口字段错误、open warnings/effective defaults/source、日志尾部和最近成功恢复范围，再由 Issue #29 依据 `screen-inventory.md` 建立 Foundations、Core Components 和选定方向页面。
 
 审计证据：React + TypeScript + Base UI 迁移已由 PR #26 合并；当前实现与设计差距以 `internal/ui/frontend`、`internal/ui`、Playwright 测试及 `contract-gaps.md` 为准。本评审只校准设计证据，不修改产品代码。
