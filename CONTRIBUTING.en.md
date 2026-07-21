@@ -37,6 +37,8 @@ Use these labels to route work:
 
 Do not implement `spec-needed` work until a maintainer confirms the direction and the document contract is updated. Attach staged delivery to the relevant milestone. A UI `design-gap` must include the `.pen` path, node ID, screen/state/viewport, and screenshot. An exploratory Pencil file that cannot be closed and reopened or lacks node mapping is not a design source of truth.
 
+Write issue titles, bodies, and discussion comments in Chinese. Keep code snippets, identifiers, file paths, and necessary technical terms in their original form.
+
 ## Commit messages — Conventional Commits
 
 We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
@@ -49,7 +51,7 @@ We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 [optional footer]
 ```
 
-Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, `perf`. Scopes are the package or area touched, e.g. `feat(render): add mermaid support`, `docs(adr): supersede ADR-002`. Use `!` or a `BREAKING CHANGE:` footer for breaking changes. Write messages in English, imperative mood, no trailing period in the subject.
+Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, `perf`. Scopes are the package or area touched, e.g. `feat(render): 增加 Mermaid 支持`, `docs(adr): 声明 ADR-002 已被取代`. Keep types, scopes, and fixed footer markers such as `BREAKING CHANGE:` in English. Write the commit description, body, and footer explanation in Chinese, with no trailing period in the subject.
 
 ## Pull requests
 
@@ -58,6 +60,8 @@ Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`
 3. Quality gate must pass locally and in CI: `pnpm --dir internal/ui/frontend check`, `pnpm --dir internal/ui/frontend test:e2e`, `gofmt -l .` (no output), `go vet ./...`, `go test ./...`, `go build ./...`.
 4. Update `CHANGELOG.md` under **Unreleased** for user-visible changes.
 5. Use `Closes #N` to link and close the issue, or explain in the PR why no issue is associated.
+
+Write pull request titles, bodies, and review discussions in Chinese. Keep code snippets, identifiers, file paths, and necessary technical terms in their original form.
 
 ## Reporting issues
 

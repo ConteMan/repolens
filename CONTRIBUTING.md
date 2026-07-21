@@ -37,6 +37,8 @@ Issue 使用以下标签分流：
 
 `spec-needed` 在维护者确认方向、文档合同更新前不得进入实现。阶段性交付挂到对应 Milestone。UI 的 `design-gap` 必须提供 `.pen` 路径、节点 ID、页面/状态/视口和截图；仍在探索、无法关闭重开或没有节点映射的 Pencil 文件不是设计事实源。
 
+Issue 标题、正文和讨论评论使用中文；代码片段、标识符、文件路径和必要的技术术语保留原文。
+
 ## Commit 规范 — Conventional Commits
 
 遵循 [Conventional Commits 1.0.0](https://www.conventionalcommits.org/)：
@@ -49,7 +51,7 @@ Issue 使用以下标签分流：
 [optional footer]
 ```
 
-允许的 type：`feat`、`fix`、`docs`、`refactor`、`test`、`build`、`ci`、`chore`、`perf`。scope 为所涉包或领域，例如 `feat(render): add mermaid support`、`docs(adr): supersede ADR-002`。破坏性变更使用 `!` 或 `BREAKING CHANGE:` footer。Commit message 使用英文、祈使语气、标题不加句号。
+允许的 type：`feat`、`fix`、`docs`、`refactor`、`test`、`build`、`ci`、`chore`、`perf`。scope 为所涉包或领域，例如 `feat(render): 增加 Mermaid 支持`、`docs(adr): 声明 ADR-002 已被取代`。破坏性变更使用 `!` 或 `BREAKING CHANGE:` footer。type、scope 和固定 footer 标记保持英文；Commit 的描述、正文和 footer 说明使用中文，标题不加句号。
 
 ## Pull Request
 
@@ -58,6 +60,8 @@ Issue 使用以下标签分流：
 3. 质量门禁本地与 CI 都必须通过：`pnpm --dir internal/ui/frontend check`、`pnpm --dir internal/ui/frontend test:e2e`、`gofmt -l .`（无输出）、`go vet ./...`、`go test ./...`、`go build ./...`。
 4. 用户可见的变更在 `CHANGELOG.md` 的 **Unreleased** 下登记。
 5. 使用 `Closes #N` 关联并关闭 Issue；没有关联 Issue 时在 PR 中说明原因。
+
+PR 标题、正文和评审讨论使用中文；代码片段、标识符、文件路径和必要的技术术语保留原文。
 
 ## 报告问题
 

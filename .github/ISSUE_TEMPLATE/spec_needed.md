@@ -1,29 +1,29 @@
 ---
-name: Spec needed
-about: Propose work that requires a new or revised product contract
+name: 需要 Spec
+about: 建议一项需要新增或修订产品合同的工作
 labels: spec-needed
 ---
 
-## Problem and affected users
+## 问题与受影响用户
 
-<!-- Describe the problem before proposing an implementation. -->
+<!-- 先描述问题，再提出实现方案。 -->
 
-## Why current Specs cannot absorb it
+## 现有 Specs 为何无法直接吸收
 
-<!-- Identify the missing or conflicting contract. -->
+<!-- 指出缺失或冲突的合同。 -->
 
-## Proposed scope
+## 建议范围
 
-<!-- Describe the smallest useful behavior. -->
+<!-- 描述最小可用行为。 -->
 
-## Out of scope
+## 范围外
 
-<!-- State what this proposal deliberately excludes. -->
+<!-- 明确本建议有意排除的内容。 -->
 
-## Related decisions
+## 相关决策
 
-<!-- Link the roadmap, design docs, ADRs, Specs, issues, or confirmed Pencil baseline. -->
+<!-- 链接 Roadmap、设计文档、ADR、Specs、Issues 或已确认的 Pencil 基线。 -->
 
-## Maintainer decision required
+## 需要维护者确认
 
-<!-- State the product or architecture decision needed before a Spec is written. -->
+<!-- 说明编写 Spec 前必须确认的产品或架构决策。 -->
