@@ -1,19 +1,19 @@
 ---
-name: Bug report
-about: Something doesn't work as documented
+name: Bug 报告
+about: 报告与文档、Spec 或已确认合同不一致的行为
 labels: bug
 ---
 
-## Environment
+## 环境
 
-- repolens version (`repolens version`):
-- OS / arch:
-- git version:
+- repolens 版本（`repolens version`）：
+- 操作系统 / 架构：
+- git 版本：
 
-## Repository & command
+## 仓库与命令
 
-<!-- The repo (or a minimal reproduction) and the exact command you ran. -->
+<!-- 提供仓库（或最小复现）和实际执行的完整命令。 -->
 
-## Expected vs actual
+## 预期与实际结果
 
-<!-- What you expected, what happened instead. Include output. -->
+<!-- 说明预期结果、实际发生的行为，并附上相关输出。 -->

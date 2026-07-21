@@ -5,7 +5,8 @@ repolens 是一个 Go 编写的单二进制 CLI 工具：把任意 Git 仓库原
 ## 语言约定
 
 - 与维护者的对话、思考过程、任务清单：**中文**。
-- 代码、注释、commit message、Issue / PR 正文与模板：**英文**。
+- 代码与注释：**英文**。
+- commit message，以及 GitHub Issue / PR 的标题、正文、讨论评论与模板：**中文**。Conventional Commits 的 type / scope、代码片段、标识符、文件路径和必要的技术术语保留原文。
 - **主文档双语，中文为默认**：README.md / CONTRIBUTING.md 为中文，README.en.md / CONTRIBUTING.en.md 为英文镜像，两份必须在同一 PR 内联动更新，顶部保留语言切换链接。
 - `docs/` 下的设计文档、ADR、spec：**中文**。
 
@@ -21,7 +22,7 @@ GitHub Issues 是任务与进度跟踪面；仓库文档是长期有效的设计
 处理 Issue 时：
 
 1. 先搜索现有 Issue；重复问题回到原 Issue 补充证据；
-2. Issue 说明问题、期望、影响和可复现证据，阶段性交付挂到对应 Milestone；
+2. Issue 标题、正文和讨论评论使用中文；正文说明问题、期望、影响和可复现证据，阶段性交付挂到对应 Milestone；
 3. `spec-needed` 先由维护者确认方向，再更新文档合同，最后进入实现；
 4. UI 差距必须引用 `.pen` 路径、节点 ID、页面/状态/视口和截图；只有可关闭重开且通过验收的 `.pen` 才能成为设计基线；
 5. PR 使用 `Closes #N` 闭环 Issue；没有关联 Issue 时在 PR 中说明原因。

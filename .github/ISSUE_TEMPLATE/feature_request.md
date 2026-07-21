@@ -1,17 +1,17 @@
 ---
-name: Feature request
-about: Propose a capability
+name: 功能建议
+about: 建议一项新能力或现有能力改进
 labels: enhancement
 ---
 
-## Problem
+## 问题
 
-<!-- Describe the problem before the solution. Who benefits? -->
+<!-- 先描述问题再讨论方案；说明受影响或受益用户。 -->
 
-## Proposal
+## 建议方案
 
-<!-- Sketch of the desired behavior. -->
+<!-- 概述期望行为。 -->
 
-## Scope check
+## 范围核对
 
-<!-- Is this within v1 scope per docs/roadmap.md? Features listed as "Out" need a roadmap discussion first. -->
+<!-- 根据 docs/roadmap.md，该能力是否属于 v1 范围？标记为 Out 的能力需先讨论并修订 Roadmap。 -->

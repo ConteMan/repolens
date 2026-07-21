@@ -1,29 +1,29 @@
 ---
-name: Design gap
-about: Report a mismatch against a confirmed Pencil design baseline
+name: 设计差距
+about: 报告实现与已确认 Pencil 设计基线之间的不一致
 labels: design-gap
 ---
 
-## Confirmed design baseline
+## 已确认的设计基线
 
-- `.pen` path:
-- Node ID:
-- Screen / state / viewport:
-- Baseline review or PR:
+- `.pen` 路径：
+- 节点 ID：
+- 页面 / 状态 / 视口：
+- 基线评审或 PR：
 
-## Actual implementation
+## 实际实现
 
-<!-- Describe the current behavior and where it appears. -->
+<!-- 说明当前行为及其出现位置。 -->
 
-## Expected design
+## 预期设计
 
-<!-- Describe the confirmed behavior represented by the referenced node. -->
+<!-- 说明引用节点所代表的已确认行为。 -->
 
-## Gap type
+## 差距类型
 
-- [ ] Implementation is missing or incorrect
-- [ ] The confirmed design needs an explicit update
+- [ ] 实现缺失或不正确
+- [ ] 已确认设计需要明确更新
 
-## Evidence
+## 证据
 
-<!-- Include screenshots, reproduction steps, and relevant code paths. -->
+<!-- 提供截图、复现步骤和相关代码路径。 -->
