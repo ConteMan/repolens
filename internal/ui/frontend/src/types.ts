@@ -45,6 +45,19 @@ export interface ConfigResponse {
   revision: string;
 }
 
+export interface ProjectOpenResponse extends ConfigResponse {
+  effective: RepositorySettings;
+  sources: Record<string, "repository" | "default">;
+  warnings: string[];
+}
+
+export interface ValidationIssue {
+  path: string;
+  code: string;
+  message: string;
+  severity: "error" | "warning";
+}
+
 export interface PrepareResponse extends ConfigResponse {
   before: string;
   after: string;

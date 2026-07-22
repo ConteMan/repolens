@@ -32,6 +32,14 @@ test("opens a repository and prepares a configuration diff", async ({ page }) =>
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("After migration");
     await expect(dialog).toContainText("写入会规范化 YAML");
+
+    await page.getByRole("button", { name: "返回编辑" }).click();
+    await page.getByRole("button", { name: "新增规则" }).click();
+    await page.getByRole("button", { name: "校验配置" }).click();
+    await expect(page.getByText("请修复以下字段后重试：", { exact: true })).toBeVisible();
+    const ruleMatch = page.getByPlaceholder("docs/**");
+    await expect(ruleMatch).toBeFocused();
+    await expect(ruleMatch).toHaveAttribute("aria-invalid", "true");
   } finally {
     rmSync(repository, { recursive: true, force: true });
   }

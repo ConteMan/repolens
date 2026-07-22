@@ -1,4 +1,4 @@
-import type { BuildResponse, ConfigResponse, PrepareResponse, RepositorySettings } from "./types";
+import type { BuildResponse, ConfigResponse, PrepareResponse, ProjectOpenResponse, RepositorySettings, ValidationIssue } from "./types";
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="repolens-csrf-token"]')?.content ?? "";
 
@@ -7,15 +7,25 @@ export class APIError extends Error {
     message: string,
     readonly code: string,
     readonly status: number,
+    readonly field?: string,
+    readonly issues: ValidationIssue[] = [],
+    readonly warnings: ValidationIssue[] = [],
   ) {
     super(message);
   }
 }
 
 async function parse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string } & T;
+  const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string; field?: string; issues?: ValidationIssue[]; warnings?: ValidationIssue[] } & T;
   if (!response.ok) {
-    throw new APIError(payload.message || `请求失败（HTTP ${response.status}）`, payload.code || "request_failed", response.status);
+    throw new APIError(
+      payload.message || `请求失败（HTTP ${response.status}）`,
+      payload.code || "request_failed",
+      response.status,
+      payload.field,
+      payload.issues ?? [],
+      payload.warnings ?? [],
+    );
   }
   return payload;
 }
@@ -31,7 +41,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const api = {
-  open: (path: string) => post<ConfigResponse>("/api/project/open", { path }),
+  open: (path: string) => post<ProjectOpenResponse>("/api/project/open", { path }),
   validate: (path: string, settings: RepositorySettings, revision: string) =>
     post<ConfigResponse>("/api/config/validate", { path, settings, revision }),
   prepare: (path: string, settings: RepositorySettings, revision: string) =>

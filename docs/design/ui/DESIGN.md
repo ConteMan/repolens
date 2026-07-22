@@ -1,6 +1,6 @@
 # M6 图形化配置界面设计基线
 
-> 状态：结构方向已选定（2026-07-17）。React + TypeScript + Base UI 是实现基线；后续以持续上下文工作台为骨架，进入合同收口、设计系统和可用性验证。配置语义以 `docs/design/config.md` 为准，跨层缺口见 [contract-gaps.md](contract-gaps.md)。
+> 状态：结构方向已选定（2026-07-17），CG-01～CG-02 合同已收口（2026-07-22）。React + TypeScript + Base UI 是实现基线；后续以持续上下文工作台为骨架，进入设计系统和可用性验证。配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
 
 当前交付由 GitHub Milestone [M6 UI design exploration](https://github.com/ConteMan/repolens/milestone/1) 跟踪：[#27](https://github.com/ConteMan/repolens/issues/27) 负责 Pencil 结构探索，[#28](https://github.com/ConteMan/repolens/issues/28) 负责合同收口，[#29](https://github.com/ConteMan/repolens/issues/29) 负责设计系统与完整页面，[#30](https://github.com/ConteMan/repolens/issues/30) 负责 React 实现与设计回归。
 
@@ -33,4 +33,4 @@
 
 当前磁盘上的 `prototypes/repolens-ui.pen` 只包含一个 800×600 空白 frame，不能作为可编辑视觉事实源，也不能证明评审 PNG 来自已持久化源文件。`Hday5`、`NuC1D`、`L2W5X` 和 `bi8Au` 仅作为历史线框证据：它们缺少完整控件状态，且部分流程与当前实现不一致。
 
-下一轮在 Issue #28 收口合同缺口后，由 Issue #29 创建干净的最终 `.pen`，建设 Foundations、完整组件状态和选定方向页面，并补 1024px、连续断点和用户任务验证。交付仍需满足：源文件含非空顶层画板、reusable component/ref 可检查、布局检查通过、PNG 与节点映射一致。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
+合同收口完成后，由 Issue #29 创建干净的最终 `.pen`，建设 Foundations、完整组件状态和选定方向页面，并补 1024px、连续断点和用户任务验证。交付仍需满足：源文件含非空顶层画板、reusable component/ref 可检查、布局检查通过、PNG 与节点映射一致。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。

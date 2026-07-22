@@ -8,10 +8,10 @@
 |---|---|---|---|---|
 | P0 | `00 Foundations` | 理解界面的语义层级和反馈 | default、info、success、warning、blocking、focus、disabled | 无；需先统一本文件与 `internal/ui/frontend/src/styles.css` 的颜色、圆角和内容宽度 |
 | P0 | `01 Core Components` | 使用一致、可键盘操作的基础控件 | Button / Input / Select / TriState / Textarea / Badge / Alert / Dialog / Skeleton 的 normal、hover、focus、disabled、error | Base UI 组件边界见 `docs/decisions/ADR-006-react-base-ui-admin.md`；现有共享组件见 `internal/ui/frontend/src/components.tsx` |
-| P0 | `02 Project Open` | 输入本地 Git 工作树绝对路径并读取配置 | 初始、读取中、空路径、相对路径、非目录或不可读、配置不存在、YAML 解析失败 | CG-01、CG-02、CG-07；当前 `POST /api/project/open` 只返回 `settings` 与 `revision` |
+| P0 | `02 Project Open` | 输入本地 Git 工作树绝对路径并读取配置 | 初始、读取中、空路径、相对路径、非目录或不可读、配置不存在、YAML 解析失败 | CG-01、CG-02、CG-07；`POST /api/project/open` 返回同一快照的 `settings`、`effective`、`sources`、`warnings` 与 `revision` |
 | P0 | `03 Config Edit` | 编辑仓库域字段及保序规则 | 默认、空配置、dirty、saved、仓库 warning、字段错误、规则新增/删除/排序 | CG-01、CG-02；字段范围以 `config.RepositorySettings` 和 `docs/design/config.md` 为准 |
 | P0 | `04 Diff and Write` | 理解写入影响并明确确认 | 正常 diff、无变更、取消、revision 冲突、写入失败、写入成功、未知或非受控字段影响 | CG-03；当前接口为 `prepare-write` 与 `commit`，冲突返回 `revision_conflict` |
-| P0 | `05 Build` | 查看构建进度与可用结果 | opening、loading_config、loading_theme、building、成功含 warning、失败、并发构建、失败但已有成功产物 | CG-04、CG-05；日志尾部与跨页面恢复最近成功结果尚无完整合同 |
+| P0 | `05 Build` | 查看构建进度与可用结果 | opening、loading_config、loading_theme、building、成功含 warning、失败、并发构建、失败但已有成功产物 | CG-04、CG-05；通用日志尾部与跨页面恢复最近成功结果已明确延期，不得在本期画板暗示可用 |
 | P1 | `06 Narrow / Project and Config` | 在 390px 视口完成项目打开与配置编辑 | 与桌面相同的加载/错误/dirty 状态；分区导航；规则独立子页 | 不能只依赖 CSS 单列堆叠；需先确定导航与子页状态模型 |
 | P1 | `07 Narrow / Diff and Build` | 在 390px 视口确认 diff 并查看构建结果 | 横向可滚动 diff、冲突恢复、纵向 Stats、warning/错误、sticky action 不遮挡内容 | CG-03、CG-04、CG-05 |
 
@@ -22,10 +22,10 @@
 ## Desktop 验收
 
 - 视口宽度 1440px；长仓库路径、长标题、三条规则、主题变量和 warning 均不裁切主操作。
-- Project Open 的路径错误与 Config Edit 的字段错误应靠近对应控件，并保留页面级摘要；在 CG-02 完成 API 映射前，画板须标注其合同依赖，不能宣称已实现。
+- Project Open 的路径错误与 Config Edit 的字段错误应靠近对应控件，并保留页面级摘要；CG-02 已提供结构化问题、字段映射和焦点恢复，画板应直接消费该合同。
 - 每个页面只有一个明确的主任务；校验、预览写入、确认写入和开始构建的可用条件与 `internal/ui/frontend/src/App.tsx` 的 dirty/busy 状态一致。
 - diff 显示目标 `.repolens.yml`、规范化影响和完整文本；无变更不出现确认写入动作；revision 冲突提供明确的重新读取路径。
-- Build 逐一覆盖 `internal/ui/build.go` 已存在的阶段、Stats、Warnings、错误和输出路径；日志尾部在 CG-04 补齐前标为未实现。
+- Build 逐一覆盖 `internal/ui/build.go` 已存在的阶段、Stats、Warnings、错误和输出路径；通用日志尾部已明确延期，不得在本期画板中出现。
 - 所有 normal、focus、disabled、error 状态可从 `.pen` 中直接定位；业务组件使用 reusable component/ref，不以导出 PNG 反推组件结构。
 
 ## Narrow 验收

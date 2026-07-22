@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -163,9 +164,9 @@ func TestConfigAPIsRejectInvalidPath(t *testing.T) {
 	}
 }
 
-func TestOpenProjectReturnsDocumentSettingsAndRevision(t *testing.T) {
+func TestOpenProjectReturnsDocumentSettingsEffectiveValuesSourcesAndWarnings(t *testing.T) {
 	repoRoot := t.TempDir()
-	if err := os.WriteFile(filepath.Join(repoRoot, ".repolens.yml"), []byte("site:\n  title: Project Lens\nview:\n  search: false\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(repoRoot, ".repolens.yml"), []byte("source:\n  repo: ignored\nsite:\n  title: Project Lens\nview:\n  search: false\nrules:\n  - match: docs/**\n    markdown:\n      math: true\n"), 0o644); err != nil {
 		t.Fatalf("write repository config: %v", err)
 	}
 
@@ -194,6 +195,74 @@ func TestOpenProjectReturnsDocumentSettingsAndRevision(t *testing.T) {
 	if response.Settings.View.Search == nil || *response.Settings.View.Search {
 		t.Fatalf("response view settings = %#v", response.Settings.View)
 	}
+	if response.Effective.Site.Language == nil || *response.Effective.Site.Language != "zh-CN" {
+		t.Fatalf("effective site settings = %#v", response.Effective.Site)
+	}
+	if response.Effective.View.Search == nil || *response.Effective.View.Search {
+		t.Fatalf("effective view settings = %#v", response.Effective.View)
+	}
+	if response.Effective.Rules == nil || len(*response.Effective.Rules) != 1 {
+		t.Fatalf("effective rules = %#v", response.Effective.Rules)
+	}
+	effectiveRule := (*response.Effective.Rules)[0]
+	if effectiveRule.Markdown.Math == nil || !*effectiveRule.Markdown.Math || effectiveRule.Markdown.TOC != nil {
+		t.Fatalf("effective rule lost repository presence: %#v", effectiveRule)
+	}
+	if response.Sources["site.title"] != "repository" || response.Sources["site.language"] != "default" || response.Sources["view.search"] != "repository" {
+		t.Fatalf("response sources = %#v", response.Sources)
+	}
+	if response.Sources["rules[0].markdown.math"] != "repository" || response.Sources["rules[0].markdown.toc"] != "default" {
+		t.Fatalf("rule sources = %#v", response.Sources)
+	}
+	if len(response.Warnings) == 0 || !strings.Contains(response.Warnings[0], "source") {
+		t.Fatalf("response warnings = %#v", response.Warnings)
+	}
+}
+
+func TestLoadProjectSnapshotRetriesChangesAndRejectsUnstableConfiguration(t *testing.T) {
+	t.Run("retries once and returns one stable snapshot", func(t *testing.T) {
+		revisions := []string{"before", "changed", "changed", "changed"}
+		documentCalls := 0
+		effectiveCalls := 0
+		document, _, warnings, err := loadProjectSnapshotWith(
+			"/repository",
+			func(string) (*config.RepositoryDocument, error) {
+				revision := revisions[documentCalls]
+				documentCalls++
+				return &config.RepositoryDocument{Revision: revision}, nil
+			},
+			func(string, string, config.Flags) (*config.Config, []config.Warning, error) {
+				effectiveCalls++
+				return &config.Config{}, []config.Warning{{Msg: "warning"}}, nil
+			},
+		)
+		if err != nil {
+			t.Fatalf("loadProjectSnapshotWith() error = %v", err)
+		}
+		if document.Revision != "changed" || documentCalls != 4 || effectiveCalls != 2 || len(warnings) != 1 {
+			t.Fatalf("snapshot = revision %q, document calls %d, effective calls %d, warnings %#v", document.Revision, documentCalls, effectiveCalls, warnings)
+		}
+	})
+
+	t.Run("rejects configuration that changes on every attempt", func(t *testing.T) {
+		documentCalls := 0
+		_, _, _, err := loadProjectSnapshotWith(
+			"/repository",
+			func(string) (*config.RepositoryDocument, error) {
+				documentCalls++
+				return &config.RepositoryDocument{Revision: fmt.Sprintf("revision-%d", documentCalls)}, nil
+			},
+			func(string, string, config.Flags) (*config.Config, []config.Warning, error) {
+				return &config.Config{}, nil, nil
+			},
+		)
+		if err == nil || !strings.Contains(err.Error(), "changed while loading") {
+			t.Fatalf("loadProjectSnapshotWith() error = %v, want unstable configuration error", err)
+		}
+		if documentCalls != 6 {
+			t.Fatalf("document calls = %d, want 6", documentCalls)
+		}
+	})
 }
 
 func TestOpenProjectRejectsInvalidPathAndToken(t *testing.T) {
@@ -459,8 +528,24 @@ rules:
 		(*openResponse.Settings.Rules)[0].Match == nil || *(*openResponse.Settings.Rules)[0].Match != "old/**" {
 		t.Fatalf("open rules = %#v", openResponse.Settings.Rules)
 	}
-	if strings.Contains(openBody, "source") || strings.Contains(openBody, "output") || strings.Contains(openBody, "access") {
-		t.Fatalf("open response exposed trusted settings: %s", openBody)
+	if openResponse.Effective.Rules == nil || len(*openResponse.Effective.Rules) != 1 ||
+		(*openResponse.Effective.Rules)[0].Match == nil || *(*openResponse.Effective.Rules)[0].Match != "old/**" ||
+		(*openResponse.Effective.Rules)[0].Render == nil || *(*openResponse.Effective.Rules)[0].Render {
+		t.Fatalf("effective open rules = %#v", openResponse.Effective.Rules)
+	}
+	var topLevel map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(openBody), &topLevel); err != nil {
+		t.Fatalf("decode open response keys: %v", err)
+	}
+	for _, key := range []string{"source", "output", "access"} {
+		if _, ok := topLevel[key]; ok {
+			t.Fatalf("open response exposed trusted top-level setting %q: %s", key, openBody)
+		}
+	}
+	for _, secret := range []string{"trusted/source.git", "trusted-dist", "private/**"} {
+		if strings.Contains(openBody, secret) {
+			t.Fatalf("open response exposed trusted setting value %q: %s", secret, openBody)
+		}
 	}
 
 	trustedSettingsRecorder := httptest.NewRecorder()
@@ -622,6 +707,126 @@ func TestConfigValidateRejectsSettingsIncompatibleWithDocument(t *testing.T) {
 		t.Fatalf("error code = %q, want validation_failed", response.Code)
 	}
 	assertFileContent(t, configPath, original)
+}
+
+func TestConfigEndpointsReturnStructuredValidationIssues(t *testing.T) {
+	repoRoot := t.TempDir()
+	invalidPattern := "["
+	negativeSize := config.RepositoryByteSize(-1)
+	invalidView := "unsupported"
+	request := configRequest{
+		Path: repoRoot,
+		Settings: repositorySettingsFromConfig(config.RepositorySettings{
+			Ignore: &[]string{invalidPattern},
+			Render: config.RepositoryFileOptionsSettings{
+				MaxFileSize: &negativeSize,
+				HTML:        config.RepositoryHTMLOptionsSettings{View: &invalidView},
+			},
+		}),
+	}
+	document, err := config.LoadRepositoryDocument(repoRoot)
+	if err != nil {
+		t.Fatalf("load document: %v", err)
+	}
+	request.Revision = document.Revision
+
+	for _, endpoint := range []string{"/api/config/validate", "/api/config/prepare-write", "/api/config/commit"} {
+		t.Run(endpoint, func(t *testing.T) {
+			endpointRequest := request
+			endpointRequest.Confirm = endpoint == "/api/config/commit"
+			recorder := httptest.NewRecorder()
+			newHandler("correct-token").ServeHTTP(recorder, newJSONRequest(t, http.MethodPost, endpoint, endpointRequest, "correct-token"))
+			if recorder.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusUnprocessableEntity, recorder.Body.String())
+			}
+			var response struct {
+				Code   string            `json:"code"`
+				Field  string            `json:"field"`
+				Issues []validationIssue `json:"issues"`
+			}
+			if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+				t.Fatalf("decode validation response: %v", err)
+			}
+			if response.Code != "validation_failed" || response.Field != "ignore[0]" || len(response.Issues) != 3 {
+				t.Fatalf("validation response = %#v", response)
+			}
+			for _, issue := range response.Issues {
+				if issue.Path == "" || issue.Code == "" || issue.Message == "" || issue.Severity != "error" {
+					t.Fatalf("validation issue = %#v", issue)
+				}
+			}
+		})
+	}
+}
+
+func TestConfigCommitClearsUnsetFieldsBackToDefaults(t *testing.T) {
+	repoRoot := t.TempDir()
+	configPath := filepath.Join(repoRoot, ".repolens.yml")
+	if err := os.WriteFile(configPath, []byte("site:\n  title: Configured title\nrender:\n  markdown:\n    math: true\n"), 0o644); err != nil {
+		t.Fatalf("write repository config: %v", err)
+	}
+
+	openRecorder := httptest.NewRecorder()
+	newHandler("correct-token").ServeHTTP(openRecorder, newJSONRequest(t, http.MethodPost, "/api/project/open", projectOpenRequest{Path: repoRoot}, "correct-token"))
+	if openRecorder.Code != http.StatusOK {
+		t.Fatalf("open status = %d, want %d: %s", openRecorder.Code, http.StatusOK, openRecorder.Body.String())
+	}
+	var openResponse projectOpenResponse
+	if err := json.NewDecoder(openRecorder.Body).Decode(&openResponse); err != nil {
+		t.Fatalf("decode open response: %v", err)
+	}
+	settings := openResponse.Settings.config()
+	settings.Site.Title = nil
+	settings.Render.Markdown.Math = nil
+
+	commitRecorder := httptest.NewRecorder()
+	newHandler("correct-token").ServeHTTP(commitRecorder, newJSONRequest(t, http.MethodPost, "/api/config/commit", configRequest{
+		Path: repoRoot, Revision: openResponse.Revision, Confirm: true, Settings: repositorySettingsFromConfig(settings),
+	}, "correct-token"))
+	if commitRecorder.Code != http.StatusOK {
+		t.Fatalf("commit status = %d, want %d: %s", commitRecorder.Code, http.StatusOK, commitRecorder.Body.String())
+	}
+	written, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read committed config: %v", err)
+	}
+	if strings.Contains(string(written), "title:") || strings.Contains(string(written), "math:") {
+		t.Fatalf("unset fields remained in YAML:\n%s", written)
+	}
+	effective, _, err := config.Load(repoRoot, "", config.Flags{})
+	if err != nil {
+		t.Fatalf("load effective config: %v", err)
+	}
+	if effective.Site.Title != "" || effective.Render.Markdown.Math {
+		t.Fatalf("effective config did not return to defaults: %#v", effective)
+	}
+}
+
+func TestConfigCommitClearsUnsetRuleFieldsAndPreservesUnknownNodes(t *testing.T) {
+	repoRoot := t.TempDir()
+	configPath := filepath.Join(repoRoot, ".repolens.yml")
+	if err := os.WriteFile(configPath, []byte("rules:\n  - match: docs/**\n    markdown:\n      math: true\n    extension: retained\n"), 0o644); err != nil {
+		t.Fatalf("write repository config: %v", err)
+	}
+	document, err := config.LoadRepositoryDocument(repoRoot)
+	if err != nil {
+		t.Fatalf("load document: %v", err)
+	}
+	match := "docs/**"
+	settings := config.RepositorySettings{Rules: &[]config.RepositoryRuleSettings{{Match: &match}}}
+	if err := document.Replace(settings); err != nil {
+		t.Fatalf("Replace() error: %v", err)
+	}
+	if err := document.Write(); err != nil {
+		t.Fatalf("Write() error: %v", err)
+	}
+	written, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read rewritten config: %v", err)
+	}
+	if strings.Contains(string(written), "math:") || !strings.Contains(string(written), "extension: retained") {
+		t.Fatalf("rule replace did not clear controlled field and preserve unknown node:\n%s", written)
+	}
 }
 
 func TestConfigCommitRequiresConfirmationAndRevision(t *testing.T) {

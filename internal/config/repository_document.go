@@ -369,6 +369,86 @@ func (d *RepositoryDocument) Apply(settings RepositorySettings) error {
 	return d.reloadSettings()
 }
 
+// Replace applies a complete UI form submission. Unlike Apply, nil editable
+// leaves explicitly remove their YAML nodes so the effective configuration
+// returns to its default value. Trusted-only sections remain untouched; unknown
+// nodes retain the same best-effort preservation behavior as Apply.
+func (d *RepositoryDocument) Replace(settings RepositorySettings) error {
+	if d == nil || d.root == nil {
+		return errors.New("repository document is not initialized")
+	}
+	if err := validateRepositorySettings(settings); err != nil {
+		return err
+	}
+	if err := d.clearUnsetSettings(settings); err != nil {
+		return err
+	}
+	if settings.Rules != nil {
+		if err := replaceRules(d.root, settings.Rules); err != nil {
+			return err
+		}
+		settings.Rules = nil
+	}
+	return d.Apply(settings)
+}
+
+func (d *RepositoryDocument) clearUnsetSettings(settings RepositorySettings) error {
+	if err := clearUnsetSettingsSection(d.root, "site", []settingValue{
+		{key: "title", value: settings.Site.Title}, {key: "language", value: settings.Site.Language}, {key: "home", value: settings.Site.Home},
+	}); err != nil {
+		return err
+	}
+	if settings.Ignore == nil {
+		removeMappingValue(d.root, "ignore")
+	}
+	if err := clearUnsetFileOptionsSettings(d.root, "render", settings.Render); err != nil {
+		return err
+	}
+	if settings.Rules == nil {
+		removeMappingValue(d.root, "rules")
+	}
+	if err := clearUnsetSettingsSection(d.root, "theme", []settingValue{
+		{key: "vars", value: settings.Theme.Vars}, {key: "css", value: settings.Theme.CSS}, {key: "templates", value: settings.Theme.Templates},
+	}); err != nil {
+		return err
+	}
+	if err := clearUnsetSettingsSection(d.root, "view", []settingValue{
+		{key: "tree_position", value: settings.View.TreePosition}, {key: "tree_expand_depth", value: settings.View.TreeExpandDepth},
+		{key: "toc_panel", value: settings.View.TOCPanel}, {key: "search", value: settings.View.Search},
+	}); err != nil {
+		return err
+	}
+	if err := clearUnsetSettingsSection(d.root, "agent", []settingValue{
+		{key: "llms_txt", value: settings.Agent.LLMSTxt}, {key: "index_json", value: settings.Agent.IndexJSON},
+	}); err != nil {
+		return err
+	}
+	return clearUnsetNestedSettingsSection(d.root, "agent", "llms_full", []settingValue{
+		{key: "enabled", value: settings.Agent.LLMSFull.Enabled}, {key: "max_size", value: settings.Agent.LLMSFull.MaxSize},
+	})
+}
+
+func clearUnsetFileOptionsSettings(root *ast.MappingNode, section string, settings RepositoryFileOptionsSettings) error {
+	if err := clearUnsetSettingsSection(root, section, []settingValue{
+		{key: "render", value: settings.Render}, {key: "max_file_size", value: settings.MaxFileSize},
+	}); err != nil {
+		return err
+	}
+	if err := clearUnsetNestedSettingsSection(root, section, "markdown", []settingValue{
+		{key: "toc", value: settings.Markdown.TOC}, {key: "toc_min_headings", value: settings.Markdown.TOCMinHeadings},
+		{key: "anchors", value: settings.Markdown.Anchors}, {key: "mermaid", value: settings.Markdown.Mermaid},
+		{key: "math", value: settings.Markdown.Math}, {key: "frontmatter_title", value: settings.Markdown.FrontmatterTitle},
+	}); err != nil {
+		return err
+	}
+	if err := clearUnsetNestedSettingsSection(root, section, "html", []settingValue{{key: "view", value: settings.HTML.View}}); err != nil {
+		return err
+	}
+	return clearUnsetNestedSettingsSection(root, section, "code", []settingValue{
+		{key: "line_numbers", value: settings.Code.LineNumbers}, {key: "theme", value: settings.Code.Theme},
+	})
+}
+
 // AddRule appends a rendering rule while preserving the existing rule order.
 func (d *RepositoryDocument) AddRule(rule RepositoryRuleSettings) error {
 	if d == nil || d.root == nil {
@@ -540,6 +620,14 @@ func applyFileOptionsSettings(root *ast.MappingNode, section string, settings Re
 }
 
 func applyRules(root *ast.MappingNode, rules *[]RepositoryRuleSettings) error {
+	return applyRulesWithMode(root, rules, false)
+}
+
+func replaceRules(root *ast.MappingNode, rules *[]RepositoryRuleSettings) error {
+	return applyRulesWithMode(root, rules, true)
+}
+
+func applyRulesWithMode(root *ast.MappingNode, rules *[]RepositoryRuleSettings, replace bool) error {
 	if rules == nil {
 		return nil
 	}
@@ -600,6 +688,11 @@ func applyRules(root *ast.MappingNode, rules *[]RepositoryRuleSettings) error {
 				return err
 			}
 		}
+		if replace {
+			if err := clearUnsetRuleSettings(node, rule); err != nil {
+				return fmt.Errorf("rules[%d]: %w", index, err)
+			}
+		}
 		if err := applyRuleSettings(node, rule); err != nil {
 			return fmt.Errorf("rules[%d]: %w", index, err)
 		}
@@ -641,6 +734,25 @@ func applyRuleSettings(node *ast.MappingNode, rule RepositoryRuleSettings) error
 	return applyNestedValues(node, "code", []settingValue{
 		{key: "line_numbers", value: rule.Code.LineNumbers},
 		{key: "theme", value: rule.Code.Theme},
+	})
+}
+
+func clearUnsetRuleSettings(node *ast.MappingNode, rule RepositoryRuleSettings) error {
+	clearUnsetValues(node, []settingValue{
+		{key: "match", value: rule.Match}, {key: "render", value: rule.Render}, {key: "max_file_size", value: rule.MaxFileSize},
+	})
+	if err := clearUnsetNestedValues(node, "markdown", []settingValue{
+		{key: "toc", value: rule.Markdown.TOC}, {key: "toc_min_headings", value: rule.Markdown.TOCMinHeadings},
+		{key: "anchors", value: rule.Markdown.Anchors}, {key: "mermaid", value: rule.Markdown.Mermaid},
+		{key: "math", value: rule.Markdown.Math}, {key: "frontmatter_title", value: rule.Markdown.FrontmatterTitle},
+	}); err != nil {
+		return err
+	}
+	if err := clearUnsetNestedValues(node, "html", []settingValue{{key: "view", value: rule.HTML.View}}); err != nil {
+		return err
+	}
+	return clearUnsetNestedValues(node, "code", []settingValue{
+		{key: "line_numbers", value: rule.Code.LineNumbers}, {key: "theme", value: rule.Code.Theme},
 	})
 }
 
@@ -725,6 +837,65 @@ func applySettingsSection(root *ast.MappingNode, section string, values []settin
 	return applyValues(sectionNode, values)
 }
 
+func clearUnsetSettingsSection(root *ast.MappingNode, section string, values []settingValue) error {
+	item := findMappingValue(root, section)
+	if item == nil {
+		return nil
+	}
+	node, ok := item.Value.(*ast.MappingNode)
+	if !ok {
+		return fmt.Errorf("%s: must be a YAML mapping", section)
+	}
+	clearUnsetValues(node, values)
+	if len(node.Values) == 0 {
+		removeMappingValue(root, section)
+	}
+	return nil
+}
+
+func clearUnsetNestedSettingsSection(root *ast.MappingNode, section, nested string, values []settingValue) error {
+	sectionItem := findMappingValue(root, section)
+	if sectionItem == nil {
+		return nil
+	}
+	sectionNode, ok := sectionItem.Value.(*ast.MappingNode)
+	if !ok {
+		return fmt.Errorf("%s: must be a YAML mapping", section)
+	}
+	nestedItem := findMappingValue(sectionNode, nested)
+	if nestedItem == nil {
+		return nil
+	}
+	nestedNode, ok := nestedItem.Value.(*ast.MappingNode)
+	if !ok {
+		return fmt.Errorf("%s.%s: must be a YAML mapping", section, nested)
+	}
+	clearUnsetValues(nestedNode, values)
+	if len(nestedNode.Values) == 0 {
+		removeMappingValue(sectionNode, nested)
+	}
+	if len(sectionNode.Values) == 0 {
+		removeMappingValue(root, section)
+	}
+	return nil
+}
+
+func clearUnsetNestedValues(parent *ast.MappingNode, key string, values []settingValue) error {
+	item := findMappingValue(parent, key)
+	if item == nil {
+		return nil
+	}
+	node, ok := item.Value.(*ast.MappingNode)
+	if !ok {
+		return fmt.Errorf("%s: must be a YAML mapping", key)
+	}
+	clearUnsetValues(node, values)
+	if len(node.Values) == 0 {
+		removeMappingValue(parent, key)
+	}
+	return nil
+}
+
 func hasSettingValue(values []settingValue) bool {
 	for _, setting := range values {
 		if !isUnsetSettingValue(setting.value) {
@@ -744,6 +915,14 @@ func applyValues(node *ast.MappingNode, values []settingValue) error {
 		}
 	}
 	return nil
+}
+
+func clearUnsetValues(node *ast.MappingNode, values []settingValue) {
+	for _, setting := range values {
+		if isUnsetSettingValue(setting.value) {
+			removeMappingValue(node, setting.key)
+		}
+	}
 }
 
 func isUnsetSettingValue(value any) bool {
