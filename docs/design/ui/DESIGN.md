@@ -1,6 +1,6 @@
 # M6 图形化配置界面设计基线
 
-> 状态：结构方向、CG-01～CG-02 合同与最终 Pencil 设计基线均已冻结（2026-07-22）。React + TypeScript + Base UI 是实现基线；下一步由 Issue #30 按节点映射实现并做设计回归。配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
+> 状态：结构方向、CG-01～CG-02 合同与最终 Pencil 设计基线均已冻结（2026-07-22）。Issue #30 已按节点映射完成 React + TypeScript + Base UI 实现与自动化回归；配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
 
 当前交付由 GitHub Milestone [M6 UI design exploration](https://github.com/ConteMan/repolens/milestone/1) 跟踪：[#27](https://github.com/ConteMan/repolens/issues/27) 负责 Pencil 结构探索，[#28](https://github.com/ConteMan/repolens/issues/28) 负责合同收口，[#29](https://github.com/ConteMan/repolens/issues/29) 负责设计系统与完整页面，[#30](https://github.com/ConteMan/repolens/issues/30) 负责 React 实现与设计回归。
 
@@ -33,4 +33,4 @@
 
 最终视觉事实源为 `prototypes/repolens-ui.pen`。文件包含与 [screen-inventory.md](screen-inventory.md) 一致的 8 个顶层画板、28 个 reusable component，以及 1440px、1024px 和 390px 的关键页面与状态。源文件已完成保存后关闭重开验证；全量布局检查无裁切或意外溢出。节点、视口、状态和 PNG 映射见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
 
-Issue #29 已完成最终 `.pen`、Foundations、组件状态、选定方向页面与窄屏状态的设计交付。Issue #30 实现时不得从历史线框或 PNG 反推结构；应直接读取最终 `.pen` 的节点、变量和组件映射，并以评审快照做视觉回归。真实用户任务验证仍是实现后的验收活动，不能由启发式设计评审替代。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
+Issue #29 已完成最终 `.pen`、Foundations、组件状态、选定方向页面与窄屏状态的设计交付。Issue #30 已直接按最终 `.pen` 的节点、变量和组件映射完成方向 B 工作区、桌面/窄屏布局、Diff/Write、Build 与恢复状态实现；回归证据见 [2026-07-22 实现回归](reviews/2026-07-22-implementation-regression.md)。真实用户任务验证仍是后续验收活动，不能由启发式设计评审或自动化浏览器回归替代。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
