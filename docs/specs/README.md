@@ -1,6 +1,6 @@
 # 功能规格（Specs）
 
-v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–013（M5–M7，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
+v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–014（M5–M8，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
 
 ## 索引
 
@@ -19,6 +19,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [011](011-toolbar-and-pjax.md) | 顶部工具栏与 pjax | internal/theme, site | M5 | 已实现 |
 | [012](012-site-search.md) | 站内搜索 | internal/site, theme | M5 | 已实现 |
 | [013](013-config-ui.md) | 图形化管理界面 | internal/ui | M6 | 已实现 |
+| [014](014-ui-session-output.md) | UI 会话级构建输出目录 | internal/ui | M8 | 已实现 |
 
 ## 依赖与实现顺序
 

@@ -48,7 +48,7 @@ export function WorkspaceHeader({ path }: { path: string }) {
 }
 
 export function WorkspaceSidebar({ active, onSelect }: { active: string; onSelect: (section: string) => void }) {
-  const items = [["overview", "概览"], ["site", "站点"], ["render", "渲染"], ["rules", "规则"], ["theme", "主题"], ["view", "浏览"], ["agent", "Agent"]] as const;
+  const items = [["overview", "概览"], ["site", "站点"], ["render", "渲染"], ["rules", "规则"], ["theme", "主题"], ["view", "浏览"], ["agent", "Agent"], ["build", "构建"]] as const;
   return <nav className="workspace-nav" aria-label="配置分区">{items.map(([id, label]) => <button key={id} type="button" className={active === id ? "nav-item active" : "nav-item"} aria-current={active === id ? "page" : undefined} onClick={() => onSelect(id)}>{label}</button>)}</nav>;
 }
 

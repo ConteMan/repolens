@@ -141,7 +141,9 @@ func newHandlerWithBuildService(token string, builds *buildService) http.Handler
 }
 
 type buildRequest struct {
-	Path string `json:"path"`
+	Path             string `json:"path"`
+	OutputPath       string `json:"output_path"`
+	ConfirmOverwrite bool   `json:"confirm_overwrite"`
 }
 
 type buildResponse struct {
@@ -151,6 +153,7 @@ type buildResponse struct {
 	Warnings   []string    `json:"warnings,omitempty"`
 	Error      string      `json:"error,omitempty"`
 	OutputPath string      `json:"output_path,omitempty"`
+	OutputMode string      `json:"output_mode"`
 }
 
 func (s *buildService) startBuild(w http.ResponseWriter, r *http.Request) {
@@ -164,10 +167,22 @@ func (s *buildService) startBuild(w http.ResponseWriter, r *http.Request) {
 		writeDocumentError(w, err)
 		return
 	}
-	op, err := s.start(filepath.Dir(document.Path))
+	op, err := s.start(filepath.Dir(document.Path), request.OutputPath, request.ConfirmOverwrite)
 	if err != nil {
 		if errors.Is(err, errBuildInProgress) {
 			writeError(w, http.StatusConflict, "build_in_progress", err.Error())
+			return
+		}
+		var outputErr *buildOutputError
+		if errors.As(err, &outputErr) {
+			issue := validationIssue{Path: "output_path", Code: outputErr.code, Message: outputErr.message, Severity: "error"}
+			writeJSON(w, outputErr.status, struct {
+				Code       string            `json:"code"`
+				Message    string            `json:"message"`
+				Field      string            `json:"field"`
+				Issues     []validationIssue `json:"issues"`
+				OutputPath string            `json:"output_path,omitempty"`
+			}{Code: outputErr.code, Message: outputErr.message, Field: "output_path", Issues: []validationIssue{issue}, OutputPath: outputErr.path})
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "build_start_failed", "unable to start build")
@@ -193,6 +208,7 @@ func buildResponseFromOperation(op buildOperation) buildResponse {
 		Warnings:   op.Warnings,
 		Error:      op.Error,
 		OutputPath: op.OutputPath,
+		OutputMode: op.OutputMode,
 	}
 }
 

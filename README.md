@@ -43,9 +43,10 @@ go install github.com/ConteMan/repolens/cmd/repolens@latest
 repolens build git@github.com:you/your-docs.git   # → ./dist
 repolens build . -o dist --ref v2.0               # 本地仓库，指定 ref
 repolens serve . --worktree                       # 本地预览（含未提交内容），改动自动重建
+repolens ui                                       # 图形化配置并构建当前工作树
 ```
 
-构建产物是纯静态目录，直接交给任何静态托管即可，见[部署指南](docs/deploy.md)。渲染行为可通过仓库根的 `.repolens.yml` 定制（可选，零配置即有合理默认），见[配置模型](docs/design/config.md)。
+构建产物是纯静态目录，直接交给任何静态托管即可，见[部署指南](docs/deploy.md)。`repolens ui` 默认构建到本机缓存，也可为当前页面会话选择安全的自定义绝对输出目录；该选择不会写入仓库配置。渲染行为可通过仓库根的 `.repolens.yml` 定制（可选，零配置即有合理默认），见[配置模型](docs/design/config.md)。
 
 ## 文档
 

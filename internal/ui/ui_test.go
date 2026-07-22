@@ -328,6 +328,9 @@ func TestBuildAPIBuildsWorktreeIntoCache(t *testing.T) {
 	if started.ID == "" || started.Stage == "" || started.OutputPath == "" {
 		t.Fatalf("start response = %#v, want ID, stage, and output path", started)
 	}
+	if started.OutputMode != outputModeCache {
+		t.Fatalf("start output mode = %q, want %q", started.OutputMode, outputModeCache)
+	}
 
 	completed := waitForBuild(t, handler, started.ID)
 	if completed.Stage != "completed" {

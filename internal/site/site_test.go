@@ -659,6 +659,21 @@ func TestBuildRefusesExistingOutputWithoutSentinel(t *testing.T) {
 	}
 }
 
+func TestOwnsOutputRequiresRegularSentinel(t *testing.T) {
+	directory := t.TempDir()
+	target := filepath.Join(directory, "target")
+	if err := os.WriteFile(target, []byte("target"), 0o644); err != nil {
+		t.Fatalf("write symlink target: %v", err)
+	}
+	if err := os.Symlink(target, filepath.Join(directory, sentinelName)); err != nil {
+		t.Fatalf("create sentinel symlink: %v", err)
+	}
+	owned, err := OwnsOutput(directory)
+	if err != nil || owned {
+		t.Fatalf("OwnsOutput() = %v, %v; want false, nil", owned, err)
+	}
+}
+
 func newSiteTestRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()

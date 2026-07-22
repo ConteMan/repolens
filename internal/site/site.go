@@ -25,6 +25,20 @@ import (
 
 const sentinelName = ".repolens-build"
 
+// OwnsOutput reports whether dir contains the regular sentinel file written by
+// repolens. A symlink or directory with the sentinel name does not establish
+// output ownership.
+func OwnsOutput(dir string) (bool, error) {
+	info, err := os.Lstat(filepath.Join(dir, sentinelName))
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return info.Mode().IsRegular(), nil
+}
+
 type Builder struct {
 	cfg      *config.Config
 	theme    *theme.Renderer
@@ -257,11 +271,12 @@ func prepareOutput(outDir string) error {
 		if !info.IsDir() {
 			return fmt.Errorf("site: output path %q exists and is not a directory", outDir)
 		}
-		if _, err := os.Stat(filepath.Join(outDir, sentinelName)); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("site: refusing to clear %q without %s sentinel", outDir, sentinelName)
-			}
+		owned, err := OwnsOutput(outDir)
+		if err != nil {
 			return err
+		}
+		if !owned {
+			return fmt.Errorf("site: refusing to clear %q without %s sentinel", outDir, sentinelName)
 		}
 		if err := clearDir(outDir); err != nil {
 			return err
