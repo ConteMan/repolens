@@ -6,27 +6,29 @@ GitHub 跟踪：[#28 ui: align config API contracts before freezing the design b
 
 | 编号 | 最小合同 | 当前事实 | 状态 | 下一步 |
 |---|---|---|---|---|
-| CG-01 配置 document | 导出仓库域未合并 document、字段 presence、可预览 YAML；非受控节点不被表单覆盖 | `internal/config/repository_document.go` 已提供 `RepositoryDocument`、指针字段、AST 读写、YAML、revision，并由 `repository_document_test.go` 覆盖未受控节点保留；但 `internal/ui/ui.go` 的 `projectOpenResponse` 只暴露 `settings` 与 `revision`，没有有效默认值、字段来源或读取 warning | 部分实现 | 为 open 响应定义 `effective`、`sources`、`warnings` 的最小结构；明确“文件未设置”与“使用有效默认值”的呈现 |
-| CG-02 结构化校验 | 返回 `{path,code,message}` 并明确 blocking/warning，前端可关联具体字段 | `config.RepositoryValidationIssue` 与 `ValidateRepositorySettings` 已结构化校验可写字段；但 `validateConfig`/`prepareWrite`/`commitConfig` 将错误折叠为通用 `validation_failed`，`writeError` 没有 `field` 或 `issues`，前端 `APIError` 与 `Status` 只能显示全局 message | 部分实现 | 保留并序列化 validation issues；确定单个 `field` 或 `issues[]` 格式；前端建立字段错误映射、页面摘要与焦点恢复；warning 另行返回，不与 blocking 混用 |
+| CG-01 配置 document | 导出同一快照的仓库域未合并 document、字段 presence、有效默认值、来源、warning 与 revision；受控字段可恢复默认值，受信任域不被表单覆盖 | `project/open` 通过 revision 有界重试返回 `settings`、`effective`、`sources`、`warnings` 与 `revision`；全局字段物化有效值，rules 保留 presence-safe 的级联 patch，避免把缺失叶子的 Go 零值误报为有效值；`RepositoryDocument.Replace` 为 UI 完整目标状态提供 nil 删除语义，通用 `Apply` 的 patch 语义不变；`source` / `output` / `access` 不进入 UI DTO 且写入时保留 | 已实现 | Issue #29 的设计应明确区分仓库值、全局有效值、规则 patch 与来源，不得把有效默认值静默写回 |
+| CG-02 结构化校验 | 返回 `{path,code,message,severity}` 并明确 error/warning，前端可关联具体字段 | `validate` / `prepare-write` / `commit` 返回 `issues[]` 与兼容首项 `field`；前端 API 保留问题结构，提供页面摘要、字段内联错误、`aria-invalid` / `aria-describedby` 和首个错误焦点恢复；数组路径归一到对应编辑控件 | 已实现 | Issue #30 补充最终 Pencil 基线下的浏览器回归，不重新定义 API 结构 |
 | CG-03 写入并发 | SHA-256 revision、unified diff、同目录临时文件与 rename 原子提交；冲突不得覆盖 | `RepositoryDocument.Write` 比较 revision 并原子写入；`internal/ui/ui.go` 已提供 prepare diff、明确 confirm、revision 冲突和受信域预览脱敏，相关 Go 测试已覆盖 | 已实现 | UI 仍需把 `revision_conflict` 设计为可执行的“重新读取”恢复路径，并补浏览器级冲突验收 |
-| CG-04 构建服务 | 不调用自身 CLI；返回阶段、Stats、warnings、错误及日志尾部 | `internal/ui/build.go` 直接复用 source/config/theme/site，已有 opening、loading_config、loading_theme、building、completed、failed，且 API 返回 Stats、Warnings、Error、OutputPath；当前 operation 没有日志尾部字段 | 部分实现 | 先定义日志尾部是否为结构化事件或有界文本，再补 API、页面展开区和失败 fixture；在此之前设计稿不得把日志标为已交付 |
-| CG-05 输出生命周期 | 仓库外 project-hash 缓存、同项目单 operation、失败保留成功产物、页面可定位最近成功结果 | `buildService.outputPath` 使用用户缓存根和 repository SHA-256；`repositories` 阻止同项目并发；临时目录替换失败会回滚已有输出。前端 `lastSuccess` 仅记录当前页面会话内完成的构建，open 新项目时清空，后端没有“按项目查询最近成功 operation”的合同 | 部分实现 | 定义最近成功结果的查询/恢复语义，覆盖页面刷新、进程重启和切换项目边界；补“已有成功后失败”的浏览器验收 |
+| CG-04 构建服务 | 不调用自身 CLI；返回结构化阶段、Stats、warnings、错误与完整输出路径 | `internal/ui/build.go` 直接复用 source/config/theme/site，已有 opening、loading_config、loading_theme、building、completed、failed，且 API 返回 Stats、Warnings、Error、OutputPath | 已实现（合同收窄） | 2026-07-22 确认 Spec 013 不承诺通用日志尾部；若后续出现真实诊断需求，另开 Spec 定义有界结构和脱敏边界 |
+| CG-05 输出生命周期 | 仓库外 project-hash 缓存、同项目单 operation、失败保留成功产物、当前页面会话可定位最近成功结果 | `buildService.outputPath` 使用用户缓存根和 repository SHA-256；`repositories` 阻止同项目并发；临时目录替换失败会回滚已有输出；前端 `lastSuccess` 记录当前页面会话内完成的构建，open 新项目时清空 | 已实现（会话范围） | 2026-07-22 确认刷新页面、进程重启和切换项目后的查询与恢复延期；后续需求不得把磁盘产物存在等同为 operation 可查询 |
 | CG-06 预览服务 | 可停止的 preview session，不依赖 UI 进程 cwd 或 stdout | Spec 013 明确本期不启动 serve、不提供预览链接 | 延期 | 后续独立 spec，不在当前画板中以 disabled 控件暗示可用 |
 | CG-07 路径浏览 | 目录浏览、home 限制、符号链接和权限语义 | 当前只接受既有绝对目录，`loadDocument` 做绝对路径与目录检查；没有目录浏览 API | 延期 | 后续独立 spec；当前 Project Open 只设计文本输入、加载与错误恢复 |
 
-## 当前跨层不一致
+## 当前跨层状态
 
-以下项目应先收口合同，再把对应 Pencil 状态标为可实现：
+- CG-01、CG-02 已收口，可作为 Issue #29 最终 Pencil 基线的实现事实。
+- CG-03 的底层 revision/原子写入合同已实现；“重新读取”交互和浏览器回归由 Issue #30 完成。
+- CG-04 已明确只返回结构化阶段、Stats、Warnings、Error 与输出路径，不再把通用日志尾部列为本期合同。
+- CG-05 已限定为磁盘产物回滚保护与当前页面会话内定位；刷新或重启后的 operation 查询明确延期。
 
-1. `docs/specs/013-config-ui.md` 声明 `project/open` 返回原始 document、有效 config、warnings 和 revision；当前 `internal/ui/ui.go` 实际只返回 repository settings 与 revision。
-2. Spec 声明 API 错误包含 `field?`，当前 `writeError` 只有 `code` 与 `message`，前端也未保存字段路径。
-3. Spec 的构建结果包含“日志尾部”，当前 `buildOperation` 与 `buildResponse` 均无日志字段。
-4. “失败保留最近一次成功结果”的文件系统行为已有回滚保护，但 UI 可恢复范围目前仅限当前页面会话，不能据此宣称刷新或重启后仍可查询。
+## 后续顺序
 
-## 收口顺序
+1. Issue #29 基于已收口的 CG-01、CG-02 建立最终 Foundations、组件状态与完整页面。
+2. Issue #30 实现冻结基线，并补 CG-03 的浏览器恢复路径与验收；不重复改写已存在的 revision/原子写入实现。
 
-1. 先完成 CG-02：字段错误是 Project Open、Config Edit 和 Diff 恢复体验的共同依赖。
-2. 再完成 CG-01 的 open warnings / effective defaults / sources，避免把合并值误画成仓库原值。
-3. 明确 CG-04 日志尾部是否仍属 v1.2 合同；若保留，先定义有界数据结构再设计页面。
-4. 明确 CG-05 最近成功结果的持久范围，再设计失败恢复卡。
-5. CG-03 只补浏览器恢复路径与验收，不重复改写已存在的 revision/原子写入实现。
+## 2026-07-22 维护者确认
+
+- CG-01、CG-02 留在 Spec 013，已补齐 API、前端映射与自动化测试。
+- CG-03 固定为 revision 冲突后阻止写入并提供“重新读取”恢复路径；浏览器实现与回归由 Issue #30 完成。
+- CG-04 的通用日志尾部延期；现有结构化构建结果即本期合同。
+- CG-05 限定为当前 UI 页面会话；跨刷新、重启和项目切换的 operation 查询延期。

@@ -1,11 +1,12 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
-export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function Field({ label, hint, error, errorID, children }: { label: string; hint?: string; error?: string; errorID?: string; children: ReactNode }) {
   return (
-    <label className="field">
+    <label className={`field${error ? " field-invalid" : ""}`}>
       <span className="field-label">{label}</span>
       {children}
       {hint ? <span className="field-hint">{hint}</span> : null}
+      {error ? <span id={errorID} className="field-error">{error}</span> : null}
     </label>
   );
 }
@@ -47,9 +48,9 @@ export function Section({ title, description, children }: { title: string; descr
   );
 }
 
-export function Status({ kind, children }: { kind: "info" | "success" | "warning" | "error"; children: ReactNode }) {
+export function Status({ kind, role, children }: { kind: "info" | "success" | "warning" | "error"; role?: "status" | "alert"; children: ReactNode }) {
   return (
-    <div className={`status status-${kind}`} role="status">
+    <div className={`status status-${kind}`} role={role ?? (kind === "error" ? "alert" : "status")}>
       {children}
     </div>
   );

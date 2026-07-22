@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -226,8 +227,11 @@ type projectOpenRequest struct {
 }
 
 type projectOpenResponse struct {
-	Settings repositorySettings `json:"settings"`
-	Revision string             `json:"revision"`
+	Settings  repositorySettings `json:"settings"`
+	Effective repositorySettings `json:"effective"`
+	Sources   map[string]string  `json:"sources"`
+	Warnings  []string           `json:"warnings"`
+	Revision  string             `json:"revision"`
 }
 
 func openProject(w http.ResponseWriter, r *http.Request) {
@@ -237,17 +241,52 @@ func openProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	document, err := loadDocument(request.Path)
+	document, effective, warnings, err := loadProjectSnapshot(request.Path)
 	if err != nil {
-		writeDocumentError(w, err)
+		if errors.Is(err, errInvalidPath) {
+			writeDocumentError(w, err)
+			return
+		}
+		writeError(w, http.StatusUnprocessableEntity, "project_open_failed", "unable to load effective repository configuration")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(projectOpenResponse{
-		Settings: repositorySettingsFromConfig(document.Settings),
-		Revision: document.Revision,
+	writeJSON(w, http.StatusOK, projectOpenResponse{
+		Settings:  repositorySettingsFromConfig(document.Settings),
+		Effective: repositorySettingsFromEffectiveConfig(*effective, document.Settings.Rules),
+		Sources:   repositorySettingSources(document.Settings),
+		Warnings:  configWarningMessages(warnings),
+		Revision:  document.Revision,
 	})
+}
+
+func loadProjectSnapshot(repoPath string) (*config.RepositoryDocument, *config.Config, []config.Warning, error) {
+	return loadProjectSnapshotWith(repoPath, loadDocument, config.Load)
+}
+
+func loadProjectSnapshotWith(
+	repoPath string,
+	documentLoader func(string) (*config.RepositoryDocument, error),
+	effectiveLoader func(string, string, config.Flags) (*config.Config, []config.Warning, error),
+) (*config.RepositoryDocument, *config.Config, []config.Warning, error) {
+	for range 3 {
+		before, err := documentLoader(repoPath)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		effective, warnings, err := effectiveLoader(repoPath, "", config.Flags{})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		after, err := documentLoader(repoPath)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if before.Revision == after.Revision {
+			return after, effective, warnings, nil
+		}
+	}
+	return nil, nil, nil, errors.New("repository configuration changed while loading")
 }
 
 type configRequest struct {
@@ -260,6 +299,15 @@ type configRequest struct {
 type configResponse struct {
 	Settings repositorySettings `json:"settings"`
 	Revision string             `json:"revision"`
+}
+
+// validationIssue is an API-facing field diagnostic. Severity allows callers
+// to keep blocking validation failures separate from non-blocking warnings.
+type validationIssue struct {
+	Path     string `json:"path"`
+	Code     string `json:"code"`
+	Message  string `json:"message"`
+	Severity string `json:"severity"`
 }
 
 // repositorySettings defines the JSON representation accepted by the UI API.
@@ -275,6 +323,137 @@ func (settings repositorySettings) config() config.RepositorySettings {
 	return config.RepositorySettings(settings)
 }
 
+func repositorySettingsFromEffectiveConfig(effective config.Config, repositoryRules *[]config.RepositoryRuleSettings) repositorySettings {
+	copyStrings := append([]string(nil), effective.Ignore...)
+	var rules *[]config.RepositoryRuleSettings
+	if repositoryRules != nil {
+		copyRules := append([]config.RepositoryRuleSettings(nil), (*repositoryRules)...)
+		rules = &copyRules
+	}
+	return repositorySettings{
+		Site: config.RepositorySiteSettings{
+			Title: stringPointer(effective.Site.Title), Language: stringPointer(effective.Site.Language), Home: stringPointer(effective.Site.Home),
+		},
+		Ignore: &copyStrings,
+		Render: config.RepositoryFileOptionsSettings{
+			Render: boolPointer(effective.Render.Render),
+			Markdown: config.RepositoryMarkdownOptionsSettings{
+				TOC: boolPointer(effective.Render.Markdown.TOC), TOCMinHeadings: intPointer(effective.Render.Markdown.TOCMinHeadings),
+				Anchors: boolPointer(effective.Render.Markdown.Anchors), Mermaid: boolPointer(effective.Render.Markdown.Mermaid),
+				Math: boolPointer(effective.Render.Markdown.Math), FrontmatterTitle: boolPointer(effective.Render.Markdown.FrontmatterTitle),
+			},
+			HTML:        config.RepositoryHTMLOptionsSettings{View: stringPointer(effective.Render.HTML.View)},
+			Code:        config.RepositoryCodeOptionsSettings{LineNumbers: boolPointer(effective.Render.Code.LineNumbers), Theme: stringPointer(effective.Render.Code.Theme)},
+			MaxFileSize: byteSizePointer(effective.Render.MaxFileSize),
+		},
+		Rules: rules,
+		Theme: config.RepositoryThemeSettings{Vars: mapPointer(effective.Theme.Vars), CSS: stringPointer(effective.Theme.CSS), Templates: stringPointer(effective.Theme.Templates)},
+		View: config.RepositoryViewSettings{
+			TreePosition: stringPointer(effective.View.TreePosition), TreeExpandDepth: intPointer(effective.View.TreeExpandDepth),
+			TOCPanel: stringPointer(effective.View.TOCPanel), Search: boolPointer(effective.View.Search),
+		},
+		Agent: config.RepositoryAgentSettings{
+			LLMSTxt:   boolPointer(effective.Agent.LLMSTxt),
+			LLMSFull:  config.RepositoryAgentFullTextSettings{Enabled: boolPointer(effective.Agent.LLMSFull.Enabled), MaxSize: byteSizePointer(effective.Agent.LLMSFull.MaxSize)},
+			IndexJSON: boolPointer(effective.Agent.IndexJSON),
+		},
+	}
+}
+
+func stringPointer(value string) *string { return &value }
+func boolPointer(value bool) *bool       { return &value }
+func intPointer(value int) *int          { return &value }
+
+func byteSizePointer(value int64) *config.RepositoryByteSize {
+	size := config.RepositoryByteSize(value)
+	return &size
+}
+
+func mapPointer(value map[string]string) *map[string]string {
+	if value == nil {
+		return nil
+	}
+	copyValue := make(map[string]string, len(value))
+	for key, item := range value {
+		copyValue[key] = item
+	}
+	return &copyValue
+}
+
+func repositorySettingSources(settings config.RepositorySettings) map[string]string {
+	sources := make(map[string]string)
+	mark := func(path string, value any) {
+		if !isNil(value) {
+			sources[path] = "repository"
+			return
+		}
+		sources[path] = "default"
+	}
+	mark("site.title", settings.Site.Title)
+	mark("site.language", settings.Site.Language)
+	mark("site.home", settings.Site.Home)
+	mark("ignore", settings.Ignore)
+	mark("render.render", settings.Render.Render)
+	mark("render.markdown.toc", settings.Render.Markdown.TOC)
+	mark("render.markdown.toc_min_headings", settings.Render.Markdown.TOCMinHeadings)
+	mark("render.markdown.anchors", settings.Render.Markdown.Anchors)
+	mark("render.markdown.mermaid", settings.Render.Markdown.Mermaid)
+	mark("render.markdown.math", settings.Render.Markdown.Math)
+	mark("render.markdown.frontmatter_title", settings.Render.Markdown.FrontmatterTitle)
+	mark("render.html.view", settings.Render.HTML.View)
+	mark("render.code.line_numbers", settings.Render.Code.LineNumbers)
+	mark("render.code.theme", settings.Render.Code.Theme)
+	mark("render.max_file_size", settings.Render.MaxFileSize)
+	mark("theme.vars", settings.Theme.Vars)
+	mark("theme.css", settings.Theme.CSS)
+	mark("theme.templates", settings.Theme.Templates)
+	mark("view.tree_position", settings.View.TreePosition)
+	mark("view.tree_expand_depth", settings.View.TreeExpandDepth)
+	mark("view.toc_panel", settings.View.TOCPanel)
+	mark("view.search", settings.View.Search)
+	mark("agent.llms_txt", settings.Agent.LLMSTxt)
+	mark("agent.llms_full.enabled", settings.Agent.LLMSFull.Enabled)
+	mark("agent.llms_full.max_size", settings.Agent.LLMSFull.MaxSize)
+	mark("agent.index_json", settings.Agent.IndexJSON)
+	if settings.Rules != nil {
+		sources["rules"] = "repository"
+		for index, rule := range *settings.Rules {
+			prefix := fmt.Sprintf("rules[%d]", index)
+			mark(prefix+".match", rule.Match)
+			mark(prefix+".render", rule.Render)
+			mark(prefix+".markdown.toc", rule.Markdown.TOC)
+			mark(prefix+".markdown.toc_min_headings", rule.Markdown.TOCMinHeadings)
+			mark(prefix+".markdown.anchors", rule.Markdown.Anchors)
+			mark(prefix+".markdown.mermaid", rule.Markdown.Mermaid)
+			mark(prefix+".markdown.math", rule.Markdown.Math)
+			mark(prefix+".markdown.frontmatter_title", rule.Markdown.FrontmatterTitle)
+			mark(prefix+".html.view", rule.HTML.View)
+			mark(prefix+".code.line_numbers", rule.Code.LineNumbers)
+			mark(prefix+".code.theme", rule.Code.Theme)
+			mark(prefix+".max_file_size", rule.MaxFileSize)
+		}
+	} else {
+		sources["rules"] = "default"
+	}
+	return sources
+}
+
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+	reflected := reflect.ValueOf(value)
+	return reflected.Kind() == reflect.Ptr && reflected.IsNil()
+}
+
+func configWarningMessages(warnings []config.Warning) []string {
+	messages := make([]string, 0, len(warnings))
+	for _, warning := range warnings {
+		messages = append(messages, warning.Msg)
+	}
+	return messages
+}
+
 type prepareWriteResponse struct {
 	configResponse
 	Before string `json:"before"`
@@ -287,9 +466,7 @@ func validateConfig(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	settings := request.Settings.config()
-	if err := document.Apply(settings); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, "validation_failed", "settings cannot be applied to the repository document")
+	if !applyRequestedSettings(w, document, request.Settings.config()) {
 		return
 	}
 	writeJSON(w, http.StatusOK, configResponse{Settings: repositorySettingsFromConfig(document.Settings), Revision: document.Revision})
@@ -305,9 +482,7 @@ func prepareWrite(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "prepare_write_failed", "unable to read repository configuration")
 		return
 	}
-	settings := request.Settings.config()
-	if err := document.Apply(settings); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, "validation_failed", "settings cannot be applied to the repository document")
+	if !applyRequestedSettings(w, document, request.Settings.config()) {
 		return
 	}
 	after, err := document.YAML()
@@ -368,9 +543,7 @@ func commitConfig(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "revision_conflict", "repository configuration changed; reopen the project")
 		return
 	}
-	settings := request.Settings.config()
-	if err := document.Apply(settings); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, "validation_failed", "settings cannot be applied to the repository document")
+	if !applyRequestedSettings(w, document, request.Settings.config()) {
 		return
 	}
 	if err := document.Write(); err != nil {
@@ -382,6 +555,36 @@ func commitConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, configResponse{Settings: repositorySettingsFromConfig(document.Settings), Revision: document.Revision})
+}
+
+func applyRequestedSettings(w http.ResponseWriter, document *config.RepositoryDocument, settings config.RepositorySettings) bool {
+	if issues := config.ValidateRepositorySettings(settings); len(issues) > 0 {
+		writeValidationError(w, issues)
+		return false
+	}
+	if err := document.Replace(settings); err != nil {
+		writeValidationIssues(w, []validationIssue{{
+			Code: "apply_failed", Message: "settings cannot be applied to the repository document", Severity: "error",
+		}})
+		return false
+	}
+	return true
+}
+
+func writeValidationError(w http.ResponseWriter, issues []config.RepositoryValidationIssue) {
+	apiIssues := make([]validationIssue, 0, len(issues))
+	for _, issue := range issues {
+		apiIssues = append(apiIssues, validationIssue{Path: issue.Path, Code: issue.Code, Message: issue.Message, Severity: "error"})
+	}
+	writeValidationIssues(w, apiIssues)
+}
+
+func writeValidationIssues(w http.ResponseWriter, issues []validationIssue) {
+	message := "settings contain validation errors"
+	if len(issues) > 0 && issues[0].Message != "" {
+		message = issues[0].Message
+	}
+	writeErrorDetails(w, http.StatusUnprocessableEntity, "validation_failed", message, issues, nil)
 }
 
 func loadConfigRequest(w http.ResponseWriter, r *http.Request) (*config.RepositoryDocument, configRequest, bool) {
@@ -484,12 +687,26 @@ func requireToken(token string, next http.Handler) http.Handler {
 }
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
+	writeErrorDetails(w, status, code, message, nil, nil)
+}
+
+func writeErrorDetails(w http.ResponseWriter, status int, code, message string, issues, warnings []validationIssue) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-	}{Code: code, Message: message})
+		Code     string            `json:"code"`
+		Message  string            `json:"message"`
+		Field    string            `json:"field,omitempty"`
+		Issues   []validationIssue `json:"issues,omitempty"`
+		Warnings []validationIssue `json:"warnings,omitempty"`
+	}{Code: code, Message: message, Field: firstIssuePath(issues), Issues: issues, Warnings: warnings})
+}
+
+func firstIssuePath(issues []validationIssue) string {
+	if len(issues) == 0 {
+		return ""
+	}
+	return issues[0].Path
 }
 
 func securityHeaders(next http.Handler) http.Handler {

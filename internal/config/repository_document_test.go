@@ -193,6 +193,69 @@ unknown_top_level:
 	}
 }
 
+func TestRepositoryDocumentReplaceClearsControlledFieldsAndPreservesTrustedSections(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	path := filepath.Join(repoRoot, repoConfigName)
+	writeFile(t, path, `
+source:
+  repo: git@example.com:trusted/source.git
+output:
+  dir: trusted-dist
+access:
+  noindex: false
+site:
+  title: Configured title
+render:
+  markdown:
+    math: true
+rules:
+  - match: docs/**
+    markdown:
+      math: true
+    future_rule: retained
+`)
+
+	doc, err := LoadRepositoryDocument(repoRoot)
+	if err != nil {
+		t.Fatalf("LoadRepositoryDocument() error = %v", err)
+	}
+	match := "docs/**"
+	settings := RepositorySettings{Rules: &[]RepositoryRuleSettings{{Match: &match}}}
+	if err := doc.Replace(settings); err != nil {
+		t.Fatalf("Replace() error = %v", err)
+	}
+	if err := doc.Write(); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read replaced config: %v", err)
+	}
+	text := string(data)
+	for _, want := range []string{
+		"repo: git@example.com:trusted/source.git",
+		"dir: trusted-dist",
+		"noindex: false",
+		"match: docs/**",
+		"future_rule: retained",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("replaced config missing %q:\n%s", want, text)
+		}
+	}
+	for _, removed := range []string{"title:", "math:"} {
+		if strings.Contains(text, removed) {
+			t.Errorf("replaced config retained controlled field %q:\n%s", removed, text)
+		}
+	}
+	if doc.Settings.Site.Title != nil || (*doc.Settings.Rules)[0].Markdown.Math != nil {
+		t.Fatalf("Replace() settings retained cleared values: %#v", doc.Settings)
+	}
+}
+
 func TestRepositoryDocumentApplyUpdatesOnlyProvidedRenderFieldsAndRules(t *testing.T) {
 	t.Parallel()
 
