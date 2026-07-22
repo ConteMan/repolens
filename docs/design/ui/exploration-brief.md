@@ -1,6 +1,6 @@
 # repolens UI 结构探索 Brief
 
-> 状态：结构探索已完成，待可用性验证与设计系统阶段（2026-07-17）
+> 状态：结构探索与最终设计基线已完成，待实现回归与真实用户验证（2026-07-22）
 > 范围：`repolens ui` 本地管理界面的结构与交互，不改变配置 schema、CLI 行为或生成站点。
 > 技术边界：React + TypeScript + Base UI；前端产物由 Go `embed` 进入单二进制，运行时不依赖 Node，不请求外部 CDN、字体或脚本。
 > GitHub 跟踪：[#27 Pencil A/B 结构探索](https://github.com/ConteMan/repolens/issues/27)；后续设计基线由 [#29](https://github.com/ConteMan/repolens/issues/29) 跟踪。
@@ -19,9 +19,9 @@
 ### 设计资产的使用规则
 
 - `docs/design/ui/reviews/2026-07-11-assets/*.png` 只作为**历史线框和早期结构假设**，不得作为当前视觉、组件或页面完成度的事实源。
-- 当前 `docs/design/ui/prototypes/repolens-ui.pen` 实际只有一个名为 `Frame` 的 800×600 空白 frame，不包含评审记录曾描述的设计系统、组件板或具体页面，因此**不是有效设计事实源，也不能用于实现验收**。
-- `docs/design/ui/reviews/2026-07-11-m6-structure.md` 的历史版本曾把多画板、节点映射和“唯一事实源”写成已完成；当前评审记录已校正。本轮仍必须以实际 `.pen` 节点重新验收，不能沿用旧结论。
-- 本轮重新建立事实源的门槛是：`.pen` 中存在可读取的设计系统、组件状态和完整任务页面；对应 frame 已导出并逐张检查；结构、截图和实现验收矩阵一致。
+- `docs/design/ui/prototypes/repolens-ui.pen` 是 2026-07-22 冻结的唯一可编辑视觉事实源；8 个顶层画板、28 个 reusable component、状态覆盖与稳定节点映射见 [最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
+- `docs/design/ui/reviews/2026-07-11-m6-structure.md` 与 `prototypes/repolens-ui-explorations.pen` 只保留为历史结构证据，不得覆盖最终 `.pen` 的视觉、组件或状态合同。
+- 最终源文件已通过保存后关闭重开、逐 frame 导出和全量布局检查；Issue #30 仍须以真实 API、浏览器连续断点、键盘/焦点和目标用户任务验证实现，不能把本次启发式评审当作真实用户证据。
 
 ## 2. 探索目标
 

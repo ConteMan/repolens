@@ -44,4 +44,21 @@
 2. Foundations、Core Components、Desktop 和 Narrow 均可从源文件独立定位；
 3. reusable components/ref 与具体页面引用关系可检查；
 4. 对具体页面运行布局检查，确认无裁切和意外溢出；
-5. PNG 仅作为评审快照，命名为 `<画板 ID>-<Pencil 节点 ID>.png`，并在评审记录中回填视口与状态。
+5. PNG 仅作为评审快照，命名为 `<画板名称 slug>-<顶层 Pencil 节点 ID>.png`，并在评审记录中回填视口与状态。
+
+## 冻结节点映射
+
+2026-07-22 最终基线已通过上述门槛；源文件保存后关闭重开仍能定位全部节点。实现与回归使用以下稳定顶层节点：
+
+| 画板 | Pencil 节点 ID |
+|---|---|
+| `00 Foundations` | `RRkxu` |
+| `01 Core Components` | `sGnOn` |
+| `02 Project Open` | `mQGrN` |
+| `03 Config Edit` | `oMxTz` |
+| `04 Diff and Write` | `bXQ2L` |
+| `05 Build` | `I9boV` |
+| `06 Narrow / Project and Config` | `mvZOJ` |
+| `07 Narrow / Diff and Build` | `cgNoV` |
+
+详细状态、视口与快照路径见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
