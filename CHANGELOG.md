@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-22
+
 ### Added
 
 - `repolens ui` 的构建页支持会话级自定义绝对输出目录；服务端拒绝危险路径与无所有权目录，覆盖旧产物前要求显式确认，并在同级临时目录构建后原子发布。
@@ -104,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/ConteMan/repolens/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/ConteMan/repolens/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/ConteMan/repolens/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/ConteMan/repolens/compare/v1.1.1...v1.1.2
