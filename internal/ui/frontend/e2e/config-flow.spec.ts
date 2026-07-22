@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { existsSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, join } from "node:path";
 import { createRepository, expectNoPageOverflow, openProject, readConfig, removeRepository, writeConfig } from "./fixtures";
 
 test("binds an invalid project path error to the path field", async ({ page }) => {
@@ -142,6 +145,77 @@ test("shows open warnings and preserves the previous successful build after a fa
     await expect(buildState).toContainText("missing.css");
     await expect(buildState).toContainText("最近一次成功构建仍可用");
     await expect(buildState).toContainText(successPath ?? "");
+  } finally {
+    removeRepository(repository);
+  }
+});
+
+test("builds to a custom output and explicitly confirms replacing owned output", async ({ page }) => {
+  const repository = createRepository("site:\n  title: Custom output fixture\n");
+  const outputRoot = mkdtempSync(join(tmpdir(), "repolens-ui-output-"));
+  const output = join(outputRoot, "published-site");
+  const normalizedOutput = join(realpathSync(dirname(output)), basename(output));
+  const originalConfig = readConfig(repository);
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await openProject(page, repository);
+    await page.getByRole("navigation", { name: "配置分区" }).getByRole("button", { name: "构建" }).click();
+
+    await page.getByRole("button", { name: "自定义目录" }).click();
+    const outputInput = page.getByLabel("绝对输出路径");
+    await outputInput.fill(output);
+    await page.getByRole("button", { name: "开始构建" }).click();
+
+    const buildState = page.locator(".build-state");
+    await expect(buildState.getByText("completed", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(buildState.getByText("自定义目录", { exact: true })).toBeVisible();
+    await expect(buildState.locator("code").first()).toHaveText(normalizedOutput);
+    expect(existsSync(join(output, "view", "index.html"))).toBeTruthy();
+    expect(readConfig(repository)).toBe(originalConfig);
+
+    await page.getByRole("button", { name: "开始构建" }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toContainText(normalizedOutput);
+    await expect(dialog).toContainText(".repolens-build");
+    await dialog.getByRole("button", { name: "返回修改" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(outputInput).toBeFocused();
+
+    await page.getByRole("button", { name: "开始构建" }).click();
+    await expect(dialog).toBeVisible();
+    const accepted = page.waitForResponse((response) => response.url().endsWith("/api/build") && response.request().method() === "POST" && response.status() === 202);
+    await dialog.getByRole("button", { name: "确认替换并构建" }).click();
+    await accepted;
+    await expect(dialog).toBeHidden();
+    await expect(buildState.getByText("completed", { exact: true })).toBeVisible({ timeout: 15_000 });
+    expect(existsSync(join(output, ".repolens-build"))).toBeTruthy();
+    await expectNoPageOverflow(page);
+  } finally {
+    removeRepository(repository);
+    rmSync(outputRoot, { recursive: true, force: true });
+  }
+});
+
+test("binds an unsafe custom output error on a 390px viewport", async ({ page }) => {
+  const repository = createRepository("site:\n  title: Unsafe output fixture\n");
+  try {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await openProject(page, repository);
+    await page.getByRole("navigation", { name: "配置分区" }).getByRole("button", { name: "构建" }).click();
+    await page.getByRole("button", { name: "自定义目录" }).click();
+
+    const outputInput = page.getByLabel("绝对输出路径");
+    await outputInput.fill(join(repository, "dist"));
+    await page.getByRole("button", { name: "开始构建" }).click();
+
+    await expect(outputInput).toBeFocused();
+    await expect(outputInput).toHaveAttribute("aria-invalid", "true");
+    await expect(outputInput).toHaveAttribute("aria-describedby", "error-output_path");
+    await expect(page.locator("#error-output_path")).toContainText("outside");
+    await expect(page.locator(".validation-summary")).toContainText("output_path");
+    await expectNoPageOverflow(page);
   } finally {
     removeRepository(repository);
   }

@@ -43,9 +43,10 @@ Upgrades: package-manager users run `brew upgrade` / `scoop update`; direct down
 repolens build git@github.com:you/your-docs.git   # → ./dist
 repolens build . -o dist --ref v2.0               # local repository, specific ref
 repolens serve . --worktree                       # local preview (incl. uncommitted changes), auto rebuild
+repolens ui                                       # configure and build the current worktree in the UI
 ```
 
-The build output is a plain static directory — hand it to any static host; see the [deployment guide](docs/deploy.md). Rendering is customizable through an optional `.repolens.yml` at the repository root (sensible defaults need no config); see the [configuration model](docs/design/config.md).
+The build output is a plain static directory — hand it to any static host; see the [deployment guide](docs/deploy.md). `repolens ui` builds to a local cache by default and can use a safe custom absolute output directory for the current page session; this choice is never written to repository configuration. Rendering is customizable through an optional `.repolens.yml` at the repository root (sensible defaults need no config); see the [configuration model](docs/design/config.md).
 
 ## Documentation
 

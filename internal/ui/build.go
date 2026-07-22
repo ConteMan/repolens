@@ -35,6 +35,7 @@ type buildOperation struct {
 	Warnings   []string
 	Error      string
 	OutputPath string
+	OutputMode string
 }
 
 func newBuildService(ctx context.Context) *buildService {
@@ -54,14 +55,14 @@ func defaultBuildCacheRoot() (string, error) {
 	return filepath.Join(root, "repolens", "ui", "builds"), nil
 }
 
-func (s *buildService) start(repository string) (buildOperation, error) {
+func (s *buildService) start(repository, requestedOutput string, confirmOverwrite bool) (buildOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.repositories[repository]; ok {
 		return buildOperation{}, errBuildInProgress
 	}
-	outputPath, err := s.outputPath(repository)
+	target, err := s.buildTarget(repository, requestedOutput, confirmOverwrite)
 	if err != nil {
 		return buildOperation{}, err
 	}
@@ -69,10 +70,10 @@ func (s *buildService) start(repository string) (buildOperation, error) {
 	if err != nil {
 		return buildOperation{}, err
 	}
-	op := &buildOperation{ID: id, Repository: repository, Stage: "opening", OutputPath: outputPath}
+	op := &buildOperation{ID: id, Repository: repository, Stage: "opening", OutputPath: target.Path, OutputMode: target.Mode}
 	s.operations[id] = op
 	s.repositories[repository] = id
-	go s.run(id, repository)
+	go s.run(id, repository, target)
 	return cloneBuildOperation(op), nil
 }
 
@@ -86,14 +87,14 @@ func (s *buildService) operation(id string) (buildOperation, bool) {
 	return cloneBuildOperation(op), true
 }
 
-func (s *buildService) run(id, repository string) {
+func (s *buildService) run(id, repository string, target buildTarget) {
 	defer s.release(repository)
-	if err := s.build(id, repository); err != nil {
+	if err := s.build(id, repository, target); err != nil {
 		s.fail(id, err)
 	}
 }
 
-func (s *buildService) build(id, repository string) error {
+func (s *buildService) build(id, repository string, target buildTarget) error {
 	s.setStage(id, "opening")
 	tree, err := source.Open(s.ctx, source.Spec{Repo: repository, Worktree: true})
 	if err != nil {
@@ -118,9 +119,9 @@ func (s *buildService) build(id, repository string) error {
 		return fmt.Errorf("load theme: %w", err)
 	}
 
-	outputPath, err := s.outputPath(repository)
-	if err != nil {
-		return err
+	outputPath := target.Path
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+		return fmt.Errorf("create build output parent: %w", err)
 	}
 	temporaryPath, err := os.MkdirTemp(filepath.Dir(outputPath), "."+filepath.Base(outputPath)+"-")
 	if err != nil {
@@ -137,6 +138,11 @@ func (s *buildService) build(id, repository string) error {
 		return fmt.Errorf("build site: %w", err)
 	}
 	warnings = append(warnings, stats.Warnings...)
+	if target.Mode == outputModeCustom {
+		if err := recheckBuildTarget(target); err != nil {
+			return fmt.Errorf("recheck build output: %w", err)
+		}
+	}
 	if err := replaceBuildOutput(temporaryPath, outputPath); err != nil {
 		return fmt.Errorf("publish build output: %w", err)
 	}
@@ -164,8 +170,11 @@ func (s *buildService) outputPath(repository string) (string, error) {
 }
 
 func replaceBuildOutput(temporaryPath, outputPath string) error {
-	backupPath := outputPath + ".previous"
-	if err := os.RemoveAll(backupPath); err != nil {
+	backupPath, err := os.MkdirTemp(filepath.Dir(outputPath), "."+filepath.Base(outputPath)+"-backup-")
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(backupPath); err != nil {
 		return err
 	}
 	hadPrevious := false
@@ -179,7 +188,9 @@ func replaceBuildOutput(temporaryPath, outputPath string) error {
 	}
 	if err := os.Rename(temporaryPath, outputPath); err != nil {
 		if hadPrevious {
-			_ = os.Rename(backupPath, outputPath)
+			if restoreErr := os.Rename(backupPath, outputPath); restoreErr != nil {
+				return fmt.Errorf("publish output: %w; restore previous output: %v", err, restoreErr)
+			}
 		}
 		return err
 	}

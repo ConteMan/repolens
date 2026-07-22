@@ -28,6 +28,7 @@
 - 顶部工具栏：树/TOC 开关、前进后退、缩放、布局宽度、源码视图（`view/<path>/source/`）、下载、搜索入口；pjax 导航（[011](specs/011-toolbar-and-pjax.md)）
 - 站内搜索：文件名 ＋ 标题级构建期索引，客户端检索，零外部请求（[012](specs/012-site-search.md)）
 - 图形化管理界面：`repolens ui` 本地 Web GUI——选目录、可视化配置写回 YAML、构建与预览（[013](specs/013-config-ui.md)）
+- UI 会话级构建输出：默认缓存与自定义绝对目录二选一，保持工作树语义与输出所有权检查，不写入仓库配置（[014](specs/014-ui-session-output.md)）
 
 ### Out（v2 及以后，实现前需先修订本文档）
 
@@ -50,5 +51,6 @@
 | M7 分发 | GoReleaser、brew tap、Windows 单 exe/Scoop、upgrade、version 修复 | [009](specs/README.md) | 三平台免 Go 环境安装实测通过 |
 | M5 浏览体验 | 混合树、顶部工具栏、pjax、源码视图、站内搜索 | [010–012](specs/README.md) | 维护者对照 docu.md 交互验收 |
 | M6 图形界面 | `repolens ui`：项目选择、可视化配置、构建预览闭环 | [013](specs/README.md) | 全新用户零终端完成建站路径 |
+| M8 UI 输出 | `repolens ui` 会话级缓存/自定义输出目录、安全覆盖与原子发布 | [014](specs/README.md) | 工作树构建到用户指定本地目录且不破坏未知内容 |
 
-> v1.x 推进顺序：M7 → M5 → M6（2026-07-06 确认；M7 与 M5 无代码冲突，必要时可并行）。
+> v1.x 推进顺序：M7 → M5 → M6 → M8（M8 于 2026-07-22 确认；不改变 `output` 信任域或部署边界）。

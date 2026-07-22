@@ -67,6 +67,7 @@ export interface PrepareResponse extends ConfigResponse {
 export interface BuildResponse {
   id: string;
   stage: string;
+  output_mode: "cache" | "custom";
   stats?: { Files: number; Pages: number; Duration: number };
   warnings?: string[];
   error?: string;

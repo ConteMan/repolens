@@ -4637,7 +4637,7 @@
       "name": "03 Config Edit",
       "clip": true,
       "width": 1600,
-      "height": 2720,
+      "height": 2530,
       "fill": "$canvas",
       "layout": "vertical",
       "gap": 24,
@@ -5914,64 +5914,6 @@
               "width": "fill_container"
             }
           ]
-        },
-        {
-          "type": "frame",
-          "id": "jYRZs",
-          "name": "Config Edit / Contract State Variants",
-          "width": 1440,
-          "height": 120,
-          "layout": "vertical",
-          "gap": 10,
-          "padding": [
-            12,
-            0
-          ],
-          "children": [
-            {
-              "type": "text",
-              "id": "RnYVj",
-              "name": "Config State Variants Title",
-              "fill": "$ink",
-              "content": "合同状态变体 · 同一表单结构与状态区",
-              "fontFamily": "$font-sans",
-              "fontSize": 13,
-              "fontWeight": "700"
-            },
-            {
-              "type": "frame",
-              "id": "NPWOd",
-              "name": "Config State Variant Alerts",
-              "width": "fill_container",
-              "gap": 14,
-              "children": [
-                {
-                  "id": "gJU7G",
-                  "type": "ref",
-                  "ref": "vfSh9",
-                  "name": "Config Variant / Empty Config",
-                  "width": "fill_container",
-                  "descendants": {
-                    "fbwFp": {
-                      "content": "空配置：显示有效默认值与 default 来源；不把默认值静默写回。"
-                    }
-                  }
-                },
-                {
-                  "id": "q2eVr",
-                  "type": "ref",
-                  "ref": "okLlR",
-                  "name": "Config Variant / Saved",
-                  "width": "fill_container",
-                  "descendants": {
-                    "M2Cqpj": {
-                      "content": "saved：清除 dirty，更新 revision，并保留当前分区与最近成功结果。"
-                    }
-                  }
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -5983,7 +5925,7 @@
       "name": "04 Diff and Write",
       "clip": true,
       "width": 1600,
-      "height": 1940,
+      "height": 1780,
       "fill": "$canvas",
       "layout": "vertical",
       "gap": 24,
@@ -6511,64 +6453,6 @@
                       }
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "ym2k2",
-          "name": "Diff and Write / Contract State Variants",
-          "width": 1440,
-          "height": 120,
-          "layout": "vertical",
-          "gap": 10,
-          "padding": [
-            12,
-            0
-          ],
-          "children": [
-            {
-              "type": "text",
-              "id": "sjCTq",
-              "name": "Diff State Variants Title",
-              "fill": "$ink",
-              "content": "合同状态变体 · 复用确认弹层与持久状态区",
-              "fontFamily": "$font-sans",
-              "fontSize": 13,
-              "fontWeight": "700"
-            },
-            {
-              "type": "frame",
-              "id": "lO6E2",
-              "name": "Diff State Variant Alerts",
-              "width": "fill_container",
-              "gap": 14,
-              "children": [
-                {
-                  "id": "uvfMu",
-                  "type": "ref",
-                  "ref": "vfSh9",
-                  "name": "Diff Variant / Cancelled",
-                  "width": "fill_container",
-                  "descendants": {
-                    "fbwFp": {
-                      "content": "取消：关闭确认弹层，保留 dirty 编辑与当前配置分区，不发起 commit。"
-                    }
-                  }
-                },
-                {
-                  "id": "uKpcV",
-                  "type": "ref",
-                  "ref": "HmRnl",
-                  "name": "Diff Variant / Unknown Fields",
-                  "width": "fill_container",
-                  "descendants": {
-                    "KrKzh": {
-                      "content": "未知或非受控字段不会进入写回；确认区明确提示规范化与丢弃影响。"
-                    }
-                  }
                 }
               ]
             }
@@ -8994,6 +8878,1260 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "OF3Ud",
+      "x": 1560,
+      "y": 12180,
+      "name": "08 Build / Custom Output",
+      "clip": true,
+      "width": 1440,
+      "height": 760,
+      "fill": "$canvas",
+      "cornerRadius": "$radius-md",
+      "stroke": "$line",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "k6af0",
+          "type": "ref",
+          "ref": "dqgA9",
+          "name": "Custom Output Header",
+          "width": "fill_container"
+        },
+        {
+          "type": "frame",
+          "id": "oCIdW",
+          "name": "Custom Output Workspace",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 18,
+          "padding": [
+            24,
+            26
+          ],
+          "children": [
+            {
+              "id": "Iyzzw",
+              "type": "ref",
+              "ref": "J0nAKh",
+              "name": "Custom Output Sidebar",
+              "height": "fill_container",
+              "descendants": {
+                "UFdjF/CPBIA": {
+                  "icon": "hammer"
+                },
+                "UFdjF/bhhtK": {
+                  "content": "Build"
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "XMy2Q",
+              "name": "Custom Output Main",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x01gYL",
+                  "name": "Custom Output Heading",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "CJEG7",
+                      "name": "Custom Output Title Group",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jIWSt",
+                          "name": "Custom Output Eyebrow",
+                          "fill": "$brand",
+                          "content": "BUILD OPERATION · SESSION OUTPUT",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jGa9p",
+                          "name": "Custom Output Title",
+                          "fill": "$ink",
+                          "content": "构建结果",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 25,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l2d02",
+                      "type": "ref",
+                      "ref": "mQEdY",
+                      "name": "Custom Output Build Action",
+                      "descendants": {
+                        "aJ9hw": {
+                          "icon": "hammer"
+                        },
+                        "V4Wi03": {
+                          "content": "开始构建"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "P8yAOC",
+                  "name": "Output Settings",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "t39LS4",
+                      "name": "Output Settings Header",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wepM4",
+                          "name": "Output Settings Title",
+                          "fill": "$ink",
+                          "content": "输出目录",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RDkFO",
+                          "name": "Output Settings Description",
+                          "fill": "$muted",
+                          "content": "只影响当前项目会话中的构建，不写入仓库配置。",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mlSPN",
+                      "name": "Output Mode Segmented Control",
+                      "width": "fill_container",
+                      "fill": "$surface-soft",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$line",
+                      "strokeWidth": 1,
+                      "gap": 4,
+                      "padding": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "CLqOH",
+                          "name": "Output Mode Cache",
+                          "width": "fill_container",
+                          "height": 36,
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "F2K6H3",
+                              "name": "Output Mode Cache Label",
+                              "fill": "$muted",
+                              "content": "缓存目录",
+                              "fontFamily": "$font-sans",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A8mfW",
+                          "name": "Output Mode Custom Active",
+                          "width": "fill_container",
+                          "height": 36,
+                          "fill": "$surface",
+                          "cornerRadius": 6,
+                          "stroke": "#BFDFCA",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "iPGse",
+                              "name": "Output Mode Custom Label",
+                              "fill": "$brand",
+                              "content": "自定义目录",
+                              "fontFamily": "$font-sans",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "O6uvkr",
+                      "type": "ref",
+                      "ref": "p3NfdV",
+                      "name": "Custom Output Path Field",
+                      "width": "fill_container",
+                      "descendants": {
+                        "YCSo4": {
+                          "content": "绝对输出路径"
+                        },
+                        "KtdY0": {
+                          "content": "/Users/mei/Sites/repolens-docs",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11
+                        },
+                        "ncERC": {
+                          "content": "目录必须位于仓库之外；不存在目录、空目录或本工具旧产物可用。"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "NPAb2",
+                  "type": "ref",
+                  "ref": "clDlI",
+                  "name": "Custom Output Result Panel",
+                  "width": "fill_container",
+                  "descendants": {
+                    "fWlEV": {
+                      "content": "/Users/mei/Sites/repolens-docs"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "m5rUGQ",
+                  "name": "Custom Output Details",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xPLwa",
+                      "name": "Custom Output Details Title",
+                      "fill": "$ink",
+                      "content": "本次输出位置",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gC9Mw",
+                      "name": "Custom Output Details Path",
+                      "fill": "$brand",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "/Users/mei/Sites/repolens-docs",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "g2fdzh",
+                      "name": "Custom Output Details Boundary",
+                      "fill": "$muted",
+                      "content": "自定义输出仅对当前 UI 会话和本次构建生效，不写入 .repolens.yml。",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yjjbJ",
+              "name": "Custom Output Side",
+              "width": 310,
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dzZEI",
+                  "name": "Custom Output Safety",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EhHts",
+                      "name": "Custom Output Safety Title",
+                      "fill": "$ink",
+                      "content": "发布前安全检查",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wtKZF",
+                      "name": "Custom Output Safety One",
+                      "fill": "$success",
+                      "content": "✓ 绝对路径且位于仓库外",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tZrlH",
+                      "name": "Custom Output Safety Two",
+                      "fill": "$success",
+                      "content": "✓ 解析现有符号链接组件",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zoLUR",
+                      "name": "Custom Output Safety Three",
+                      "fill": "$success",
+                      "content": "✓ 同级临时目录原子替换",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "F8B2ew",
+                  "name": "Custom Output Session Boundary",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "#BFDFCA",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BQU32",
+                      "name": "Custom Output Session Title",
+                      "fill": "$ink",
+                      "content": "会话级参数",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Ub1U4",
+                      "name": "Custom Output Session Text",
+                      "fill": "$muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "切换项目后恢复缓存模式；路径不进入浏览器持久化。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "k7Wma8",
+      "x": 3120,
+      "y": 12180,
+      "name": "09 Build / Confirm Overwrite",
+      "clip": true,
+      "width": 1440,
+      "height": 760,
+      "fill": "$canvas",
+      "cornerRadius": "$radius-md",
+      "stroke": "$line",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "zAVYt",
+          "type": "ref",
+          "ref": "dqgA9",
+          "name": "Custom Output Header",
+          "width": "fill_container"
+        },
+        {
+          "type": "frame",
+          "id": "HgP75",
+          "name": "Custom Output Workspace",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 18,
+          "padding": [
+            24,
+            26
+          ],
+          "children": [
+            {
+              "id": "u3C8SM",
+              "type": "ref",
+              "ref": "J0nAKh",
+              "name": "Custom Output Sidebar",
+              "height": "fill_container",
+              "descendants": {
+                "UFdjF/CPBIA": {
+                  "icon": "hammer"
+                },
+                "UFdjF/bhhtK": {
+                  "content": "Build"
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "V7tvx",
+              "name": "Custom Output Main",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ineQB",
+                  "name": "Custom Output Heading",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lRKg6",
+                      "name": "Custom Output Title Group",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UiSOw",
+                          "name": "Custom Output Eyebrow",
+                          "fill": "$brand",
+                          "content": "BUILD OPERATION · SESSION OUTPUT",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Xggyc",
+                          "name": "Custom Output Title",
+                          "fill": "$ink",
+                          "content": "构建结果",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 25,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "tCOv0",
+                      "type": "ref",
+                      "ref": "mQEdY",
+                      "name": "Custom Output Build Action",
+                      "descendants": {
+                        "aJ9hw": {
+                          "icon": "hammer"
+                        },
+                        "V4Wi03": {
+                          "content": "开始构建"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nzvlQ",
+                  "name": "Output Settings",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ehOKh",
+                      "name": "Output Settings Header",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GKogu",
+                          "name": "Output Settings Title",
+                          "fill": "$ink",
+                          "content": "输出目录",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "P28fnT",
+                          "name": "Output Settings Description",
+                          "fill": "$muted",
+                          "content": "只影响当前项目会话中的构建，不写入仓库配置。",
+                          "fontFamily": "$font-sans",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aH5yI",
+                      "name": "Output Mode Segmented Control",
+                      "width": "fill_container",
+                      "fill": "$surface-soft",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$line",
+                      "strokeWidth": 1,
+                      "gap": 4,
+                      "padding": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "tMmfh",
+                          "name": "Output Mode Cache",
+                          "width": "fill_container",
+                          "height": 36,
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "fUkoy",
+                              "name": "Output Mode Cache Label",
+                              "fill": "$muted",
+                              "content": "缓存目录",
+                              "fontFamily": "$font-sans",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "i6b3Vc",
+                          "name": "Output Mode Custom Active",
+                          "width": "fill_container",
+                          "height": 36,
+                          "fill": "$surface",
+                          "cornerRadius": 6,
+                          "stroke": "#BFDFCA",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "HnVtu",
+                              "name": "Output Mode Custom Label",
+                              "fill": "$brand",
+                              "content": "自定义目录",
+                              "fontFamily": "$font-sans",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "EPeiG",
+                      "type": "ref",
+                      "ref": "p3NfdV",
+                      "name": "Custom Output Path Field",
+                      "width": "fill_container",
+                      "descendants": {
+                        "YCSo4": {
+                          "content": "绝对输出路径"
+                        },
+                        "KtdY0": {
+                          "content": "/Users/mei/Sites/repolens-docs",
+                          "fontFamily": "$font-mono",
+                          "fontSize": 11
+                        },
+                        "ncERC": {
+                          "content": "目录必须位于仓库之外；不存在目录、空目录或本工具旧产物可用。"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "l53H3U",
+                  "type": "ref",
+                  "ref": "clDlI",
+                  "name": "Custom Output Result Panel",
+                  "width": "fill_container",
+                  "descendants": {
+                    "fWlEV": {
+                      "content": "/Users/mei/Sites/repolens-docs"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "AuvDq",
+                  "name": "Custom Output Details",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gA6ZP",
+                      "name": "Custom Output Details Title",
+                      "fill": "$ink",
+                      "content": "本次输出位置",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kFFua",
+                      "name": "Custom Output Details Path",
+                      "fill": "$brand",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "/Users/mei/Sites/repolens-docs",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Ibfsz",
+                      "name": "Custom Output Details Boundary",
+                      "fill": "$muted",
+                      "content": "自定义输出仅对当前 UI 会话和本次构建生效，不写入 .repolens.yml。",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Q00ElN",
+              "name": "Custom Output Side",
+              "width": 310,
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "g8zFBx",
+                  "name": "Custom Output Safety",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hUMUw",
+                      "name": "Custom Output Safety Title",
+                      "fill": "$ink",
+                      "content": "发布前安全检查",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ozJGh",
+                      "name": "Custom Output Safety One",
+                      "fill": "$success",
+                      "content": "✓ 绝对路径且位于仓库外",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "G9gq1H",
+                      "name": "Custom Output Safety Two",
+                      "fill": "$success",
+                      "content": "✓ 解析现有符号链接组件",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RUUHh",
+                      "name": "Custom Output Safety Three",
+                      "fill": "$success",
+                      "content": "✓ 同级临时目录原子替换",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "c305pE",
+                  "name": "Custom Output Session Boundary",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "#BFDFCA",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "D74Dt",
+                      "name": "Custom Output Session Title",
+                      "fill": "$ink",
+                      "content": "会话级参数",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ALWHq",
+                      "name": "Custom Output Session Text",
+                      "fill": "$muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "切换项目后恢复缓存模式；路径不进入浏览器持久化。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "m3hif",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 0,
+          "name": "Overwrite Confirmation Backdrop",
+          "width": 1440,
+          "height": 760,
+          "fill": "#14281D99",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "NFYAY",
+              "name": "Overwrite Confirmation Dialog",
+              "width": 520,
+              "fill": "$surface",
+              "cornerRadius": "$radius-md",
+              "stroke": "$line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vP5oO",
+                  "name": "Overwrite Confirmation Icon Container",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#FFF8E8",
+                  "cornerRadius": "$radius-sm",
+                  "stroke": "#EAD5A7",
+                  "strokeWidth": 1,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "G22d8",
+                      "name": "Overwrite Confirmation Icon",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "folder-sync",
+                      "library": "lucide",
+                      "fill": "$warning"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "k4DHs3",
+                  "name": "Overwrite Confirmation Title",
+                  "fill": "$ink",
+                  "content": "替换 repolens 的旧构建产物？",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 20,
+                  "fontWeight": "750"
+                },
+                {
+                  "type": "text",
+                  "id": "zSRHU",
+                  "name": "Overwrite Confirmation Description",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "目标目录包含 .repolens-build 哨兵。确认后会在同级临时目录完成构建，发布前再次检查所有权，再原子替换当前目录。",
+                  "lineHeight": 1.6,
+                  "fontFamily": "$font-sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "sRYvn",
+                  "name": "Overwrite Confirmation Path",
+                  "width": "fill_container",
+                  "fill": "$surface-soft",
+                  "cornerRadius": "$radius-sm",
+                  "stroke": "$line",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 14,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ha9MW",
+                      "name": "Overwrite Confirmation Path Label",
+                      "fill": "$muted",
+                      "content": "将被替换的目录",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "jJjXo",
+                      "name": "Overwrite Confirmation Path Value",
+                      "fill": "$brand",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "/Users/mei/Sites/repolens-docs",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "iL1zs",
+                  "name": "Overwrite Confirmation Safety Note",
+                  "width": "fill_container",
+                  "fill": "#EAF7EE",
+                  "cornerRadius": "$radius-sm",
+                  "stroke": "#BEE0C9",
+                  "strokeWidth": 1,
+                  "gap": 9,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "dcmLG",
+                      "name": "Overwrite Confirmation Safety Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "shield-check",
+                      "library": "lucide",
+                      "fill": "$success"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hrQNa",
+                      "name": "Overwrite Confirmation Safety Text",
+                      "fill": "$success",
+                      "content": "构建失败时保留最近一次成功产物。",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xybKN",
+                  "name": "Overwrite Confirmation Actions",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "id": "krABC",
+                      "type": "ref",
+                      "ref": "NIVG5",
+                      "name": "Overwrite Confirmation Cancel",
+                      "descendants": {
+                        "o5cd1": {
+                          "icon": "arrow-left"
+                        },
+                        "L5HKwm": {
+                          "content": "返回修改"
+                        }
+                      }
+                    },
+                    {
+                      "id": "y5tBMP",
+                      "type": "ref",
+                      "ref": "mQEdY",
+                      "name": "Overwrite Confirmation Confirm",
+                      "descendants": {
+                        "aJ9hw": {
+                          "icon": "folder-sync"
+                        },
+                        "V4Wi03": {
+                          "content": "确认替换并构建"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "SNX4i",
+      "x": 4680,
+      "y": 12180,
+      "name": "10 Narrow / Custom Output",
+      "clip": true,
+      "width": 390,
+      "height": 844,
+      "fill": "$canvas",
+      "cornerRadius": "$radius-md",
+      "stroke": "$line",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "Z8bsK",
+          "type": "ref",
+          "ref": "T69PfB",
+          "name": "Narrow Custom Output Header",
+          "width": "fill_container",
+          "descendants": {
+            "Dg19G": {
+              "content": "Build"
+            },
+            "CLkRt": {
+              "content": "待修复",
+              "fill": "#F2C879"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "UKFZb",
+          "name": "Narrow Custom Output Body",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 14,
+          "padding": [
+            20,
+            14
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "vtSfL",
+              "name": "Narrow Custom Output Title Group",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 5,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "c2r34",
+                  "name": "Narrow Custom Output Eyebrow",
+                  "fill": "$brand",
+                  "content": "BUILD · SESSION OUTPUT",
+                  "fontFamily": "$font-mono",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                },
+                {
+                  "type": "text",
+                  "id": "wo8Ys",
+                  "name": "Narrow Custom Output Title",
+                  "fill": "$ink",
+                  "content": "选择输出目录",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 24,
+                  "fontWeight": "750"
+                },
+                {
+                  "type": "text",
+                  "id": "EeC5A",
+                  "name": "Narrow Custom Output Description",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "本次选择不写入 .repolens.yml；切换项目后恢复缓存模式。",
+                  "lineHeight": 1.55,
+                  "fontFamily": "$font-sans",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WHezJ",
+              "name": "Narrow Output Mode Segmented Control",
+              "width": "fill_container",
+              "fill": "$surface-soft",
+              "cornerRadius": "$radius-sm",
+              "stroke": "$line",
+              "strokeWidth": 1,
+              "gap": 4,
+              "padding": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Z5HwOI",
+                  "name": "Narrow Output Mode Cache",
+                  "width": "fill_container",
+                  "height": 38,
+                  "cornerRadius": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "H2SIAp",
+                      "name": "Narrow Output Mode Cache Label",
+                      "fill": "$muted",
+                      "content": "缓存目录",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "650"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Iyl6i",
+                  "name": "Narrow Output Mode Custom Active",
+                  "width": "fill_container",
+                  "height": 38,
+                  "fill": "$surface",
+                  "cornerRadius": 6,
+                  "stroke": "#BFDFCA",
+                  "strokeWidth": 1,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G0pvK",
+                      "name": "Narrow Output Mode Custom Label",
+                      "fill": "$brand",
+                      "content": "自定义目录",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "F7hSd",
+              "type": "ref",
+              "ref": "YF5Kl",
+              "name": "Narrow Custom Output Error",
+              "width": "fill_container",
+              "descendants": {
+                "qiixw": {
+                  "content": "绝对输出路径"
+                },
+                "r1OUe0": {
+                  "content": "/Users/mei/Workspaces/repository/dist",
+                  "fontSize": 10
+                },
+                "Ixcos": {
+                  "content": "输出目录不能位于仓库内部。"
+                },
+                "MkNik": {
+                  "content": "output_path · unsafe_output_path"
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "W4xHp",
+              "name": "Narrow Custom Output Safety",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": "$radius-sm",
+              "stroke": "$line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 9,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "T3Z6r",
+                  "name": "Narrow Custom Output Safety Title Row",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "lqxvP",
+                      "name": "Narrow Custom Output Safety Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "shield-check",
+                      "library": "lucide",
+                      "fill": "$brand"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wbk9U",
+                      "name": "Narrow Custom Output Safety Title",
+                      "fill": "$ink",
+                      "content": "允许的位置",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "A45Ou3",
+                  "name": "Narrow Custom Output Safety Text",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "仓库外的不存在目录、空目录，或带 .repolens-build 哨兵的旧产物。",
+                  "lineHeight": 1.55,
+                  "fontFamily": "$font-sans",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "id": "WkZNG",
+              "type": "ref",
+              "ref": "n38kJ",
+              "name": "Narrow Custom Output Disabled Build",
+              "width": "fill_container",
+              "descendants": {
+                "J3l6N6": {
+                  "content": "请先修复输出路径"
+                }
+              }
+            },
+            {
+              "id": "dOa5d",
+              "type": "ref",
+              "ref": "NIVG5",
+              "name": "Narrow Custom Output Use Cache",
+              "width": "fill_container",
+              "descendants": {
+                "o5cd1": {
+                  "icon": "archive"
+                },
+                "L5HKwm": {
+                  "content": "改用缓存目录"
+                }
+              }
             }
           ]
         }

@@ -10,13 +10,14 @@ export class APIError extends Error {
     readonly field?: string,
     readonly issues: ValidationIssue[] = [],
     readonly warnings: ValidationIssue[] = [],
+    readonly outputPath?: string,
   ) {
     super(message);
   }
 }
 
 async function parse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string; field?: string; issues?: ValidationIssue[]; warnings?: ValidationIssue[] } & T;
+  const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string; field?: string; issues?: ValidationIssue[]; warnings?: ValidationIssue[]; output_path?: string } & T;
   if (!response.ok) {
     throw new APIError(
       payload.message || `请求失败（HTTP ${response.status}）`,
@@ -25,6 +26,7 @@ async function parse<T>(response: Response): Promise<T> {
       payload.field,
       payload.issues ?? [],
       payload.warnings ?? [],
+      payload.output_path,
     );
   }
   return payload;
@@ -48,6 +50,7 @@ export const api = {
     post<PrepareResponse>("/api/config/prepare-write", { path, settings, revision }),
   commit: (path: string, settings: RepositorySettings, revision: string) =>
     post<ConfigResponse>("/api/config/commit", { path, settings, revision, confirm: true }),
-  startBuild: (path: string) => post<BuildResponse>("/api/build", { path }),
+  startBuild: (path: string, outputPath = "", confirmOverwrite = false) =>
+    post<BuildResponse>("/api/build", { path, output_path: outputPath, confirm_overwrite: confirmOverwrite }),
   getBuild: async (id: string) => parse<BuildResponse>(await fetch(`/api/build/${encodeURIComponent(id)}`)),
 };

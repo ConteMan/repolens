@@ -14,6 +14,9 @@
 | P0 | `05 Build` | 查看构建进度与可用结果 | opening、loading_config、loading_theme、building、成功含 warning、失败、并发构建、失败但已有成功产物 | CG-04、CG-05；通用日志尾部与跨页面恢复最近成功结果已明确延期，不得在本期画板暗示可用 |
 | P1 | `06 Narrow / Project and Config` | 在 390px 视口完成项目打开与配置编辑 | 与桌面相同的加载/错误/dirty 状态；分区导航；规则独立子页 | 不能只依赖 CSS 单列堆叠；需先确定导航与子页状态模型 |
 | P1 | `07 Narrow / Diff and Build` | 在 390px 视口确认 diff 并查看构建结果 | 横向可滚动 diff、冲突恢复、纵向 Stats、warning/错误、sticky action 不遮挡内容 | CG-03、CG-04、CG-05 |
+| P0 | `08 Build / Custom Output` | 为当前 UI 会话选择安全的自定义绝对输出目录 | 缓存/自定义模式、最终路径、切换项目重置 | Spec 014；不改变仓库 `output` 信任域 |
+| P0 | `09 Build / Confirm Overwrite` | 明确确认替换 repolens 自有旧产物 | 哨兵确认、同级临时构建、所有权复检、失败保留 | Spec 014；未知非空目录不可强制覆盖 |
+| P1 | `10 Narrow / Custom Output` | 在 390px 视口选择或修复输出目录 | 分段控件、字段错误、禁用构建、恢复缓存模式 | Spec 014；无页面级横向溢出 |
 
 ## 真实规模样本
 
@@ -60,5 +63,8 @@
 | `05 Build` | `I9boV` |
 | `06 Narrow / Project and Config` | `mvZOJ` |
 | `07 Narrow / Diff and Build` | `cgNoV` |
+| `08 Build / Custom Output` | `OF3Ud` |
+| `09 Build / Confirm Overwrite` | `k7Wma8` |
+| `10 Narrow / Custom Output` | `SNX4i` |
 
-详细状态、视口与快照路径见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
+原 M6 状态、视口与快照路径见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)；Spec 014 新增状态见 [UI 会话级输出设计基线评审](reviews/2026-07-22-session-output.md)。

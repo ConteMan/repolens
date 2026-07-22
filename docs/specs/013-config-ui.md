@@ -38,7 +38,7 @@ func Run(ctx context.Context, opts Options) error // 阻塞直到 ctx 取消
 
 - 不做原生桌面壳、远程仓库 URL、最近项目、服务端目录浏览器、多用户/远程部署、站点托管；
 - 不做外部 `--config`、`source` / `output` / `access` 的可信域编辑、YAML 无损 round-trip 或仓库内容编辑；
-- 不做内嵌 `serve`/watch、预览 session、浏览器预览链接或用户自选部署输出目录；
+- 不做内嵌 `serve`/watch、预览 session 或浏览器预览链接；用户自选本地输出目录由 [Spec 014](014-ui-session-output.md) 取代本期非目标；
 - 不做通用构建日志流、页面刷新或进程重启后的最近成功 operation 查询；
 - CLI 仍是一等公民，UI 不新增 CLI 做不到的构建语义。
 

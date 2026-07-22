@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `repolens ui` 的构建页支持会话级自定义绝对输出目录；服务端拒绝危险路径与无所有权目录，覆盖旧产物前要求显式确认，并在同级临时目录构建后原子发布。
+
 ### Changed
 
 - `repolens ui` 打开项目时同时提供仓库值、有效默认值、字段来源与读取 warning；配置校验错误可定位到具体字段并恢复焦点。

@@ -23,7 +23,7 @@
 
 ## 非目标
 
-本期不呈现远程仓库、加密、外部配置、目录浏览器和内嵌 serve；它们不能以“禁用但可点”的形式暗示可用。规则与主题是仓库域的真实 schema，提供结构化编辑；`source`、`output`、`access` 不是仓库域字段，绝不展示为可写控件。
+本期不呈现远程仓库、加密、外部配置、目录浏览器和内嵌 serve；它们不能以“禁用但可点”的形式暗示可用。规则与主题是仓库域的真实 schema，提供结构化编辑；`source`、`output`、`access` 不是仓库域字段，绝不展示为可写控件。Spec 014 新增的输出目录是 Build 页的会话级执行参数，与仓库 `output` 配置明确分离，不进入配置表单或 YAML diff。
 
 ## 视觉与原型现状
 
@@ -31,6 +31,6 @@
 
 低保真结构探索已完成 18 个顶层画板，覆盖 A/B 的 1440px 与 390px Project Open、Config Edit、Diff、Build 及结构评分卡。源文件为 `prototypes/repolens-ui-explorations.pen`，对应 PNG 位于 `reviews/2026-07-17-structure-ab-assets/`。该文件继续作为结构决策证据，不作为最终视觉事实源。
 
-最终视觉事实源为 `prototypes/repolens-ui.pen`。文件包含与 [screen-inventory.md](screen-inventory.md) 一致的 8 个顶层画板、28 个 reusable component，以及 1440px、1024px 和 390px 的关键页面与状态。源文件已完成保存后关闭重开验证；全量布局检查无裁切或意外溢出。节点、视口、状态和 PNG 映射见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
+最终视觉事实源为 `prototypes/repolens-ui.pen`。文件包含与 [screen-inventory.md](screen-inventory.md) 一致的 11 个顶层画板、28 个 reusable component，以及 1440px、1024px 和 390px 的关键页面与状态。原 M6 基线已完成保存后关闭重开验证；Spec 014 新增画板均通过布局检查与 PNG 复核。节点、视口、状态和 PNG 映射见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md) 与 [UI 会话级输出设计基线评审](reviews/2026-07-22-session-output.md)。
 
-Issue #29 已完成最终 `.pen`、Foundations、组件状态、选定方向页面与窄屏状态的设计交付。Issue #30 已直接按最终 `.pen` 的节点、变量和组件映射完成方向 B 工作区、桌面/窄屏布局、Diff/Write、Build 与恢复状态实现；回归证据见 [2026-07-22 实现回归](reviews/2026-07-22-implementation-regression.md)。真实用户任务验证仍是后续验收活动，不能由启发式设计评审或自动化浏览器回归替代。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
+Issue #29 已完成最终 `.pen`、Foundations、组件状态、选定方向页面与窄屏状态的设计交付。Issue #30 已直接按最终 `.pen` 的节点、变量和组件映射完成方向 B 工作区、桌面/窄屏布局、Diff/Write、Build 与恢复状态实现；回归证据见 [2026-07-22 实现回归](reviews/2026-07-22-implementation-regression.md)。Issue #46 的 Spec 014 会话级输出以新增的 `08`～`10` 画板为实现基线。真实用户任务验证仍是后续验收活动，不能由启发式设计评审或自动化浏览器回归替代。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
