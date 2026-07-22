@@ -1,6 +1,6 @@
 # M6 图形化配置界面设计基线
 
-> 状态：结构方向已选定（2026-07-17），CG-01～CG-02 合同已收口（2026-07-22）。React + TypeScript + Base UI 是实现基线；后续以持续上下文工作台为骨架，进入设计系统和可用性验证。配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
+> 状态：结构方向、CG-01～CG-02 合同与最终 Pencil 设计基线均已冻结（2026-07-22）。React + TypeScript + Base UI 是实现基线；下一步由 Issue #30 按节点映射实现并做设计回归。配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
 
 当前交付由 GitHub Milestone [M6 UI design exploration](https://github.com/ConteMan/repolens/milestone/1) 跟踪：[#27](https://github.com/ConteMan/repolens/issues/27) 负责 Pencil 结构探索，[#28](https://github.com/ConteMan/repolens/issues/28) 负责合同收口，[#29](https://github.com/ConteMan/repolens/issues/29) 负责设计系统与完整页面，[#30](https://github.com/ConteMan/repolens/issues/30) 负责 React 实现与设计回归。
 
@@ -27,10 +27,10 @@
 
 ## 视觉与原型现状
 
-桌面以 1440px 和 1280px 验收，窄屏以 390px 验收。窄屏需验证分区导航、规则独立编辑、diff 区域内横向滚动和 sticky action 不遮挡内容。路径、glob、diff 使用系统 mono；不得加载外部字体或 CDN。
+桌面以 1440px 和 1024px 验收，窄屏以 390px 验收。窄屏需验证分区导航、规则独立编辑、diff 区域内横向滚动和 sticky action 不遮挡内容。路径、glob、diff 使用系统 mono；不得加载外部字体或 CDN。
 
-低保真结构探索已完成 18 个顶层画板，覆盖 A/B 的 1440px 与 390px Project Open、Config Edit、Diff、Build 及结构评分卡。源文件为 `prototypes/repolens-ui-explorations.pen`，对应 PNG 位于 `reviews/2026-07-17-structure-ab-assets/`。该文件是结构决策证据，不是最终视觉事实源；颜色、圆角和最大内容宽度仍未锁定。
+低保真结构探索已完成 18 个顶层画板，覆盖 A/B 的 1440px 与 390px Project Open、Config Edit、Diff、Build 及结构评分卡。源文件为 `prototypes/repolens-ui-explorations.pen`，对应 PNG 位于 `reviews/2026-07-17-structure-ab-assets/`。该文件继续作为结构决策证据，不作为最终视觉事实源。
 
-当前磁盘上的 `prototypes/repolens-ui.pen` 只包含一个 800×600 空白 frame，不能作为可编辑视觉事实源，也不能证明评审 PNG 来自已持久化源文件。`Hday5`、`NuC1D`、`L2W5X` 和 `bi8Au` 仅作为历史线框证据：它们缺少完整控件状态，且部分流程与当前实现不一致。
+最终视觉事实源为 `prototypes/repolens-ui.pen`。文件包含与 [screen-inventory.md](screen-inventory.md) 一致的 8 个顶层画板、28 个 reusable component，以及 1440px、1024px 和 390px 的关键页面与状态。源文件已完成保存后关闭重开验证；全量布局检查无裁切或意外溢出。节点、视口、状态和 PNG 映射见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)。
 
-合同收口完成后，由 Issue #29 创建干净的最终 `.pen`，建设 Foundations、完整组件状态和选定方向页面，并补 1024px、连续断点和用户任务验证。交付仍需满足：源文件含非空顶层画板、reusable component/ref 可检查、布局检查通过、PNG 与节点映射一致。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。
+Issue #29 已完成最终 `.pen`、Foundations、组件状态、选定方向页面与窄屏状态的设计交付。Issue #30 实现时不得从历史线框或 PNG 反推结构；应直接读取最终 `.pen` 的节点、变量和组件映射，并以评审快照做视觉回归。真实用户任务验证仍是实现后的验收活动，不能由启发式设计评审替代。具体流程和退出门禁见 [exploration-brief.md](exploration-brief.md) 与 [screen-inventory.md](screen-inventory.md)。

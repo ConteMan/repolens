@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `repolens ui` 打开项目时同时提供仓库值、有效默认值、字段来源与读取 warning；配置校验错误可定位到具体字段并恢复焦点。
+- 冻结 `repolens ui` 最终 Pencil 设计基线，覆盖 Foundations、核心组件、Project Open、Config Edit、Diff/Write、Build 及 390px 窄屏状态。
 
 ## [1.2.1] - 2026-07-17
 

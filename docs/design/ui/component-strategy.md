@@ -1,6 +1,6 @@
 # repolens UI 组件策略
 
-> 状态：提案
+> 状态：已冻结（2026-07-22）；Pencil 组件与页面基线见 [2026-07-22 最终设计基线评审](reviews/2026-07-22-final-baseline.md)
 > 适用范围：`repolens ui` 本地管理界面
 > 技术边界：React + TypeScript + Vite + Base UI；最终产物由 Go `embed` 进入单二进制；运行时零外部请求
 ## 1. 目标
