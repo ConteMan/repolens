@@ -99,6 +99,20 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
   await expect(fixedTree.getByRole("link", { name: currentPath, exact: true })).toHaveAttribute("title", currentPath);
   await expect(page.locator(".tb-file")).toHaveAttribute("title", currentPath);
 
+  const fixedScroll = fixedTree.locator(":scope > .tree");
+  const fixedActions = fixedTree.getByRole("group", { name: "Repository tree actions" });
+  const fixedSearch = fixedTree.locator(".tree-search");
+  const fixedActionsTop = (await fixedActions.boundingBox())?.y;
+  const fixedSearchTop = (await fixedSearch.boundingBox())?.y;
+  await fixedScroll.evaluate((tree) => {
+    tree.scrollTop = tree.scrollHeight;
+  });
+  await expect.poll(() => fixedScroll.evaluate((tree) => tree.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(async () => (await fixedActions.boundingBox())?.y).toBe(fixedActionsTop);
+  await expect.poll(async () => (await fixedSearch.boundingBox())?.y).toBe(fixedSearchTop);
+  await expect(fixedScroll).toHaveAttribute("data-tree-scroll", "");
+  await expect(page.locator(".sidebar")).not.toHaveAttribute("data-tree-scroll", "");
+
   const uniquePathCount = await page.locator("details[data-tree-path]").evaluateAll((details) => (
     new Set(details.map((detail) => detail.getAttribute("data-tree-path"))).size
   ));
@@ -123,6 +137,20 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
   await expect.poll(() => page.evaluate(() => Object.values(
     (window as typeof window & { __treeWrites: Record<string, number> }).__treeWrites,
   ).reduce((total, count) => total + count, 0))).toBe(uniquePathCount);
+
+  const overlayScroll = overlayTree.locator(":scope > .tree");
+  const overlayActions = overlayTree.getByRole("group", { name: "Repository tree actions" });
+  const overlaySearch = overlayTree.locator(".tree-search");
+  const overlayActionsTop = (await overlayActions.boundingBox())?.y;
+  const overlaySearchTop = (await overlaySearch.boundingBox())?.y;
+  await overlayScroll.evaluate((tree) => {
+    tree.scrollTop = tree.scrollHeight;
+  });
+  await expect.poll(() => overlayScroll.evaluate((tree) => tree.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(async () => (await overlayActions.boundingBox())?.y).toBe(overlayActionsTop);
+  await expect.poll(async () => (await overlaySearch.boundingBox())?.y).toBe(overlaySearchTop);
+  await expect(overlayScroll).toHaveAttribute("data-tree-scroll", "");
+  await expect(overlayTree).not.toHaveAttribute("data-tree-scroll", "");
 
   await overlayTree.getByRole("button", { name: "Collapse all" }).click();
   const ancestorPaths = await overlayTree.locator("li.current").evaluate((current) => {
