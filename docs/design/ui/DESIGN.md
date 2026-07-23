@@ -2,7 +2,7 @@
 
 > 状态：结构方向、CG-01～CG-02 合同与最终 Pencil 设计基线均已冻结（2026-07-22）。Issue #30 已按节点映射完成 React + TypeScript + Base UI 实现与自动化回归；配置语义以 `docs/design/config.md` 为准，跨层状态见 [contract-gaps.md](contract-gaps.md)。
 
-当前交付由 GitHub Milestone [M6 UI design exploration](https://github.com/ConteMan/repolens/milestone/1) 跟踪：[#27](https://github.com/ConteMan/repolens/issues/27) 负责 Pencil 结构探索，[#28](https://github.com/ConteMan/repolens/issues/28) 负责合同收口，[#29](https://github.com/ConteMan/repolens/issues/29) 负责设计系统与完整页面，[#30](https://github.com/ConteMan/repolens/issues/30) 负责 React 实现与设计回归。
+本轮交付已由 GitHub Milestone [M6 UI design exploration](https://github.com/ConteMan/repolens/milestone/1) 闭环：[#27](https://github.com/ConteMan/repolens/issues/27) 完成 Pencil 结构探索，[#28](https://github.com/ConteMan/repolens/issues/28) 完成合同收口，[#29](https://github.com/ConteMan/repolens/issues/29) 完成设计系统与完整页面，[#30](https://github.com/ConteMan/repolens/issues/30) 完成 React 实现与设计回归。
 
 ## 目标与信息架构
 
