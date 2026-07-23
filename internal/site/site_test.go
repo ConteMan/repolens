@@ -104,6 +104,11 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, rootPage, `href="docs/guide.md/"`)
 	assertContains(t, rootPage, `src="../assets/pixel.png"`)
 	assertContains(t, rootPage, "docs")
+	assertContains(t, rootPage, `<li class="current file" data-kind="markdown">`)
+	assertContains(t, rootPage, `<a class="tree-file" href="README.md/" title="README.md" aria-label="README.md">`)
+	if got := strings.Count(rootPage, `<li class="current `); got != 1 {
+		t.Fatalf("root page current tree items = %d, want 1", got)
+	}
 
 	// 普通外部超链接允许出现在产物中（自检只拦资源加载类外部引用）。
 	assertContains(t, rootPage, `href="https://example.com/"`)
@@ -469,6 +474,12 @@ func TestBuildSiteHomeOverridesRootPage(t *testing.T) {
 	assertNotContains(t, rootPage, "External")
 	// site.language 注入 <html lang>（默认 zh-CN）。
 	assertContains(t, rootPage, `<html class="no-js" lang="zh-CN">`)
+	assertContains(t, rootPage, `<details data-tree-path="docs" open>`)
+	assertContains(t, rootPage, `<li class="current file" data-kind="markdown">`)
+	assertContains(t, rootPage, `<a class="tree-file" href="docs/guide.md/" title="docs/guide.md" aria-label="docs/guide.md">`)
+	if got := strings.Count(rootPage, `<li class="current `); got != 1 {
+		t.Fatalf("custom home current tree items = %d, want 1", got)
+	}
 }
 
 func TestTOCPanelModeAffectsMarkdownPages(t *testing.T) {

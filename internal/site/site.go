@@ -565,10 +565,16 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 	if title == "" {
 		title = dirTitle(dir)
 	}
+	treeCurrentPath := dir
+	if dir == "" {
+		if home, ok := b.dirDocFile(model, dir); ok {
+			treeCurrentPath = home.Path
+		}
+	}
 	data := theme.PageData{
 		Title:       title,
 		Breadcrumbs: breadcrumbs(currentURL, dir, true),
-		Tree:        buildTree(model, currentURL, dir, b.cfg.View.TreeExpandDepth),
+		Tree:        buildTree(model, currentURL, treeCurrentPath, b.cfg.View.TreeExpandDepth),
 		Kind:        "dir",
 		Body:        body,
 		TOC:         toc,

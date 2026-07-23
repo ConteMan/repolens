@@ -59,6 +59,23 @@ test.afterAll(async () => {
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
+test("highlights and locates the default home file", async ({ page }) => {
+  await page.goto(`${siteURL}/view/`);
+
+  const fixedTree = page.locator("#tree-src");
+  const current = fixedTree.locator("li.current");
+  await expect(current).toHaveCount(1);
+  await expect(current.getByRole("link", { name: "README.md", exact: true })).toHaveAttribute("title", "README.md");
+
+  await fixedTree.getByRole("button", { name: "Collapse all" }).click();
+  await fixedTree.getByRole("button", { name: "Locate current file" }).click();
+  await expect.poll(() => current.evaluate((item) => {
+    const itemRect = item.getBoundingClientRect();
+    const containerRect = item.closest("[data-tree-scroll]")?.getBoundingClientRect();
+    return !!containerRect && itemRect.top >= containerRect.top && itemRect.bottom <= containerRect.bottom;
+  })).toBe(true);
+});
+
 test("keeps bulk tree actions synchronized and locates the current file", async ({ page }) => {
   await page.addInitScript(() => {
     const original = Storage.prototype.setItem;
