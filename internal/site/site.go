@@ -565,10 +565,16 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 	if title == "" {
 		title = dirTitle(dir)
 	}
+	treeCurrentPath := dir
+	if dir == "" {
+		if home, ok := b.dirDocFile(model, dir); ok {
+			treeCurrentPath = home.Path
+		}
+	}
 	data := theme.PageData{
 		Title:       title,
 		Breadcrumbs: breadcrumbs(currentURL, dir, true),
-		Tree:        buildTree(model, currentURL, dir, b.cfg.View.TreeExpandDepth),
+		Tree:        buildTree(model, currentURL, treeCurrentPath, b.cfg.View.TreeExpandDepth),
 		Kind:        "dir",
 		Body:        body,
 		TOC:         toc,
@@ -922,7 +928,7 @@ func sortTree(node *theme.TreeNode) {
 
 func breadcrumbs(currentURL, repoPath string, dir bool) []theme.Crumb {
 	var crumbs []theme.Crumb
-	crumbs = append(crumbs, theme.Crumb{Label: "root", Href: render.RelTo(currentURL, viewDirURL(""))})
+	crumbs = append(crumbs, theme.Crumb{Label: "root", Path: ".", Href: render.RelTo(currentURL, viewDirURL(""))})
 	if repoPath == "" {
 		crumbs[0].Current = true
 		return crumbs
@@ -937,6 +943,7 @@ func breadcrumbs(currentURL, repoPath string, dir bool) []theme.Crumb {
 		}
 		crumbs = append(crumbs, theme.Crumb{
 			Label:   part,
+			Path:    p,
 			Href:    render.RelTo(currentURL, target),
 			Current: last,
 		})

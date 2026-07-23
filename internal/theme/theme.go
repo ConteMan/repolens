@@ -27,10 +27,12 @@ type Renderer struct {
 	vars         map[string]string
 }
 
-// Crumb is one breadcrumb item. Href is already relative to the current page;
-// Current marks the terminal crumb so templates can render it without a link.
+// Crumb is one breadcrumb item. Path is the complete repository-relative path
+// ("." for root), while Href is already relative to the current page. Current
+// marks the terminal crumb so templates can render it without a link.
 type Crumb struct {
 	Label   string
+	Path    string
 	Href    string
 	Current bool
 }
@@ -361,6 +363,10 @@ func fallbackKindLabel(kind string, ui map[string]string) string {
 var uiZH = map[string]string{
 	"tree":                 "文件树",
 	"tree_title":           "文件树（收起/浮出）",
+	"tree_actions":         "文件树操作",
+	"tree_expand_all":      "全部展开",
+	"tree_collapse_all":    "全部折叠",
+	"tree_locate_current":  "定位当前文件",
 	"pin_tree":             "固定",
 	"pin_tree_title":       "固定为侧栏",
 	"back":                 "后退",
@@ -410,6 +416,10 @@ var uiZH = map[string]string{
 var uiEN = map[string]string{
 	"tree":                 "Repository tree",
 	"tree_title":           "Repository tree",
+	"tree_actions":         "Repository tree actions",
+	"tree_expand_all":      "Expand all",
+	"tree_collapse_all":    "Collapse all",
+	"tree_locate_current":  "Locate current file",
 	"pin_tree":             "Pin",
 	"pin_tree_title":       "Pin as sidebar",
 	"back":                 "Back",

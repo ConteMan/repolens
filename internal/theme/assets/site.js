@@ -80,10 +80,75 @@
       applySavedDetailState(detail);
       detail.addEventListener("toggle", function () {
         var path = detail.getAttribute("data-tree-path") || "";
+        var state = detail.open ? "open" : "closed";
+        if (detail.getAttribute("data-tree-bulk-state") === state) {
+          detail.removeAttribute("data-tree-bulk-state");
+          return;
+        }
+        detail.removeAttribute("data-tree-bulk-state");
         sessionSet(keyFor(detail), detail.open ? "open" : "closed");
         syncDetailPath(path, detail.open, detail);
       });
     });
+  }
+
+  function updateTreeDetails(open, paths) {
+    var selected = null;
+    if (paths) {
+      selected = Object.create(null);
+      paths.forEach(function (path) { selected[path] = true; });
+    }
+    var persisted = Object.create(null);
+    var state = open ? "open" : "closed";
+    Array.prototype.forEach.call(document.querySelectorAll("details[data-tree-path]"), function (detail) {
+      var path = detail.getAttribute("data-tree-path") || "";
+      if (!path || (selected && !selected[path])) {
+        return;
+      }
+      if (!persisted[path]) {
+        sessionSet(statePrefix + path, state);
+        persisted[path] = true;
+      }
+      if (detail.open !== open) {
+        detail.setAttribute("data-tree-bulk-state", state);
+        detail.open = open;
+      }
+    });
+  }
+
+  function locateCurrentTreeItem(button) {
+    var root = button.closest && button.closest("nav");
+    var current = root && root.querySelector(".tree li.current");
+    if (!current) {
+      return;
+    }
+    var paths = [];
+    var node = current.parentElement;
+    while (node && node !== root) {
+      if (node.tagName === "DETAILS" && node.hasAttribute("data-tree-path")) {
+        paths.push(node.getAttribute("data-tree-path"));
+      }
+      node = node.parentElement;
+    }
+    updateTreeDetails(true, paths);
+    var first = current.firstElementChild;
+    var target = first && first.tagName === "DETAILS" ? first.querySelector("summary") : first;
+    if (target && target.scrollIntoView) {
+      window.requestAnimationFrame(function () {
+        target.scrollIntoView({ block: "nearest" });
+      });
+    }
+  }
+
+  function runTreeAction(button) {
+    var action = button.getAttribute("data-tree-action");
+    if (action === "expand") {
+      updateTreeDetails(true);
+    } else if (action === "collapse") {
+      updateTreeDetails(false);
+    } else if (action === "locate") {
+      locateCurrentTreeItem(button);
+    }
   }
 
   function bindScroll(container) {
@@ -579,7 +644,9 @@
     }
 
     var button = target.closest && target.closest("button");
-    if (button && button.id === "btn-tree") {
+    if (button && button.hasAttribute("data-tree-action")) {
+      runTreeAction(button);
+    } else if (button && button.id === "btn-tree") {
       if (!isFloatingViewport() && savedTreePreference() === "expanded") {
         setTreePreference("collapsed");
       } else {

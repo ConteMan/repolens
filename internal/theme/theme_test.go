@@ -165,12 +165,18 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<use href="#icon-tree"></use>`,
 		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
 		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
+		`<div class="tree-actions js-only" role="group" aria-label="Repository tree actions">`,
+		`data-tree-action="expand" title="Expand all" aria-label="Expand all"`,
+		`data-tree-action="collapse" title="Collapse all" aria-label="Collapse all"`,
+		`data-tree-action="locate" title="Locate current file" aria-label="Locate current file"`,
 		`<span class="tree-chevron" aria-hidden="true"></span>`,
 		`<div class="scrim" id="scrim" aria-hidden="true"></div>`,
 		`<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">`,
 		`<nav class="overlay-tree" id="overlay-tree" data-tree-scroll aria-label="Repository tree"></nav>`,
 		`<button class="tb-btn" id="btn-pin-tree" type="button"`,
 		`<details data-tree-path="docs" open>`,
+		`<summary title="docs" aria-label="docs">`,
+		`title="docs/guide.md" aria-label="docs/guide.md"`,
 		`<symbol id="icon-markdown" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/><path d="M5.3 8.2h5.4M5.3 10.7h5.4"/></symbol>`,
 	} {
 		if !strings.Contains(got, want) {
@@ -197,6 +203,8 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	css := readTestOutput(t, outDir, "_assets/site.css")
 	for _, want := range []string{
 		`.tree-chevron`,
+		`.tree-actions`,
+		`.tree-action:focus-visible`,
 		`border-right: 1.6px solid var(--muted);`,
 		`body[data-tree="collapsed"] .sidebar`,
 		`body[data-tree-mode="floating"] .sidebar`,
@@ -225,6 +233,9 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`overlayTree.innerHTML = treeSource.innerHTML;`,
 		`event.key === "Escape"`,
 		`sessionSet(keyFor(detail), detail.open ? "open" : "closed");`,
+		`detail.getAttribute("data-tree-bulk-state") === state`,
+		`sessionSet(statePrefix + path, state);`,
+		`target.scrollIntoView({ block: "nearest" });`,
 		`sessionSet(scrollKey, String(container.scrollTop));`,
 		`window.fetch(url.href, { credentials: "same-origin" })`,
 		`window.history.pushState({ pjax: true }, "", url.href);`,
@@ -311,9 +322,9 @@ func TestToolbarPageDataAndLanguage(t *testing.T) {
 			Subject: "docs: update guide",
 		},
 		Breadcrumbs: []Crumb{
-			{Label: "root", Href: "../../"},
-			{Label: "docs", Href: "../"},
-			{Label: "guide.md", Current: true},
+			{Label: "root", Path: ".", Href: "../../"},
+			{Label: "docs", Path: "docs", Href: "../"},
+			{Label: "guide.md", Path: "docs/guide.md", Current: true},
 		},
 	})
 	if err != nil {
@@ -330,6 +341,8 @@ func TestToolbarPageDataAndLanguage(t *testing.T) {
 		`href="source/"`,
 		`Raw file guide.md`,
 		`Search (/)`,
+		`<a href="../" title="docs" aria-label="docs">docs</a>`,
+		`<span class="tb-file" title="docs/guide.md" aria-label="docs/guide.md" aria-current="page">guide.md</span>`,
 		`<aside class="toc-panel" id="toc-panel" aria-label="Table of contents">`,
 		`<a href="#intro" data-lv="2">Intro</a>`,
 	} {
