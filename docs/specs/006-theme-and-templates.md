@@ -1,7 +1,7 @@
 # 006: 主题、模板与增强层（internal/theme）
 
 - 状态：已实现
-- 关联：roadmap M3、ADR-002、ADR-003、Issue #37
+- 关联：roadmap M3、ADR-002、ADR-003、Issue #37、Issue #55
 
 ## 问题
 
@@ -14,12 +14,12 @@
    - `page` —— 文件页正文（Markdown / Code / HTML iframe / Image / Binary 五种形态的分支在此）；
    - `dirlist` —— 目录页（README 正文来自 `PageData.Body`，子项表格来自 `PageData.DirEntries`）；
    - `tree` —— 文件树侧栏（递归 partial：目录可折叠、类型图标、当前项高亮、祖先默认展开、其余按 `tree_expand_depth`）。
-2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
+2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。固定侧栏与浮动覆盖层使用定高 flex 导航，树级操作和搜索入口保留在顶部，仅根文件树列表占用剩余高度并滚动。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
    - 文件树折叠状态持久化（sessionStorage，key 为目录路径）；
    - 文件树提供全部展开、全部折叠与定位当前文件操作；固定树与浮动树同步，批量更新按唯一路径持久化一次；
    - 树项目与面包屑对截断文本提供完整仓库相对路径的原生 tooltip 和无障碍名称；
-   - 树滚动位置保持；
+   - 根文件树列表独立滚动并保持位置，操作与搜索区域不随树滚动；
    - pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 / 顶栏 / TOC / 树高亮 ＋ history.pushState，失败回退整页跳转。
    - 无 JS 时一切可读可导航（`<details>` 或默认展开态兜底）。
 4. **Mermaid**：vendor `mermaid.min.js`（UMD 构建，版本写入文件头注释与 CHANGELOG）到 `_assets/`；仅 `HasMermaid` 的页面注入 `<script defer>` 与初始化调用。

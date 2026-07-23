@@ -77,7 +77,7 @@
   </div>
 </header>
 <div class="shell">
-  <aside class="sidebar" data-tree-scroll>
+  <aside class="sidebar">
     <nav class="tree-nav" id="tree-src" aria-label="{{index .UI "tree"}}">
       {{template "tree-actions" .}}
       {{template "tree" .Tree}}
@@ -99,7 +99,7 @@
     <span>{{.SiteTitle}} · {{index .UI "tree"}}</span>
     <button class="tb-btn" id="btn-pin-tree" type="button" title="{{index .UI "pin_tree_title"}}"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>{{index .UI "pin_tree"}}</button>
   </div>
-  <nav class="overlay-tree" id="overlay-tree" data-tree-scroll aria-label="{{index .UI "tree"}}"></nav>
+  <nav class="overlay-tree" id="overlay-tree" aria-label="{{index .UI "tree"}}"></nav>
 </div>
 {{if and .TOC (eq .TOCPanel "floating")}}<aside class="toc-panel" id="toc-panel" aria-label="{{index .UI "toc_title"}}">
   <div class="toc-panel-head">{{index .UI "toc"}}</div>

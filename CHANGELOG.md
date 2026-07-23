@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- 文件树侧栏与浮动覆盖层仅滚动文件列表，树级操作和搜索入口固定在顶部，长仓库中无需返回树顶即可继续操作。
+
 ## [1.4.0] - 2026-07-23
 
 ### Added

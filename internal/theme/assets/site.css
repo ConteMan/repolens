@@ -314,13 +314,27 @@ body[data-tree-mode="floating"] .sidebar .tree-nav {
   position: sticky;
   top: var(--topbar-height);
   height: calc(100vh - var(--topbar-height));
-  overflow: auto;
+  overflow: hidden;
   border-right: 1px solid var(--border);
   background: var(--subtle);
 }
 
 .tree-nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   padding: 0.75rem;
+}
+
+.tree-nav > .tree,
+.overlay-tree > .tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .tree,
@@ -527,9 +541,12 @@ body[data-overlay="open"] .overlay {
 }
 
 .overlay-tree {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
   padding: 0.75rem;
-  overflow: auto;
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1007,9 +1024,13 @@ body[data-info="open"] .info-panel {
     position: static;
     height: auto;
     max-height: 42vh;
-    overflow: auto;
+    overflow: hidden;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  .tree-nav {
+    max-height: 42vh;
   }
 }
 
