@@ -33,6 +33,9 @@
   <symbol id="icon-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.7"/><path d="M8 7.2V11"/><circle cx="8" cy="5" r=".35"/></symbol>
   <symbol id="icon-commit" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M1.5 8h4.3M10.2 8h4.3"/></symbol>
   <symbol id="icon-pin" viewBox="0 0 16 16"><path d="M6 2.5h4l.5 5 2 2h-9l2-2z"/><path d="M8 9.5V14"/></symbol>
+  <symbol id="icon-expand-all" viewBox="0 0 16 16"><path d="M3 2.5h10M4.5 6L8 9.5 11.5 6M3 13.5h10"/></symbol>
+  <symbol id="icon-collapse-all" viewBox="0 0 16 16"><path d="M3 2.5h10M4.5 10L8 6.5 11.5 10M3 13.5h10"/></symbol>
+  <symbol id="icon-locate" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.5"/><path d="M8 1.5V4M8 12v2.5M1.5 8H4M12 8h2.5"/></symbol>
 </svg>
 <header class="topbar">
   <div class="tb-group js-only">
@@ -41,7 +44,7 @@
     <button class="tb-btn" id="btn-fwd" type="button" title="{{index .UI "forward"}}" aria-label="{{index .UI "forward"}}"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
   </div>
   <nav class="tb-crumbs" aria-label="Breadcrumbs">
-    {{range .Breadcrumbs}}{{if .Current}}<span class="tb-file" aria-current="page">{{.Label}}</span>{{else}}<a href="{{.Href}}">{{.Label}}</a>{{end}}{{end}}
+    {{range .Breadcrumbs}}{{if .Current}}<span class="tb-file" title="{{.Path}}" aria-label="{{.Path}}" aria-current="page">{{.Label}}</span>{{else}}<a href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}">{{.Label}}</a>{{end}}{{end}}
   </nav>
   <div class="tb-group">
     {{if and .TOC (eq .TOCPanel "floating")}}<button class="tb-btn js-only" id="btn-toc" type="button" title="{{index .UI "toc_title"}}" aria-label="{{index .UI "toc_title"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-toc"></use></svg></button>{{end}}
@@ -75,7 +78,10 @@
 </header>
 <div class="shell">
   <aside class="sidebar" data-tree-scroll>
-    <nav class="tree-nav" id="tree-src" aria-label="{{index .UI "tree"}}">{{template "tree" .Tree}}</nav>
+    <nav class="tree-nav" id="tree-src" aria-label="{{index .UI "tree"}}">
+      {{template "tree-actions" .}}
+      {{template "tree" .Tree}}
+    </nav>
   </aside>
   <main class="content" id="content">
     <h1>{{.Title}}</h1>
@@ -105,3 +111,9 @@
 </html>{{end}}
 
 {{define "toc-panel-item"}}<a href="#{{.Anchor}}" data-lv="{{.Level}}">{{.Title}}</a>{{range .Children}}{{template "toc-panel-item" .}}{{end}}{{end}}
+
+{{define "tree-actions"}}<div class="tree-actions js-only" role="group" aria-label="{{index .UI "tree_actions"}}">
+  <button class="tree-action" type="button" data-tree-action="expand" title="{{index .UI "tree_expand_all"}}" aria-label="{{index .UI "tree_expand_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="collapse" title="{{index .UI "tree_collapse_all"}}" aria-label="{{index .UI "tree_collapse_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="locate" title="{{index .UI "tree_locate_current"}}" aria-label="{{index .UI "tree_locate_current"}}"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
+</div>{{end}}

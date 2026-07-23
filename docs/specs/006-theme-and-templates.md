@@ -1,7 +1,7 @@
 # 006: 主题、模板与增强层（internal/theme）
 
 - 状态：已实现
-- 关联：roadmap M3、ADR-002、ADR-003
+- 关联：roadmap M3、ADR-002、ADR-003、Issue #37
 
 ## 问题
 
@@ -17,6 +17,8 @@
 2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
    - 文件树折叠状态持久化（sessionStorage，key 为目录路径）；
+   - 文件树提供全部展开、全部折叠与定位当前文件操作；固定树与浮动树同步，批量更新按唯一路径持久化一次；
+   - 树项目与面包屑对截断文本提供完整仓库相对路径的原生 tooltip 和无障碍名称；
    - 树滚动位置保持；
    - pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 / 顶栏 / TOC / 树高亮 ＋ history.pushState，失败回退整页跳转。
    - 无 JS 时一切可读可导航（`<details>` 或默认展开态兜底）。
@@ -42,6 +44,11 @@ type DirEntry struct {
     Size                   int64
     LastCommit             *source.Commit
     IsDir                  bool
+}
+
+type Crumb struct {
+    Label, Path, Href string // Path 为完整仓库相对路径；根为 "."
+    Current           bool
 }
 
 type PageData struct {
@@ -78,7 +85,7 @@ func (r *Renderer) WriteAssets(outDir string) error
 
 ## 验收
 
-- 模板渲染单测：五种 Kind ＋ 目录页的 golden HTML；vars 覆盖生效；模板覆盖生效；主题 CSS 合同覆盖 GFM 表格的容器滚动、长内容断行、代码块边界与键盘焦点；
+- 模板渲染单测：五种 Kind ＋ 目录页的 golden HTML；vars 覆盖生效；模板覆盖生效；文件树批量操作与完整路径标注存在；主题 CSS 合同覆盖 GFM 表格的容器滚动、长内容断行、代码块边界与键盘焦点；
 - 产物中无任何外部 origin 引用（配合 spec 005 自检）；
 - 禁 JS 环境下手工验证树可导航、内容可读；
 - 视觉验收：对本仓库构建，维护者认可默认主题观感（docu.md 级整洁度）；

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 文件树增加全部展开、全部折叠和定位当前文件操作；固定树与浮动树共享去重后的目录状态，长树项目和面包屑可查看完整仓库相对路径。
+
 ## [1.3.1] - 2026-07-22
 
 ### Fixed

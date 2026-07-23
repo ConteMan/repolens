@@ -4,11 +4,11 @@
 <li class="{{if .Current}}current {{end}}{{if .IsDir}}dir{{else}}file{{end}}" data-kind="{{.Kind}}">
 {{if .IsDir}}
   <details data-tree-path="{{.Path}}" {{if .Expanded}}open{{end}}>
-    <summary><span class="tree-chevron" aria-hidden="true"></span><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="{{.Href}}">{{.Name}}</a></span></summary>
+    <summary title="{{.Path}}" aria-label="{{.Path}}"><span class="tree-chevron" aria-hidden="true"></span><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}">{{.Name}}</a></span></summary>
     <ul>{{range .Children}}{{template "tree-node" .}}{{end}}</ul>
   </details>
 {{else}}
-  <a class="tree-file" href="{{.Href}}"><svg class="icon icon-{{iconName .Kind false}}" aria-hidden="true"><use href="#icon-{{iconName .Kind false}}"></use></svg><span>{{.Name}}</span></a>
+  <a class="tree-file" href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}"><svg class="icon icon-{{iconName .Kind false}}" aria-hidden="true"><use href="#icon-{{iconName .Kind false}}"></use></svg><span>{{.Name}}</span></a>
 {{end}}
 </li>
 {{end}}

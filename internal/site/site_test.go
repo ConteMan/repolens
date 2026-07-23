@@ -175,6 +175,21 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, robots, "Disallow: /")
 }
 
+func TestBreadcrumbsIncludeRepositoryPaths(t *testing.T) {
+	t.Parallel()
+
+	got := breadcrumbs("view/docs/guides/readme.md/", "docs/guides/readme.md", false)
+	want := []string{".", "docs", "docs/guides", "docs/guides/readme.md"}
+	if len(got) != len(want) {
+		t.Fatalf("breadcrumbs() len = %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i].Path != want[i] {
+			t.Errorf("breadcrumbs()[%d].Path = %q, want %q", i, got[i].Path, want[i])
+		}
+	}
+}
+
 func TestAgentOutputs(t *testing.T) {
 	repo := newAgentTestRepo(t)
 	outDir, _, err := buildSite(t, repo)
