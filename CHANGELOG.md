@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-23
+
 ### Added
 
 - 文件树增加全部展开、全部折叠和定位当前文件操作；固定树与浮动树共享去重后的目录状态，长树项目和面包屑可查看完整仓库相对路径。
@@ -116,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/ConteMan/repolens/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/ConteMan/repolens/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ConteMan/repolens/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/ConteMan/repolens/compare/v1.2.0...v1.2.1
