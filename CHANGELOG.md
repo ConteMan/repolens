@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-07-23
+
 ### Changed
 
 - 文件树侧栏与浮动覆盖层仅滚动文件列表，树级操作和搜索入口固定在顶部，长仓库中无需返回树顶即可继续操作。
@@ -122,7 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/ConteMan/repolens/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ConteMan/repolens/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/ConteMan/repolens/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ConteMan/repolens/compare/v1.2.1...v1.3.0
