@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-24
+
 ### Added
 
 - 桌面固定文件树支持鼠标、触控笔、触摸与键盘调宽，访问者偏好按部署 base path 持久化，并支持双击或 `Enter` 恢复站点作者默认值。
@@ -132,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/ConteMan/repolens/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/ConteMan/repolens/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ConteMan/repolens/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/ConteMan/repolens/compare/v1.3.0...v1.3.1
