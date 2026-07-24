@@ -288,8 +288,14 @@ th {
 .shell {
   display: grid;
   grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
+  grid-template-areas: "sidebar content";
   min-height: calc(100vh - var(--topbar-height));
   transition: grid-template-columns 0.18s ease;
+}
+
+body[data-tree-position="right"] .shell {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, var(--sidebar-width));
+  grid-template-areas: "content sidebar";
 }
 
 /* 收起 = 侧栏列宽过渡到 0（对齐原型动效），内容立即隐藏防溢出。 */
@@ -298,10 +304,16 @@ body[data-tree-mode="floating"] .shell {
   grid-template-columns: 0 minmax(0, 1fr);
 }
 
+body[data-tree-position="right"][data-tree="collapsed"] .shell,
+body[data-tree-position="right"][data-tree-mode="floating"] .shell {
+  grid-template-columns: minmax(0, 1fr) 0;
+}
+
 body[data-tree="collapsed"] .sidebar,
 body[data-tree-mode="floating"] .sidebar {
   overflow: hidden;
   border-right: 0;
+  border-left: 0;
   visibility: hidden;
 }
 
@@ -311,12 +323,18 @@ body[data-tree-mode="floating"] .sidebar .tree-nav {
 }
 
 .sidebar {
+  grid-area: sidebar;
   position: sticky;
   top: var(--topbar-height);
   height: calc(100vh - var(--topbar-height));
   overflow: hidden;
   border-right: 1px solid var(--border);
   background: var(--subtle);
+}
+
+body[data-tree-position="right"] .sidebar {
+  border-right: 0;
+  border-left: 1px solid var(--border);
 }
 
 .tree-nav {
@@ -515,6 +533,14 @@ body[data-tree-mode="floating"] .sidebar .tree-nav {
   transition: transform 0.18s ease;
 }
 
+body[data-tree-position="right"] .overlay {
+  right: 0;
+  left: auto;
+  border-right: 0;
+  border-left: 1px solid var(--border);
+  transform: translateX(102%);
+}
+
 body[data-overlay="open"] .scrim {
   visibility: visible;
   opacity: 1;
@@ -559,6 +585,7 @@ body[data-overlay="open"] .overlay {
 }
 
 .content {
+  grid-area: content;
   width: 100%;
   min-width: 0;
   max-width: var(--content-width);
@@ -1018,6 +1045,9 @@ body[data-info="open"] .info-panel {
      有 JS 时 data-tree-mode="floating" 的隐藏规则优先生效。 */
   .shell {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "sidebar"
+      "content";
   }
 
   .sidebar {
@@ -1026,6 +1056,7 @@ body[data-info="open"] .info-panel {
     max-height: 42vh;
     overflow: hidden;
     border-right: 0;
+    border-left: 0;
     border-bottom: 1px solid var(--border);
   }
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `view.tree_position: right` 现在会镜像生成站点的桌面固定文件树、收起列、边框和浮动树出现方向，不再静默保持左侧布局。
+
 ## [1.4.1] - 2026-07-23
 
 ### Changed

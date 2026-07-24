@@ -68,6 +68,7 @@ type DirEntry struct {
 type PageData struct {
 	Title, SiteTitle    string
 	RelRoot             string
+	TreePosition        string
 	Breadcrumbs         []Crumb
 	Tree                *TreeNode
 	Kind                string
@@ -135,6 +136,9 @@ func (r *Renderer) Page(w io.Writer, d PageData) error {
 }
 
 func fillPageDefaults(d PageData) PageData {
+	if d.TreePosition == "" {
+		d.TreePosition = "left"
+	}
 	if d.TOCPanel == "" {
 		d.TOCPanel = "floating"
 	}

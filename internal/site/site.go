@@ -592,6 +592,7 @@ func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
 	data.RelRoot = relRoot(currentURL)
 	data.NoIndex = b.cfg.Access.NoIndex
 	data.SearchEnabled = b.cfg.View.Search
+	data.TreePosition = b.cfg.View.TreePosition
 	data.Lang = b.cfg.Site.Language
 	data.TOCPanel = tocPanelMode(b.cfg.View.TOCPanel)
 	data.UI = theme.UIStrings(b.cfg.Site.Language)

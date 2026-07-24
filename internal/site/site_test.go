@@ -180,6 +180,19 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, robots, "Disallow: /")
 }
 
+func TestBuildPropagatesTreePosition(t *testing.T) {
+	repo := newSiteTestRepo(t)
+	outDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.View.TreePosition = "right"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	page := readOutput(t, outDir, "view/index.html")
+	assertContains(t, page, `data-tree-position="right"`)
+}
+
 func TestBreadcrumbsIncludeRepositoryPaths(t *testing.T) {
 	t.Parallel()
 
