@@ -67,7 +67,7 @@ theme:
   templates: .repolens/templates/    # 同名覆盖内置模板
 
 view:
-  tree_position: left                # left / right
+  tree_position: left                # left / right；控制固定树与浮动树出现方向
   tree_expand_depth: 2
   toc_panel: floating                # floating / inline；默认 floating
   search: true                       # 站内搜索入口与 search.json；默认 true
@@ -85,6 +85,7 @@ agent:
 - **`ignore` vs `rules[].render: false`**：前者"文件当不存在"（两层都排除），后者"可访问但无阅读页"（镜像层保留）。`ignore` 同时是安全功能，文档按此定位撰写；
 - **加密与 Agent 视图互斥**：`access.encrypt.paths` 与 agent 输出的交集构建时检测并告警（lint 规则）。私有站点优先推荐平台层认证（Agent 可走 service token），客户端加密仅留给托管平台完全不可控的场景；
 - **站内搜索是浏览层能力**：`view.search: true` 时输出站点根 `search.json` 并渲染工具栏 / 树顶搜索入口；设为 `false` 时两者都不生成。该开关不参与 `rules` 级联，且不受 `agent.index_json` 影响；
+- **文件树位置统一**：`view.tree_position` 同时控制桌面固定侧栏与浮动树从左侧或右侧出现；窄屏禁用 JavaScript 时仍退化为树在正文前的上下单列，保证导航可读；
 - **侧栏宽度分属两个层级**：`theme.vars.sidebar-width` 是站点作者随构建产物发布的默认值；访问者对桌面固定树的调宽只保存在按部署 base path 隔离的浏览器本地偏好中，不回写配置。浮动树宽度保持独立；
 - **密码只引用环境变量名**，配置文件可安全提交；
 - 主题定制三级：`theme.vars`（90% 需求）→ `theme.css` → `theme.templates`（逃生舱，模板名是公开 API，宁缺毋滥）。

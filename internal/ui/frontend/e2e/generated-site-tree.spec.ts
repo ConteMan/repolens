@@ -9,11 +9,14 @@ const currentPath = "docs/deeply/nested/a-very-long-file-name-that-needs-a-toolt
 let fixtureRoot = "";
 let siteURL = "";
 let server: Server;
+let leftOutput = "";
+let rightOutput = "";
 
 test.beforeAll(async () => {
   fixtureRoot = mkdtempSync(join(tmpdir(), "repolens-tree-e2e-"));
   const repository = join(fixtureRoot, "repository");
-  const output = join(fixtureRoot, "dist");
+  leftOutput = join(fixtureRoot, "dist-left");
+  rightOutput = join(fixtureRoot, "dist-right");
   mkdirSync(join(repository, "docs", "deeply", "nested"), { recursive: true });
   writeFileSync(join(repository, "README.md"), "# Home\n");
   writeFileSync(join(repository, currentPath), "# Current file\n\nCurrent content.\n");
@@ -29,11 +32,17 @@ test.beforeAll(async () => {
   execFileSync("git", ["-C", repository, "config", "user.name", "repolens tree test"]);
   execFileSync("git", ["-C", repository, "add", "."]);
   execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: add tree fixture"]);
-  execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", output]);
+  execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", leftOutput]);
+  writeFileSync(join(repository, ".repolens.yml"), "site:\n  language: en\nview:\n  tree_position: right\n");
+  execFileSync("git", ["-C", repository, "add", ".repolens.yml"]);
+  execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: move tree to the right"]);
+  execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", rightOutput]);
 
   server = createServer((request, response) => {
     const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
-    let filePath = join(output, pathname.replace(/^\/+/, ""));
+    const right = pathname === "/right" || pathname.startsWith("/right/");
+    const relativePath = (right ? pathname.slice("/right".length) : pathname).replace(/^\/+/, "");
+    let filePath = join(right ? rightOutput : leftOutput, relativePath);
     try {
       if (statSync(filePath).isDirectory()) filePath = join(filePath, "index.html");
       const contentTypes: Record<string, string> = {
@@ -188,5 +197,55 @@ test("keeps the generated tree navigable without JavaScript", async ({ browser }
   await page.goto(`${siteURL}/view/${currentPath}/`);
   await expect(page.locator("#tree-src").getByRole("link", { name: currentPath, exact: true })).toBeVisible();
   await expect(page.locator(".tree-actions")).toBeHidden();
+  await context.close();
+});
+
+test("mirrors fixed and floating trees for left and right layouts", async ({ page }) => {
+  for (const fixture of [
+    { prefix: "", position: "left", fixedAtStart: true },
+    { prefix: "/right", position: "right", fixedAtStart: false },
+  ]) {
+    await page.goto(`${siteURL}${fixture.prefix}/view/${currentPath}/`);
+    await page.evaluate(() => window.localStorage.setItem("repolens:tree:preference", "expanded"));
+    await page.reload();
+    await expect(page.locator("body")).toHaveAttribute("data-tree-position", fixture.position);
+
+    const sidebar = page.locator(".sidebar");
+    const content = page.locator("#content");
+    const sidebarBox = await sidebar.boundingBox();
+    const contentBox = await content.boundingBox();
+    if (!sidebarBox || !contentBox) throw new Error("fixed layout boxes are unavailable");
+    expect(sidebarBox.x < contentBox.x).toBe(fixture.fixedAtStart);
+
+    const border = await sidebar.evaluate((element, position) => {
+      const style = getComputedStyle(element);
+      return position === "left" ? style.borderRightWidth : style.borderLeftWidth;
+    }, fixture.position);
+    expect(border).toBe("1px");
+
+    await page.locator("#btn-tree").click();
+    await page.locator("#btn-tree").click();
+    await expect(page.locator("body")).toHaveAttribute("data-overlay", "open");
+    if (fixture.position === "left") {
+      await expect.poll(async () => Math.round((await page.locator("#tree-overlay").boundingBox())?.x ?? -1)).toBe(0);
+    } else {
+      await expect.poll(async () => {
+        const box = await page.locator("#tree-overlay").boundingBox();
+        return box ? Math.round(box.x + box.width) : -1;
+      }).toBe(await page.evaluate(() => window.innerWidth));
+    }
+
+    await page.locator("#overlay-tree").getByRole("link", { name: "README.md", exact: true }).click();
+    await expect(page).toHaveURL(`${siteURL}${fixture.prefix}/view/README.md/`);
+    await expect(page.locator("body")).toHaveAttribute("data-tree-position", fixture.position);
+  }
+});
+
+test("keeps the right-side static tree readable without JavaScript", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto(`${siteURL}/right/view/${currentPath}/`);
+  await expect(page.locator("body")).toHaveAttribute("data-tree-position", "right");
+  await expect(page.locator("#tree-src").getByRole("link", { name: currentPath, exact: true })).toBeVisible();
   await context.close();
 });

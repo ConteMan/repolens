@@ -12,7 +12,7 @@
 {{if .HasCustomCSS}}<link rel="stylesheet" href="{{.RelRoot}}_assets/custom.css">{{end}}
 {{.HeadExtra}}
 </head>
-<body data-page-kind="{{.Kind}}">
+<body data-page-kind="{{.Kind}}" data-tree-position="{{.TreePosition}}">
 <svg class="icon-sprite" aria-hidden="true" focusable="false">
   <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
   <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>

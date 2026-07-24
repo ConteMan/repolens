@@ -189,6 +189,40 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 	}
 }
 
+func TestTreePositionRendering(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	for _, tc := range []struct {
+		name         string
+		treePosition string
+		want         string
+	}{
+		{name: "default", want: `data-tree-position="left"`},
+		{name: "right", treePosition: "right", want: `data-tree-position="right"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			err := renderer.Page(&out, PageData{
+				Title:        "guide.md",
+				SiteTitle:    "test",
+				Kind:         "markdown",
+				TreePosition: tc.treePosition,
+			})
+			if err != nil {
+				t.Fatalf("Page() error = %v", err)
+			}
+			if !strings.Contains(out.String(), tc.want) {
+				t.Fatalf("output missing %q\n%s", tc.want, out.String())
+			}
+		})
+	}
+}
+
 func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	t.Parallel()
 
@@ -211,6 +245,9 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`border-right: 1.6px solid var(--muted);`,
 		`body[data-tree="collapsed"] .sidebar`,
 		`body[data-tree-mode="floating"] .sidebar`,
+		`body[data-tree-position="right"] .shell`,
+		`body[data-tree-position="right"] .sidebar`,
+		`body[data-tree-position="right"] .overlay`,
 		`.scrim`,
 		`.overlay`,
 		`body[data-overlay="open"] .overlay`,
