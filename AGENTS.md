@@ -41,7 +41,7 @@ GitHub Issues 是任务与进度跟踪面；仓库文档是长期有效的设计
 3. **Commit 遵循 Conventional Commits**（见 CONTRIBUTING.md），一个 commit 一个逻辑变更。
 4. **新增依赖需要论证**：Go 直接依赖控制在个位数，候选库必须主流且在维护（参照 ADR-003 / ADR-006）。Node 工具链仅允许用于 `repolens ui` 的开发构建；最终发布仍须是无需 Node 的单二进制。
 5. **质量门禁**：提交前 `gofmt -l .` 无输出、`go vet ./...`、`go test ./...`、`go build ./...` 全部通过；CI 红灯的 PR 不合并。
-6. **范围纪律**：roadmap 中标记 Out of v1 的能力（搜索、多仓库聚合、主题市场等）不做，除非 roadmap 先修订。
+6. **范围纪律**：roadmap 中标记 Out of v1.x 的能力（全文搜索、多仓库聚合、主题市场等）不做，除非 roadmap 先修订。
 7. **零外部请求约束**：生成站点的任何页面不得引用外部 CDN / 字体 / 脚本，所有资源 embed 进二进制并输出到站点内。
 
 ## 协作模式：主控 Agent 与实现 Agent

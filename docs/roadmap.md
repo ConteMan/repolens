@@ -21,6 +21,8 @@
 
 ## v1.x 范围（2026-07-06 维护者确认方向）
 
+> 状态：已按 M7 → M5 → M6 → M8 顺序完成（2026-07-22）。后续范围通过 GitHub Issues / Milestones 重新立项。
+
 ### In
 
 - 多平台分发与升级：GoReleaser 流水线、Homebrew tap、Windows 单 exe ＋ Scoop、`repolens upgrade`（[009](specs/009-release-distribution.md)）
@@ -42,15 +44,13 @@
 
 ## 里程碑
 
-| 里程碑 | 内容 | Specs | 验收 |
-|---|---|---|---|
-| M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | — | `repolens version` 可用，CI 绿 ✅ 已完成 |
-| M2 核心管线 | source（git）→ config（双域级联）→ render（md/code）→ site（双层输出） | [001–005](specs/README.md) | 对本仓 build 出可浏览的 dist/ |
-| M3 浏览层 | 文件树、目录页、HTML iframe、主题、增强层 JS、serve | [006–007](specs/README.md) | docu.md 级浏览体验 |
-| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | [008](specs/README.md) ＋ 收尾项 | 文档站上线，tag v1.0.0 ✅ 已完成（2026-07-05） |
-| M7 分发 | GoReleaser、brew tap、Windows 单 exe/Scoop、upgrade、version 修复 | [009](specs/README.md) | 三平台免 Go 环境安装实测通过 |
-| M5 浏览体验 | 混合树、顶部工具栏、pjax、源码视图、站内搜索 | [010–012](specs/README.md) | 维护者对照 docu.md 交互验收 |
-| M6 图形界面 | `repolens ui`：项目选择、可视化配置、构建预览闭环 | [013](specs/README.md) | 全新用户零终端完成建站路径 |
-| M8 UI 输出 | `repolens ui` 会话级缓存/自定义输出目录、安全覆盖与原子发布 | [014](specs/README.md) | 工作树构建到用户指定本地目录且不破坏未知内容 |
-
-> v1.x 推进顺序：M7 → M5 → M6 → M8（M8 于 2026-07-22 确认；不改变 `output` 信任域或部署边界）。
+| 里程碑 | 内容 | Specs | 验收 | 状态 |
+|---|---|---|---|---|
+| M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | — | `repolens version` 可用，CI 绿 | 已完成 |
+| M2 核心管线 | source（git）→ config（双域级联）→ render（md/code）→ site（双层输出） | [001–005](specs/README.md) | 对本仓 build 出可浏览的 dist/ | 已完成 |
+| M3 浏览层 | 文件树、目录页、HTML iframe、主题、增强层 JS、serve | [006–007](specs/README.md) | docu.md 级浏览体验 | 已完成 |
+| M4 收尾 | Agent 视图、git 元数据、平台部署指南、dogfood CI、v1.0.0 发布 | [008](specs/README.md) ＋ 收尾项 | 文档站上线，tag v1.0.0 | 已完成（2026-07-05） |
+| M7 分发 | GoReleaser、brew tap、Windows 单 exe/Scoop、upgrade、version 修复 | [009](specs/README.md) | 三平台免 Go 环境安装实测通过 | 已完成 |
+| M5 浏览体验 | 混合树、顶部工具栏、pjax、源码视图、站内搜索 | [010–012](specs/README.md) | 维护者对照 docu.md 交互验收 | 已完成 |
+| M6 图形界面 | `repolens ui`：项目选择、可视化配置、构建预览闭环 | [013](specs/README.md) | 全新用户零终端完成建站路径 | 已完成 |
+| M8 UI 输出 | `repolens ui` 会话级缓存/自定义输出目录、安全覆盖与原子发布 | [014](specs/README.md) | 工作树构建到用户指定本地目录且不破坏未知内容 | 已完成（2026-07-22） |
