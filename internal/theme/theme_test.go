@@ -164,6 +164,7 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<div class="search-modal" id="search-modal" role="dialog" aria-label="Site search"`,
 		`<use href="#icon-tree"></use>`,
 		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
+		`<div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="Resize repository tree" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>`,
 		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
 		`<ul class="tree" data-tree-scroll>`,
 		`<div class="tree-actions js-only" role="group" aria-label="Repository tree actions">`,
@@ -248,6 +249,13 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`body[data-tree-position="right"] .shell`,
 		`body[data-tree-position="right"] .sidebar`,
 		`body[data-tree-position="right"] .overlay`,
+		`.sidebar-resizer {`,
+		`left: calc(var(--sidebar-effective-width) - 12px);`,
+		`width: 24px;`,
+		`touch-action: none;`,
+		`.sidebar-resizer:focus-visible`,
+		`body[data-sidebar-resizing="true"] .shell`,
+		`@media (forced-colors: active)`,
 		`.scrim`,
 		`.overlay`,
 		`body[data-overlay="open"] .overlay`,
@@ -268,6 +276,15 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	js := readTestOutput(t, outDir, "_assets/site.js")
 	for _, want := range []string{
 		`var treePreferenceKey = "repolens:tree:preference";`,
+		`var sidebarStoragePrefix = "repolens:sidebar-width:v1:";`,
+		`function sidebarStorageKey()`,
+		`Math.floor(Math.min(sidebarMaxWidth, window.innerWidth * 0.45))`,
+		`resizer.setPointerCapture(event.pointerId);`,
+		`resizer.addEventListener("pointercancel"`,
+		`event.key === "Home"`,
+		`event.key === "End"`,
+		`event.key === "ArrowLeft"`,
+		`localRemove(sidebarStorageKey());`,
 		`storageGet(window.localStorage, key)`,
 		`window.matchMedia("(max-width: 1023px)")`,
 		`overlayTree.innerHTML = treeSource.innerHTML;`,
@@ -286,6 +303,17 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		if !strings.Contains(js, want) {
 			t.Fatalf("site.js missing %q\n%s", want, js)
 		}
+	}
+}
+
+func TestSidebarResizeStrings(t *testing.T) {
+	t.Parallel()
+
+	if got := UIStrings("zh-CN")["tree_resize"]; got != "调整文件树宽度" {
+		t.Fatalf("zh tree_resize = %q", got)
+	}
+	if got := UIStrings("en")["tree_resize"]; got != "Resize repository tree" {
+		t.Fatalf("en tree_resize = %q", got)
 	}
 }
 

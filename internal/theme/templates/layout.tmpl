@@ -83,6 +83,7 @@
       {{template "tree" .Tree}}
     </nav>
   </aside>
+  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="{{index .UI "tree_resize"}}" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
   <main class="content" id="content">
     <h1>{{.Title}}</h1>
     {{template "page" .}}
