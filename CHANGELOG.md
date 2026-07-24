@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 桌面固定文件树支持鼠标、触控笔、触摸与键盘调宽，访问者偏好按部署 base path 持久化，并支持双击或 `Enter` 恢复站点作者默认值。
+
 ### Fixed
 
 - `view.tree_position: right` 现在会镜像生成站点的桌面固定文件树、收起列、边框和浮动树出现方向，不再静默保持左侧布局。

@@ -41,7 +41,12 @@ test.beforeAll(async () => {
   server = createServer((request, response) => {
     const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
     const right = pathname === "/right" || pathname.startsWith("/right/");
-    const relativePath = (right ? pathname.slice("/right".length) : pathname).replace(/^\/+/, "");
+    const docs = pathname === "/docs" || pathname.startsWith("/docs/");
+    const relativePath = (right
+      ? pathname.slice("/right".length)
+      : docs
+        ? pathname.slice("/docs".length)
+        : pathname).replace(/^\/+/, "");
     let filePath = join(right ? rightOutput : leftOutput, relativePath);
     try {
       if (statSync(filePath).isDirectory()) filePath = join(filePath, "index.html");
@@ -197,6 +202,8 @@ test("keeps the generated tree navigable without JavaScript", async ({ browser }
   await page.goto(`${siteURL}/view/${currentPath}/`);
   await expect(page.locator("#tree-src").getByRole("link", { name: currentPath, exact: true })).toBeVisible();
   await expect(page.locator(".tree-actions")).toBeHidden();
+  await expect(page.getByRole("separator", { name: "Resize repository tree" })).toBeHidden();
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(300);
   await context.close();
 });
 
@@ -247,5 +254,259 @@ test("keeps the right-side static tree readable without JavaScript", async ({ br
   await page.goto(`${siteURL}/right/view/${currentPath}/`);
   await expect(page.locator("body")).toHaveAttribute("data-tree-position", "right");
   await expect(page.locator("#tree-src").getByRole("link", { name: currentPath, exact: true })).toBeVisible();
+  await context.close();
+});
+
+test("resizes the left fixed tree with pointer and keyboard controls", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  await page.evaluate(() => {
+    window.localStorage.removeItem("repolens:sidebar-width:v1:/");
+    window.localStorage.setItem("repolens:tree:preference", "expanded");
+  });
+  await page.reload();
+
+  const resizer = page.getByRole("separator", { name: "Resize repository tree" });
+  const sidebar = page.locator(".sidebar");
+  const width = async (): Promise<number> => Math.round((await sidebar.boundingBox())?.width ?? 0);
+  await expect(resizer).toBeVisible();
+  await expect(resizer).toHaveAttribute("aria-valuemin", "220");
+  await expect(resizer).toHaveAttribute("aria-valuemax", "520");
+  await expect(resizer).toHaveAttribute("aria-valuenow", "300");
+  await expect.poll(width).toBe(300);
+
+  await resizer.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(width).toBe(308);
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect.poll(width).toBe(340);
+  await page.keyboard.press("Home");
+  await expect.poll(width).toBe(220);
+  await page.keyboard.press("End");
+  await expect.poll(width).toBe(520);
+  await page.keyboard.press("Enter");
+  await expect.poll(width).toBe(300);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBeNull();
+
+  const box = await resizer.boundingBox();
+  if (!box) throw new Error("resizer box is unavailable");
+  await page.mouse.move(box.x + box.width / 2, box.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 68, box.y + 80);
+  await expect.poll(width).toBe(368);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBeNull();
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("368");
+
+  await page.locator("#tree-src").getByRole("link", { name: "README.md", exact: true }).click();
+  await expect(page).toHaveURL(`${siteURL}/view/README.md/`);
+  await expect.poll(width).toBe(368);
+  await resizer.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(width).toBe(376);
+
+  await page.locator("#btn-tree").click();
+  await expect(resizer).toBeHidden();
+  await page.locator("#btn-tree").click();
+  await page.locator("#btn-pin-tree").click();
+  await expect(resizer).toBeVisible();
+  await expect.poll(width).toBe(376);
+  await resizer.dblclick();
+  await expect.poll(width).toBe(300);
+});
+
+test("cancels pointer drags without committing intermediate widths", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  await page.evaluate(() => {
+    window.localStorage.setItem("repolens:tree:preference", "expanded");
+    window.localStorage.setItem("repolens:sidebar-width:v1:/", "360");
+  });
+  await page.reload();
+
+  const resizer = page.getByRole("separator", { name: "Resize repository tree" });
+  const sidebar = page.locator(".sidebar");
+  const width = async (): Promise<number> => Math.round((await sidebar.boundingBox())?.width ?? 0);
+  const box = await resizer.boundingBox();
+  if (!box) throw new Error("resizer box is unavailable");
+  const startX = box.x + box.width / 2;
+
+  await resizer.dispatchEvent("pointerdown", {
+    pointerId: 31, pointerType: "pen", isPrimary: true, button: 0, clientX: startX, clientY: box.y + 80,
+  });
+  await resizer.dispatchEvent("pointermove", {
+    pointerId: 31, pointerType: "pen", isPrimary: true, buttons: 1, clientX: startX + 40, clientY: box.y + 80,
+  });
+  await expect.poll(width).toBe(400);
+  await resizer.dispatchEvent("pointercancel", {
+    pointerId: 31, pointerType: "pen", isPrimary: true, clientX: startX + 40, clientY: box.y + 80,
+  });
+  await expect.poll(width).toBe(360);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("360");
+
+  await resizer.dispatchEvent("pointerdown", {
+    pointerId: 32, pointerType: "touch", isPrimary: true, button: 0, clientX: startX, clientY: box.y + 120,
+  });
+  await resizer.dispatchEvent("pointermove", {
+    pointerId: 32, pointerType: "touch", isPrimary: true, buttons: 1, clientX: startX + 32, clientY: box.y + 120,
+  });
+  await page.keyboard.press("Escape");
+  await expect.poll(width).toBe(360);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("360");
+
+  await resizer.dispatchEvent("pointerdown", {
+    pointerId: 33, pointerType: "pen", isPrimary: true, button: 0, clientX: startX, clientY: box.y + 160,
+  });
+  await resizer.dispatchEvent("pointermove", {
+    pointerId: 33, pointerType: "pen", isPrimary: true, buttons: 1, clientX: startX + 16, clientY: box.y + 160,
+  });
+  await resizer.dispatchEvent("pointerup", {
+    pointerId: 33, pointerType: "pen", isPrimary: true, button: 0, clientX: startX + 16, clientY: box.y + 160,
+  });
+  await expect.poll(width).toBe(376);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("376");
+
+  await resizer.dispatchEvent("pointerdown", {
+    pointerId: 34, pointerType: "touch", isPrimary: true, button: 0, clientX: startX, clientY: box.y + 200,
+  });
+  await resizer.dispatchEvent("pointermove", {
+    pointerId: 34, pointerType: "touch", isPrimary: true, buttons: 1, clientX: startX + 24, clientY: box.y + 200,
+  });
+  await resizer.dispatchEvent("pointerup", {
+    pointerId: 34, pointerType: "touch", isPrimary: true, button: 0, clientX: startX + 24, clientY: box.y + 200,
+  });
+  await expect.poll(width).toBe(400);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("400");
+});
+
+test("isolates widths by base path and safely handles invalid storage and defaults", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  await page.evaluate(() => {
+    window.localStorage.setItem("repolens:tree:preference", "expanded");
+    window.localStorage.setItem("repolens:sidebar-width:v1:/", "360");
+    window.localStorage.setItem("repolens:sidebar-width:v1:/docs/", "420");
+  });
+  await page.reload();
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(360);
+
+  await page.goto(`${siteURL}/docs/view/${currentPath}/`);
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(420);
+
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  await page.evaluate(() => window.localStorage.setItem("repolens:sidebar-width:v1:/", "invalid"));
+  await page.reload();
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(300);
+
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty("--sidebar-width", "invalid");
+    window.dispatchEvent(new Event("resize"));
+  });
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(300);
+
+  await page.evaluate(() => {
+    document.documentElement.style.removeProperty("--sidebar-width");
+    window.localStorage.setItem("repolens:sidebar-width:v1:/", "999");
+  });
+  await page.reload();
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(520);
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(460);
+  expect(await page.evaluate(() => window.localStorage.getItem("repolens:sidebar-width:v1:/"))).toBe("999");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(520);
+});
+
+test("mirrors keyboard direction and preserves width across responsive modes", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${siteURL}/right/view/${currentPath}/`);
+  await page.evaluate(() => {
+    window.localStorage.setItem("repolens:tree:preference", "expanded");
+    window.localStorage.removeItem("repolens:sidebar-width:v1:/right/");
+  });
+  await page.reload();
+
+  const resizer = page.getByRole("separator", { name: "Resize repository tree" });
+  const sidebar = page.locator(".sidebar");
+  const width = async (): Promise<number> => Math.round((await sidebar.boundingBox())?.width ?? 0);
+  await resizer.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(width).toBe(292);
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(width).toBe(300);
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect.poll(width).toBe(332);
+  expect(await page.locator(".shell").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
+
+  const rightBox = await resizer.boundingBox();
+  if (!rightBox) throw new Error("right resizer box is unavailable");
+  await page.mouse.move(rightBox.x + rightBox.width / 2, rightBox.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(rightBox.x + rightBox.width / 2 - 32, rightBox.y + 80);
+  await page.mouse.up();
+  await expect.poll(width).toBe(364);
+
+  await page.setViewportSize({ width: 720, height: 900 });
+  await expect(resizer).toBeHidden();
+  await expect(page.locator("#btn-tree")).toBeFocused();
+  await expect(page.locator("body")).toHaveAttribute("data-tree-mode", "floating");
+  await page.locator("#btn-tree").click();
+  await expect(page.locator("#tree-overlay")).toBeVisible();
+  await expect(page.locator("#sidebar-resizer")).toBeHidden();
+  const zoomOverflow = await page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    offenders: Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.right > window.innerWidth + 1 || rect.left < -1;
+      })
+      .slice(0, 12)
+      .map((element) => ({
+        className: element.className,
+        id: element.id,
+        left: element.getBoundingClientRect().left,
+        right: element.getBoundingClientRect().right,
+      })),
+  }));
+  expect(zoomOverflow.scrollWidth, JSON.stringify(zoomOverflow.offenders)).toBeLessThanOrEqual(zoomOverflow.innerWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(async () => Math.round((await page.locator("#tree-overlay").boundingBox())?.width ?? 0)).toBe(320);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.locator("#scrim").click({ position: { x: 10, y: 400 } });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(resizer).toBeVisible();
+  await expect.poll(width).toBe(364);
+});
+
+test("falls back when localStorage is unavailable", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addInitScript(() => {
+    const getItem = Storage.prototype.getItem;
+    const setItem = Storage.prototype.setItem;
+    const removeItem = Storage.prototype.removeItem;
+    Storage.prototype.getItem = function (key: string): string | null {
+      if (key.startsWith("repolens:sidebar-width:")) throw new Error("storage unavailable");
+      return getItem.call(this, key);
+    };
+    Storage.prototype.setItem = function (key: string, value: string): void {
+      if (key.startsWith("repolens:sidebar-width:")) throw new Error("storage unavailable");
+      setItem.call(this, key, value);
+    };
+    Storage.prototype.removeItem = function (key: string): void {
+      if (key.startsWith("repolens:sidebar-width:")) throw new Error("storage unavailable");
+      removeItem.call(this, key);
+    };
+  });
+  const page = await context.newPage();
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(300);
+  const resizer = page.getByRole("separator", { name: "Resize repository tree" });
+  await resizer.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(308);
   await context.close();
 });
