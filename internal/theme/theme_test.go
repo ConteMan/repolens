@@ -267,6 +267,9 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`.search-modal`,
 		`body[data-search="open"] .scrim`,
 		`.search-item mark`,
+		`.snapshot-notice {`,
+		`.snapshot-notice[hidden]`,
+		`.snapshot-notice button:focus-visible`,
 	} {
 		if !strings.Contains(css, want) {
 			t.Fatalf("site.css missing %q\n%s", want, css)
@@ -299,10 +302,55 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`navigator.clipboard.writeText(text)`,
 		`window.fetch(modal.getAttribute("data-search-src"), { credentials: "same-origin" })`,
 		`markText(label, item.label, query);`,
+		`var snapshotCheckInterval = 60000;`,
+		`url.searchParams.set("repolens-check", String(Date.now()));`,
+		`cache: "no-store"`,
+		`document.addEventListener("visibilitychange"`,
+		`window.addEventListener("online", checkSnapshot);`,
+		`window.location.reload();`,
 	} {
 		if !strings.Contains(js, want) {
 			t.Fatalf("site.js missing %q\n%s", want, js)
 		}
+	}
+}
+
+func TestSnapshotFreshnessPageDataAndStrings(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	var out bytes.Buffer
+	err = renderer.Page(&out, PageData{
+		Title:      "snapshot",
+		SiteTitle:  "test",
+		Kind:       "dir",
+		RelRoot:    "../../../",
+		Lang:       "zh-CN",
+		SnapshotID: "0123456789abcdef0123456789abcdef",
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	html := out.String()
+	for _, want := range []string{
+		`data-snapshot-id="0123456789abcdef0123456789abcdef"`,
+		`data-snapshot-src="../../../_assets/snapshot.json"`,
+		`id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden`,
+		`此站点已有新版本。`,
+		`id="snapshot-reload" type="button">重新加载</button>`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Fatalf("snapshot page missing %q\n%s", want, html)
+		}
+	}
+	if got := UIStrings("en")["snapshot_update"]; got != "A newer version of this site is available." {
+		t.Fatalf("en snapshot_update = %q", got)
+	}
+	if got := UIStrings("en")["snapshot_reload"]; got != "Reload" {
+		t.Fatalf("en snapshot_reload = %q", got)
 	}
 }
 

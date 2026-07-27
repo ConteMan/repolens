@@ -19,6 +19,9 @@
   var searchResults = [], searchSelected = 0;
   var sidebarPreferenceLoaded = false, sidebarPreferredWidth = null, sidebarDrag = null;
   var sidebarResizerFocused = false;
+  var snapshotCheckInterval = 60000;
+  var snapshotChecking = false;
+  var snapshotStale = false;
 
   function $(id) {
     return document.getElementById(id);
@@ -66,6 +69,69 @@
 
   function localRemove(key) {
     storageRemove(window.localStorage, key);
+  }
+
+  function showSnapshotNotice() {
+    if (snapshotStale) {
+      return;
+    }
+    snapshotStale = true;
+    var notice = $("snapshot-notice");
+    if (notice) {
+      notice.hidden = false;
+    }
+  }
+
+  function checkSnapshot() {
+    var current = body.getAttribute("data-snapshot-id");
+    var source = body.getAttribute("data-snapshot-src");
+    if (!current || !source || snapshotChecking || snapshotStale || document.hidden || navigator.onLine === false) {
+      return Promise.resolve();
+    }
+    var url;
+    try {
+      url = new URL(source, window.location.href);
+      url.searchParams.set("repolens-check", String(Date.now()));
+    } catch (_) {
+      return Promise.resolve();
+    }
+    snapshotChecking = true;
+    return window.fetch(url.href, {
+      credentials: "same-origin",
+      cache: "no-store"
+    }).then(function (response) {
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.json();
+    }).then(function (metadata) {
+      if (metadata && typeof metadata.snapshot === "string" && metadata.snapshot && metadata.snapshot !== current) {
+        showSnapshotNotice();
+      }
+    }).catch(function () {
+      return;
+    }).then(function () {
+      snapshotChecking = false;
+    });
+  }
+
+  function initSnapshotFreshness() {
+    if (!body.hasAttribute("data-snapshot-id") || !body.hasAttribute("data-snapshot-src")) {
+      return;
+    }
+    var reload = $("snapshot-reload");
+    if (reload) {
+      reload.addEventListener("click", function () {
+        window.location.reload();
+      });
+    }
+    window.setInterval(checkSnapshot, snapshotCheckInterval);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) {
+        checkSnapshot();
+      }
+    });
+    window.addEventListener("online", checkSnapshot);
   }
 
   function sidebarStorageKey() {
@@ -800,6 +866,10 @@
       if (nextKind) {
         body.setAttribute("data-page-kind", nextKind);
       }
+      var nextSnapshot = doc.body && doc.body.getAttribute("data-snapshot-id");
+      if (nextSnapshot && nextSnapshot !== body.getAttribute("data-snapshot-id")) {
+        showSnapshotNotice();
+      }
       document.querySelector(".topbar").outerHTML = nextTopbar.outerHTML;
       $("content").outerHTML = nextContent.outerHTML;
       $("tree-src").innerHTML = nextTree.innerHTML;
@@ -1015,6 +1085,7 @@
 
   setupTreeDOM();
   applyToolbarState();
+  initSnapshotFreshness();
   if (!window.history.state) {
     window.history.replaceState({ pjax: true }, "", window.location.href);
   }

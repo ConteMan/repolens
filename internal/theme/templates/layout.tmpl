@@ -12,7 +12,7 @@
 {{if .HasCustomCSS}}<link rel="stylesheet" href="{{.RelRoot}}_assets/custom.css">{{end}}
 {{.HeadExtra}}
 </head>
-<body data-page-kind="{{.Kind}}" data-tree-position="{{.TreePosition}}">
+<body data-page-kind="{{.Kind}}" data-tree-position="{{.TreePosition}}"{{if .SnapshotID}} data-snapshot-id="{{.SnapshotID}}" data-snapshot-src="{{.RelRoot}}_assets/snapshot.json"{{end}}>
 <svg class="icon-sprite" aria-hidden="true" focusable="false">
   <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
   <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>
@@ -105,6 +105,10 @@
 {{if and .TOC (eq .TOCPanel "floating")}}<aside class="toc-panel" id="toc-panel" aria-label="{{index .UI "toc_title"}}">
   <div class="toc-panel-head">{{index .UI "toc"}}</div>
   <div class="toc-panel-body" id="toc-body">{{range .TOC}}{{template "toc-panel-item" .}}{{end}}</div>
+</aside>{{end}}
+{{if .SnapshotID}}<aside class="snapshot-notice js-only" id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden>
+  <span>{{index .UI "snapshot_update"}}</span>
+  <button id="snapshot-reload" type="button">{{index .UI "snapshot_reload"}}</button>
 </aside>{{end}}
 {{if .HasMermaid}}<script defer src="{{.RelRoot}}_assets/mermaid.min.js"></script>{{end}}
 <script defer src="{{.RelRoot}}_assets/site.js"></script>

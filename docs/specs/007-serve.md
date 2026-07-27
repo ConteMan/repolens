@@ -11,7 +11,7 @@
 
 1. **首次构建**：与 build 相同管线，输出到临时目录（`os.MkdirTemp`，退出清理）。默认 `--worktree=false` 走 git 树；`--worktree` 直接渲染工作目录（含未提交内容，spec 001 的 worktree 模式）。
 2. **静态服务**：`net/http` ＋ `http.FileServer`，监听 `--addr`（默认 `127.0.0.1:8788`）。镜像层文件按扩展名正常给 Content-Type（`.md` 即 text/markdown——与线上静态托管行为一致，所见即所得）。启动打印可点击 URL。
-3. **监听重建**：fsnotify 递归监听源目录（worktree 模式）或轮询 git HEAD 变化（git 模式，间隔 2s）；变化后 300ms 防抖全量重建到**新临时目录**，成功后原子切换服务根（失败保留旧站点并打印错误，不中断服务）。忽略 `.git/`、输出目录自身与 `ignore` 命中路径。
+3. **监听重建**：fsnotify 递归监听源目录（worktree 模式）或轮询 git HEAD 变化（git 模式，间隔 2s）；变化后 300ms 防抖全量重建到**新临时目录**，成功后原子切换服务根（失败保留旧站点并打印错误，不中断服务）。忽略 `.git/`、输出目录自身与 `ignore` 命中路径。每次成功重建产生新的 spec 016 快照 ID，因此已打开的浏览页可发现更新；失败重建沿用旧站点与旧快照。
 4. **退出**：SIGINT/SIGTERM 优雅关闭并清理临时目录。
 
 ## 接口契约
@@ -31,7 +31,7 @@ func Run(ctx context.Context, opts Options, rebuild func(ctx context.Context) (d
 
 ## 边界与非目标
 
-- 不做浏览器 live-reload 注入（v1 手动刷新；接口不排斥后续加 SSE）；
+- 不做自动 live reload、SSE 或其他推送注入；spec 016 只通过静态同源资源提示访问者主动刷新；
 - 不支持对外暴露的生产服务（明确定位本地预览，默认只绑 127.0.0.1）；
 - 不做部分重建。
 

@@ -3,6 +3,7 @@ package site
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -52,6 +53,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertExists(t, outDir, "robots.txt")
 	assertExists(t, outDir, "_assets/site.css")
 	assertExists(t, outDir, "_assets/site.js")
+	assertExists(t, outDir, snapshotMetadataPath)
 	assertExists(t, outDir, "llms.txt")
 	assertExists(t, outDir, "llms-full.txt")
 	assertExists(t, outDir, "index.json")
@@ -98,6 +100,22 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertMissing(t, outDir, "view/skip/hidden.md/index.html")
 
 	rootPage := readOutput(t, outDir, "view/index.html")
+	var snapshot snapshotMetadata
+	if err := json.Unmarshal([]byte(readOutput(t, outDir, snapshotMetadataPath)), &snapshot); err != nil {
+		t.Fatalf("decode snapshot metadata: %v", err)
+	}
+	if len(snapshot.Snapshot) != 32 {
+		t.Fatalf("snapshot id length = %d, want 32", len(snapshot.Snapshot))
+	}
+	if _, err := hex.DecodeString(snapshot.Snapshot); err != nil {
+		t.Fatalf("snapshot id is not lowercase hexadecimal: %q", snapshot.Snapshot)
+	}
+	if snapshot.Snapshot != strings.ToLower(snapshot.Snapshot) {
+		t.Fatalf("snapshot id is not lowercase: %q", snapshot.Snapshot)
+	}
+	assertContains(t, rootPage, `data-snapshot-id="`+snapshot.Snapshot+`"`)
+	assertContains(t, rootPage, `data-snapshot-src="../_assets/snapshot.json"`)
+	assertContains(t, rootPage, `id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden`)
 	assertContains(t, rootPage, `<meta name="robots" content="noindex">`)
 	assertContains(t, rootPage, `<section class="readme">`)
 	assertContains(t, rootPage, "Home")
@@ -178,6 +196,27 @@ func TestBuildEndToEnd(t *testing.T) {
 
 	robots := readOutput(t, outDir, "robots.txt")
 	assertContains(t, robots, "Disallow: /")
+}
+
+func TestSnapshotIDsAreUnique(t *testing.T) {
+	first, err := newSnapshotID()
+	if err != nil {
+		t.Fatalf("newSnapshotID() error = %v", err)
+	}
+	second, err := newSnapshotID()
+	if err != nil {
+		t.Fatalf("newSnapshotID() error = %v", err)
+	}
+	if first == second {
+		t.Fatalf("newSnapshotID() returned duplicate value %q", first)
+	}
+}
+
+func TestValidateSnapshotPathRejectsMirrorCollision(t *testing.T) {
+	err := validateSnapshotPath([]fileEntry{{File: source.File{Path: snapshotMetadataPath}}})
+	if err == nil || !strings.Contains(err.Error(), "collides with generated snapshot metadata") {
+		t.Fatalf("validateSnapshotPath() error = %v, want snapshot collision", err)
+	}
 }
 
 func TestBuildPropagatesTreePosition(t *testing.T) {
