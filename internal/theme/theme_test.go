@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -178,6 +179,7 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<button class="tb-btn" id="btn-pin-tree" type="button"`,
 		`<details data-tree-path="docs" open>`,
 		`<summary title="docs" aria-label="docs">`,
+		`<a class="tree-dir" href="../" title="docs" aria-label="docs">`,
 		`title="docs/guide.md" aria-label="docs/guide.md"`,
 		`<symbol id="icon-markdown" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/><path d="M5.3 8.2h5.4M5.3 10.7h5.4"/></symbol>`,
 	} {
@@ -187,6 +189,55 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 	}
 	if strings.Contains(got, `data-tree="collapsed"`) || strings.Contains(got, `data-tree-mode="floating"`) {
 		t.Fatalf("no-JS fallback should render the fixed sidebar by default\n%s", got)
+	}
+}
+
+func TestTreeSummaryHasNoInteractiveDescendants(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	var out bytes.Buffer
+	err = renderer.Page(&out, PageData{
+		Title:     "guide.md",
+		SiteTitle: "test",
+		Kind:      "markdown",
+		Tree: &TreeNode{IsDir: true, Children: []*TreeNode{{
+			Name:  "docs",
+			Path:  "docs",
+			Href:  "../",
+			Kind:  "dir",
+			IsDir: true,
+			Children: []*TreeNode{{
+				Name: "guide.md", Path: "docs/guide.md", Href: ".", Kind: "markdown",
+			}},
+		}}},
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+
+	got := out.String()
+	summaries := regexp.MustCompile(`(?s)<summary\b[^>]*>.*?</summary>`).FindAllString(got, -1)
+	if len(summaries) == 0 {
+		t.Fatalf("output missing summary\n%s", got)
+	}
+	for _, summary := range summaries {
+		if strings.Contains(summary, "<a ") || strings.Contains(summary, "<button") {
+			t.Fatalf("summary contains an interactive descendant: %s", summary)
+		}
+	}
+	for _, want := range []string{
+		`<summary title="docs" aria-label="docs">`,
+		`</a>
+  <details data-tree-path="docs"`,
+		`<a class="tree-dir" href="../" title="docs" aria-label="docs">`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output missing %q\n%s", want, got)
+		}
 	}
 }
 
@@ -239,6 +290,7 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 	css := readTestOutput(t, outDir, "_assets/site.css")
 	for _, want := range []string{
 		`.tree-chevron`,
+		`.tree-dir`,
 		`.tree-actions`,
 		`.tree-action:focus-visible`,
 		`.tree-nav > .tree`,
