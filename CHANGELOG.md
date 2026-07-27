@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-07-27
+
 ### Fixed
 
 - 文件树将目录折叠控件与目录页链接拆为同级交互元素，消除 `<summary>` 内嵌链接的无障碍告警，同时保留键盘操作、PJAX 与禁用 JavaScript 时的目录导航。
@@ -144,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/ConteMan/repolens/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/ConteMan/repolens/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/ConteMan/repolens/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/ConteMan/repolens/compare/v1.4.0...v1.4.1
