@@ -3,8 +3,9 @@
 {{define "tree-node"}}
 <li class="{{if .Current}}current {{end}}{{if .IsDir}}dir{{else}}file{{end}}" data-kind="{{.Kind}}">
 {{if .IsDir}}
+  <a class="tree-dir" href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><span>{{.Name}}</span></a>
   <details data-tree-path="{{.Path}}" {{if .Expanded}}open{{end}}>
-    <summary title="{{.Path}}" aria-label="{{.Path}}"><span class="tree-chevron" aria-hidden="true"></span><span class="summary-row"><svg class="icon icon-folder" aria-hidden="true"><use href="#icon-folder"></use></svg><a href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}">{{.Name}}</a></span></summary>
+    <summary title="{{.Path}}" aria-label="{{.Path}}"><span class="tree-chevron" aria-hidden="true"></span></summary>
     <ul>{{range .Children}}{{template "tree-node" .}}{{end}}</ul>
   </details>
 {{else}}

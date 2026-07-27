@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- 文件树将目录折叠控件与目录页链接拆为同级交互元素，消除 `<summary>` 内嵌链接的无障碍告警，同时保留键盘操作、PJAX 与禁用 JavaScript 时的目录导航。
+
 ## [1.6.0] - 2026-07-27
 
 ### Added

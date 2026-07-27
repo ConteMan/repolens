@@ -90,6 +90,42 @@ test("highlights and locates the default home file", async ({ page }) => {
   })).toBe(true);
 });
 
+test("keeps directory disclosure and navigation as separate keyboard controls", async ({ page }) => {
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+
+  const fixedTree = page.locator("#tree-src");
+  const docsDetail = fixedTree.locator('details[data-tree-path="docs"]');
+  const docsToggle = docsDetail.locator(":scope > summary");
+  const docsLink = fixedTree.getByRole("link", { name: "docs", exact: true });
+
+  await expect(page.locator("summary a, summary button")).toHaveCount(0);
+  await expect(docsToggle).toHaveAttribute("title", "docs");
+  await expect(docsToggle).toHaveAttribute("aria-label", "docs");
+  await expect(docsLink).toHaveAttribute("title", "docs");
+  await expect(docsLink).toHaveAttribute("aria-label", "docs");
+
+  await docsToggle.focus();
+  await expect(docsToggle).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(docsDetail).not.toHaveAttribute("open", "");
+  await page.keyboard.press("Enter");
+  await expect(docsDetail).toHaveAttribute("open", "");
+
+  await docsLink.focus();
+  await expect(docsLink).toBeFocused();
+  await page.evaluate(() => {
+    (window as typeof window & { __directoryPjaxMarker?: boolean }).__directoryPjaxMarker = true;
+  });
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(`${siteURL}/view/docs/`);
+  expect(await page.evaluate(() => (
+    window as typeof window & { __directoryPjaxMarker?: boolean }
+  ).__directoryPjaxMarker)).toBe(true);
+
+  await page.goto(`${siteURL}/view/docs/`);
+  await expect(page.locator("#content > h1")).toHaveText("docs");
+});
+
 test("detects a replaced snapshot from a subpath without stealing focus", async ({ page }) => {
   await page.goto(`${siteURL}/docs/view/${currentPath}/`);
   const notice = page.getByRole("status");
@@ -266,10 +302,28 @@ test("keeps the generated tree navigable without JavaScript", async ({ browser }
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(`${siteURL}/view/${currentPath}/`);
-  await expect(page.locator("#tree-src").getByRole("link", { name: currentPath, exact: true })).toBeVisible();
+  const fixedTree = page.locator("#tree-src");
+  await expect(fixedTree.getByRole("link", { name: currentPath, exact: true })).toBeVisible();
   await expect(page.locator(".tree-actions")).toBeHidden();
   await expect(page.getByRole("separator", { name: "Resize repository tree" })).toBeHidden();
   await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(300);
+
+  const docsDetail = fixedTree.locator('details[data-tree-path="docs"]');
+  const docsToggle = docsDetail.locator(":scope > summary");
+  const docsLink = fixedTree.getByRole("link", { name: "docs", exact: true });
+  await docsToggle.focus();
+  await expect(docsToggle).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(docsDetail).not.toHaveAttribute("open", "");
+  await expect(docsLink).toBeVisible();
+  await docsLink.focus();
+  await expect(docsLink).toBeFocused();
+  await Promise.all([
+    page.waitForNavigation(),
+    page.keyboard.press("Enter"),
+  ]);
+  await expect(page).toHaveURL(`${siteURL}/view/docs/`);
+  await expect(page.locator("#content > h1")).toHaveText("docs");
   await context.close();
 });
 
