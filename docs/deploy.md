@@ -8,6 +8,15 @@
 repolens build git@github.com:you/your-docs.git -o dist
 ```
 
+## 缓存与页面更新提示
+
+每次成功构建都会输出 `_assets/snapshot.json`，并把同一个不透明快照 ID 写入浏览页。已打开页面在可见且在线时每 60 秒通过相对 URL 检查该资源，在重新可见或恢复联网时也会立即检查；探测请求使用 `cache: no-store` 和唯一查询参数绕过浏览器与中间缓存。发现新快照后页面只显示非阻塞提示，由访问者主动重新加载。
+
+- 部署时必须把 `_assets/snapshot.json` 与同一次构建的其他文件一起发布，避免混合两个构建的产物；
+- 无需为该文件配置平台专用响应头，但 CDN 仍应允许带查询参数的同源 GET 到达当前部署；
+- 网络失败、离线或后台标签页不会破坏现有页面，也不会自动刷新；
+- 使用自定义 `layout` 模板时需保留 `PageData.SnapshotID` 对应的 `data-snapshot-id`、相对 `_assets/snapshot.json` 地址和更新提示 DOM；完整结构以默认 `layout.tmpl` 与 Spec 016 为准。
+
 ## GitHub Pages
 
 仓库里加一条 workflow（`.github/workflows/pages.yml`）：

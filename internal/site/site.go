@@ -88,11 +88,18 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 	if err != nil {
 		return stats, err
 	}
+	if err := validateSnapshotPath(files); err != nil {
+		return stats, err
+	}
+	snapshotID, err := newSnapshotID()
+	if err != nil {
+		return stats, fmt.Errorf("create snapshot id: %w", err)
+	}
 	dirs := collectDirs(files)
 	if err := validateIndexHTMLDirs(dirs); err != nil {
 		return stats, err
 	}
-	model := newSiteModel(tree.Root, tree.CommitHash, files, dirs)
+	model := newSiteModel(tree.Root, tree.CommitHash, snapshotID, files, dirs)
 
 	if err := prepareOutput(outDir); err != nil {
 		return stats, err
@@ -168,6 +175,9 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 	if err := checkRelativeLinks(outDir, generatedRootIndex, generated404); err != nil {
 		return stats, err
 	}
+	if err := writeSnapshotMetadata(outDir, snapshotID); err != nil {
+		return stats, err
+	}
 	stats.Duration = time.Since(start)
 	return stats, nil
 }
@@ -200,6 +210,15 @@ func (b *Builder) collectFiles(tree *source.Tree) ([]fileEntry, error) {
 	}
 	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
 	return files, nil
+}
+
+func validateSnapshotPath(files []fileEntry) error {
+	for _, file := range files {
+		if file.Path == snapshotMetadataPath {
+			return fmt.Errorf("site: repository path %q collides with generated snapshot metadata", file.Path)
+		}
+	}
+	return nil
 }
 
 func readSniff(filePath string, size, maxFileSize int64) ([]byte, error) {
@@ -334,6 +353,7 @@ func copyMirror(root, outDir string, file fileEntry) error {
 type siteModel struct {
 	root             string
 	commitHash       string
+	snapshotID       string
 	files            []fileEntry
 	fileByPath       map[string]fileEntry
 	dirs             map[string]bool
@@ -350,10 +370,11 @@ type listItem struct {
 	IsDir      bool
 }
 
-func newSiteModel(root, commitHash string, files []fileEntry, dirs []string) siteModel {
+func newSiteModel(root, commitHash, snapshotID string, files []fileEntry, dirs []string) siteModel {
 	m := siteModel{
 		root:             root,
 		commitHash:       commitHash,
+		snapshotID:       snapshotID,
 		files:            files,
 		fileByPath:       make(map[string]fileEntry, len(files)),
 		dirs:             make(map[string]bool, len(dirs)),
@@ -444,6 +465,7 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 		RepoPath:    file.Path,
 		LastCommit:  file.LastCommit,
 		HasMermaid:  hasMermaid,
+		SnapshotID:  model.snapshotID,
 		HeadExtra:   alternateHead(currentURL, file.Path),
 	}
 	b.fillCommonPageData(currentURL, &data)
@@ -479,6 +501,7 @@ func (b *Builder) writeSourcePage(outDir string, model siteModel, file fileEntry
 		FileSize:    file.Size,
 		RepoPath:    file.Path,
 		LastCommit:  file.LastCommit,
+		SnapshotID:  model.snapshotID,
 		HeadExtra:   alternateHead(currentURL, file.Path),
 	}
 	b.fillCommonPageData(currentURL, &page)
@@ -581,6 +604,7 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		LastCommit:  lastCommit,
 		HasMermaid:  hasMermaid,
 		RepoPath:    dir,
+		SnapshotID:  model.snapshotID,
 		DirEntries:  dirEntries(model, currentURL, dir),
 	}
 	b.fillCommonPageData(currentURL, &data)

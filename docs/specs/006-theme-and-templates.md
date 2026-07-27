@@ -20,7 +20,8 @@
    - 文件树提供全部展开、全部折叠与定位当前文件操作；固定树与浮动树同步，批量更新按唯一路径持久化一次；
    - 树项目与面包屑对截断文本提供完整仓库相对路径的原生 tooltip 和无障碍名称；
    - 根文件树列表独立滚动并保持位置，操作与搜索区域不随树滚动；
-   - pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 / 顶栏 / TOC / 树高亮 ＋ history.pushState，失败回退整页跳转。
+   - pjax：拦截站内浏览页链接，fetch 目标页并替换内容区 / 顶栏 / TOC / 树高亮 ＋ history.pushState，失败回退整页跳转；
+   - 站点新鲜度：按 spec 016 探测 `_assets/snapshot.json`；新快照只显示可访问更新提示和重新加载操作，网络失败静默降级。
    - 无 JS 时一切可读可导航（`<details>` 或默认展开态兜底）。
 4. **Mermaid**：vendor `mermaid.min.js`（UMD 构建，版本写入文件头注释与 CHANGELOG）到 `_assets/`；仅 `HasMermaid` 的页面注入 `<script defer>` 与初始化调用。
 5. **三级定制**：
@@ -68,6 +69,7 @@ type PageData struct {
     UI               map[string]string // zh/en 内置主题字符串表
     LastCommit       *source.Commit
     HasMermaid, NoIndex bool
+    SnapshotID       string        // 当前输出快照的不透明标识
     HeadExtra        template.HTML // rel=alternate 等，site 层拼装
     DirEntries       []DirEntry    // 仅目录页使用；由 dirlist 模板渲染子项表格
     Lang             string        // <html lang>，取 site.language，空则省略（v1 收尾接线，2026-07-05）

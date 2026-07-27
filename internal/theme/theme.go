@@ -84,6 +84,7 @@ type PageData struct {
 	LastCommit          *source.Commit
 	HasMermaid, NoIndex bool
 	SearchEnabled       bool
+	SnapshotID          string
 	HeadExtra           template.HTML
 	DirEntries          []DirEntry
 	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
@@ -408,6 +409,8 @@ var uiZH = map[string]string{
 	"search_select":        "选择",
 	"search_open":          "跳转",
 	"search_escape":        "关闭",
+	"snapshot_update":      "此站点已有新版本。",
+	"snapshot_reload":      "重新加载",
 	"kind_markdown":        "Markdown",
 	"kind_markdown_source": "Markdown 源码",
 	"kind_html":            "HTML",
@@ -462,6 +465,8 @@ var uiEN = map[string]string{
 	"search_select":        "Select",
 	"search_open":          "Open",
 	"search_escape":        "Close",
+	"snapshot_update":      "A newer version of this site is available.",
+	"snapshot_reload":      "Reload",
 	"kind_markdown":        "Markdown",
 	"kind_markdown_source": "Markdown source",
 	"kind_html":            "HTML",

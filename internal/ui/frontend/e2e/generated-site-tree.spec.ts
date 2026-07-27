@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { createReadStream, mkdtempSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
@@ -88,6 +88,72 @@ test("highlights and locates the default home file", async ({ page }) => {
     const containerRect = item.closest("[data-tree-scroll]")?.getBoundingClientRect();
     return !!containerRect && itemRect.top >= containerRect.top && itemRect.bottom <= containerRect.bottom;
   })).toBe(true);
+});
+
+test("detects a replaced snapshot from a subpath without stealing focus", async ({ page }) => {
+  await page.goto(`${siteURL}/docs/view/${currentPath}/`);
+  const notice = page.getByRole("status");
+  await expect(notice).toBeHidden();
+
+  const currentSnapshot = await page.locator("body").getAttribute("data-snapshot-id");
+  if (!currentSnapshot) throw new Error("generated page is missing its snapshot id");
+
+  let responseMode: "fail" | "same" | "new" = "fail";
+  await page.route(/\/_assets\/snapshot\.json\?/, async (route) => {
+    if (responseMode === "fail") {
+      await route.abort("failed");
+      return;
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        snapshot: responseMode === "same" ? currentSnapshot : "ffffffffffffffffffffffffffffffff",
+      }),
+    });
+  });
+
+  const treeButton = page.locator("#btn-tree");
+  await treeButton.focus();
+  const failedRequest = page.waitForRequest((request) => request.url().includes("/docs/_assets/snapshot.json?"));
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  const failed = await failedRequest;
+  expect(new URL(failed.url()).searchParams.has("repolens-check")).toBe(true);
+  await page.waitForTimeout(25);
+  await expect(notice).toBeHidden();
+
+  responseMode = "same";
+  const sameResponse = page.waitForResponse((response) => response.url().includes("/docs/_assets/snapshot.json?"));
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await sameResponse;
+  await expect(notice).toBeHidden();
+
+  responseMode = "new";
+  const newResponse = page.waitForResponse((response) => response.url().includes("/docs/_assets/snapshot.json?"));
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await newResponse;
+  await expect(notice).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
+  await expect(treeButton).toBeFocused();
+  await expect(page.locator("#snapshot-notice")).toHaveCount(1);
+
+  const navigation = page.waitForNavigation();
+  await page.getByRole("button", { name: "Reload" }).click();
+  await navigation;
+  await expect(page).toHaveURL(`${siteURL}/docs/view/${currentPath}/`);
+  await expect(notice).toBeHidden();
+});
+
+test("warns immediately when pjax crosses deployment snapshots", async ({ page }) => {
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  const replacement = readFileSync(join(rightOutput, "view", "docs", "other.md", "index.html"), "utf8");
+  await page.route("**/view/docs/other.md/", async (route) => {
+    await route.fulfill({ contentType: "text/html", body: replacement });
+  });
+
+  await page.locator("#tree-src").getByRole("link", { name: "docs/other.md", exact: true }).click();
+  await expect(page).toHaveURL(`${siteURL}/view/docs/other.md/`);
+  await expect(page.getByRole("status")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
 });
 
 test("keeps bulk tree actions synchronized and locates the current file", async ({ page }) => {

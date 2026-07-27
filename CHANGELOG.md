@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 生成站点可通过同源快照元数据发现新部署，在页面可见且在线时保守检查，并以不抢焦点的中英文提示让访问者主动重新加载；静态托管、子路径部署与 `repolens serve` 共用同一机制。
+
 ## [1.5.0] - 2026-07-24
 
 ### Added
