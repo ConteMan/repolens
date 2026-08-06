@@ -452,21 +452,23 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 	if title == "" {
 		title = path.Base(file.Path)
 	}
+	kind := pageKind(file, b.cfg.OptionsFor(file.Path))
 	data := theme.PageData{
-		Title:       title,
-		Breadcrumbs: breadcrumbs(currentURL, file.Path, false),
-		Tree:        buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
-		Kind:        pageKind(file, b.cfg.OptionsFor(file.Path)),
-		Body:        body,
-		TOC:         toc,
-		MirrorHref:  render.RelTo(currentURL, mirrorURL(file.Path)),
-		SourceHref:  sourceHref(currentURL, file, b.cfg.OptionsFor(file.Path)),
-		FileSize:    file.Size,
-		RepoPath:    file.Path,
-		LastCommit:  file.LastCommit,
-		HasMermaid:  hasMermaid,
-		SnapshotID:  model.snapshotID,
-		HeadExtra:   alternateHead(currentURL, file.Path),
+		Title:         title,
+		Breadcrumbs:   breadcrumbs(currentURL, file.Path, false),
+		Tree:          buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
+		Kind:          kind,
+		Body:          body,
+		TOC:           toc,
+		MirrorHref:    render.RelTo(currentURL, mirrorURL(file.Path)),
+		SourceHref:    sourceHref(currentURL, file, b.cfg.OptionsFor(file.Path)),
+		FileSize:      file.Size,
+		RepoPath:      file.Path,
+		LastCommit:    file.LastCommit,
+		HasMermaid:    hasMermaid,
+		HidePageTitle: kind == "markdown",
+		SnapshotID:    model.snapshotID,
+		HeadExtra:     alternateHead(currentURL, file.Path),
 	}
 	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
@@ -588,6 +590,10 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 	if title == "" {
 		title = dirTitle(dir)
 	}
+	_, hasMarkdownBody := b.dirDocFile(model, dir)
+	if _, hasMergedIndex := model.mergedIndexByDir[dir]; hasMergedIndex {
+		hasMarkdownBody = false
+	}
 	treeCurrentPath := dir
 	if dir == "" {
 		if home, ok := b.dirDocFile(model, dir); ok {
@@ -595,17 +601,18 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		}
 	}
 	data := theme.PageData{
-		Title:       title,
-		Breadcrumbs: breadcrumbs(currentURL, dir, true),
-		Tree:        buildTree(model, currentURL, treeCurrentPath, b.cfg.View.TreeExpandDepth),
-		Kind:        "dir",
-		Body:        body,
-		TOC:         toc,
-		LastCommit:  lastCommit,
-		HasMermaid:  hasMermaid,
-		RepoPath:    dir,
-		SnapshotID:  model.snapshotID,
-		DirEntries:  dirEntries(model, currentURL, dir),
+		Title:         title,
+		Breadcrumbs:   breadcrumbs(currentURL, dir, true),
+		Tree:          buildTree(model, currentURL, treeCurrentPath, b.cfg.View.TreeExpandDepth),
+		Kind:          "dir",
+		Body:          body,
+		TOC:           toc,
+		LastCommit:    lastCommit,
+		HasMermaid:    hasMermaid,
+		HidePageTitle: hasMarkdownBody,
+		RepoPath:      dir,
+		SnapshotID:    model.snapshotID,
+		DirEntries:    dirEntries(model, currentURL, dir),
 	}
 	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)

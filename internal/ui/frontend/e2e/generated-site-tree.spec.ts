@@ -594,6 +594,7 @@ test("mirrors keyboard direction and preserves width across responsive modes", a
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(async () => Math.round((await page.locator("#tree-overlay").boundingBox())?.width ?? 0)).toBe(320);
+  await expect.poll(async () => Math.round((await page.locator("#content").boundingBox())?.width ?? 0)).toBeGreaterThanOrEqual(380);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator("#scrim").click({ position: { x: 10, y: 400 } });
 

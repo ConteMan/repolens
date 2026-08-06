@@ -66,27 +66,29 @@ type DirEntry struct {
 }
 
 type PageData struct {
-	Title, SiteTitle    string
-	RelRoot             string
-	TreePosition        string
-	Breadcrumbs         []Crumb
-	Tree                *TreeNode
-	Kind                string
-	KindLabel           string
-	Body                template.HTML
-	TOC                 []render.TOCItem
-	MirrorHref          string
-	SourceHref          string
-	FileSize            int64
-	RepoPath            string
-	TOCPanel            string
-	UI                  map[string]string
-	LastCommit          *source.Commit
-	HasMermaid, NoIndex bool
-	SearchEnabled       bool
-	SnapshotID          string
-	HeadExtra           template.HTML
-	DirEntries          []DirEntry
+	Title, SiteTitle string
+	RelRoot          string
+	TreePosition     string
+	Breadcrumbs      []Crumb
+	Tree             *TreeNode
+	Kind             string
+	KindLabel        string
+	Body             template.HTML
+	TOC              []render.TOCItem
+	MirrorHref       string
+	SourceHref       string
+	FileSize         int64
+	RepoPath         string
+	TOCPanel         string
+	UI               map[string]string
+	LastCommit       *source.Commit
+	HasMermaid       bool
+	NoIndex          bool
+	HidePageTitle    bool
+	SearchEnabled    bool
+	SnapshotID       string
+	HeadExtra        template.HTML
+	DirEntries       []DirEntry
 	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
 	Lang string
 }
