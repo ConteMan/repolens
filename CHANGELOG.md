@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Markdown 文件页与由 Markdown 提供正文的目录页不再额外显示派生页面标题，正文直接从文章自身内容开始；浏览器标题、搜索与 Agent 元数据保持不变。
+- 窄屏浮动文件树不再残留隐藏侧栏的网格轨道，正文恢复为占满可用宽度的单列布局。
+
 ## [1.6.1] - 2026-07-27
 
 ### Fixed

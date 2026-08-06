@@ -1187,6 +1187,14 @@ body[data-info="open"] .info-panel {
       "content";
   }
 
+  body[data-tree="collapsed"] .shell,
+  body[data-tree-mode="floating"] .shell,
+  body[data-tree-position="right"][data-tree="collapsed"] .shell,
+  body[data-tree-position="right"][data-tree-mode="floating"] .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "content";
+  }
+
   .sidebar-resizer {
     display: none;
   }

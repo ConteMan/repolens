@@ -50,6 +50,52 @@ func TestPageKindsRender(t *testing.T) {
 	}
 }
 
+func TestDerivedPageTitleVisibility(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	for _, tc := range []struct {
+		name          string
+		kind          string
+		body          string
+		hidePageTitle bool
+		wantHeading   string
+	}{
+		{name: "markdown", kind: "markdown", body: `<h1 id="article">Article</h1>`, hidePageTitle: true, wantHeading: "Article"},
+		{name: "directory readme", kind: "dir", body: `<h1 id="readme">README</h1>`, hidePageTitle: true, wantHeading: "README"},
+		{name: "code", kind: "code", body: `<pre>code</pre>`, wantHeading: "Derived"},
+		{name: "directory listing", kind: "dir", wantHeading: "Derived"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			err := renderer.Page(&out, PageData{
+				Title:         "Derived",
+				SiteTitle:     "test",
+				Kind:          tc.kind,
+				Body:          html(tc.body),
+				HidePageTitle: tc.hidePageTitle,
+			})
+			if err != nil {
+				t.Fatalf("Page() error = %v", err)
+			}
+			got := out.String()
+			if !strings.Contains(got, `<title>Derived - test</title>`) {
+				t.Fatalf("browser title missing\n%s", got)
+			}
+			if gotCount := strings.Count(got, "<h1"); gotCount != 1 {
+				t.Fatalf("h1 count = %d, want 1\n%s", gotCount, got)
+			}
+			if !strings.Contains(got, ">"+tc.wantHeading+"</h1>") {
+				t.Fatalf("visible heading %q missing\n%s", tc.wantHeading, got)
+			}
+		})
+	}
+}
+
 func TestDirlistGoldenHTML(t *testing.T) {
 	t.Parallel()
 

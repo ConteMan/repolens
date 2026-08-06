@@ -124,6 +124,9 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, rootPage, "docs")
 	assertContains(t, rootPage, `<li class="current file" data-kind="markdown">`)
 	assertContains(t, rootPage, `<a class="tree-file" href="README.md/" title="README.md" aria-label="README.md">`)
+	if got := strings.Count(rootPage, "<h1"); got != 1 {
+		t.Fatalf("root page h1 count = %d, want README heading only", got)
+	}
 	if got := strings.Count(rootPage, `<li class="current `); got != 1 {
 		t.Fatalf("root page current tree items = %d, want 1", got)
 	}
@@ -138,6 +141,9 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, readmePage, `<code data-page-path>README.md</code>`)
 	assertContains(t, readmePage, `<small>initial</small>`)
 	assertNotContains(t, readmePage, `footer class="meta"`)
+	if got := strings.Count(readmePage, "<h1"); got != 1 {
+		t.Fatalf("README page h1 count = %d, want article heading only", got)
+	}
 
 	readmeSourcePage := readOutput(t, outDir, "view/README.md/source/index.html")
 	assertContains(t, readmeSourcePage, `class="page page-markdown-source"`)
@@ -148,6 +154,9 @@ func TestBuildEndToEnd(t *testing.T) {
 	docsPage := readOutput(t, outDir, "view/docs/index.html")
 	assertContains(t, docsPage, "Docs")
 	assertContains(t, docsPage, "guide.md")
+	if got := strings.Count(docsPage, "<h1"); got != 1 {
+		t.Fatalf("docs page h1 count = %d, want README heading only", got)
+	}
 	// 非祖先目录 code 深度 1 ≤ tree_expand_depth(默认 2)，树中应默认展开。
 	assertContains(t, docsPage, `<details data-tree-path="code" open>`)
 
@@ -158,6 +167,7 @@ func TestBuildEndToEnd(t *testing.T) {
 
 	codeDirPage := readOutput(t, outDir, "view/code/index.html")
 	assertContains(t, codeDirPage, `<section class="dir-list"`)
+	assertContains(t, codeDirPage, `<h1>code</h1>`)
 	if strings.Contains(codeDirPage, `<section class="readme">`) {
 		t.Fatalf("code directory unexpectedly rendered a README section")
 	}
