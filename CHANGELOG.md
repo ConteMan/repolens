@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-08-06
+
 ### Fixed
 
 - Markdown 文件页与由 Markdown 提供正文的目录页不再额外显示派生页面标题，正文直接从文章自身内容开始；浏览器标题、搜索与 Agent 元数据保持不变。
@@ -151,7 +153,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.2...HEAD
+[1.6.2]: https://github.com/ConteMan/repolens/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/ConteMan/repolens/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/ConteMan/repolens/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/ConteMan/repolens/compare/v1.4.1...v1.5.0
