@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-08-14
+
 ### Fixed
 
 - Markdown 标题锚点保留 Unicode 字母、数字与组合标记；中文及混合语言标题不再丢失非 ASCII 内容或退化为通用 `heading`，TOC 与搜索章节链接同步使用完整 fragment。纯 ASCII fragment 保持兼容；重新构建后，旧版本生成的缺损非 ASCII fragment 需要更新。
@@ -157,7 +159,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.2...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.3...HEAD
+[1.6.3]: https://github.com/ConteMan/repolens/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/ConteMan/repolens/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/ConteMan/repolens/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/ConteMan/repolens/compare/v1.5.0...v1.6.0
