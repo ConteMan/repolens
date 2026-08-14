@@ -85,6 +85,49 @@ func TestMarkdownTitleFallbackAndTOCThreshold(t *testing.T) {
 	}
 }
 
+func TestMarkdownUnicodeHeadingIDs(t *testing.T) {
+	t.Parallel()
+
+	src := []byte("# Document Heading\n\n## 5.6 广告\n\n## 中文标题\n\n## API 接口\n\n## 重复 标题\n\n## 重复 标题\n\n## 😀\n")
+	got, err := NewMarkdown().Render(src, PageRef{Path: "docs/headings.md"}, MarkdownOptions{
+		TOC:            true,
+		TOCMinHeadings: 1,
+		Anchors:        true,
+	})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+
+	for _, want := range []string{
+		`<h1 id="document-heading">Document Heading <a class="anchor" href="#document-heading">`,
+		`<h2 id="56-广告">5.6 广告 <a class="anchor" href="#56-广告">`,
+		`<h2 id="中文标题">中文标题 <a class="anchor" href="#中文标题">`,
+		`<h2 id="api-接口">API 接口 <a class="anchor" href="#api-接口">`,
+		`<h2 id="重复-标题">重复 标题 <a class="anchor" href="#重复-标题">`,
+		`<h2 id="重复-标题-1">重复 标题 <a class="anchor" href="#重复-标题-1">`,
+		`<h2 id="heading">😀 <a class="anchor" href="#heading">`,
+	} {
+		requireContains(t, string(got.HTML), want)
+	}
+
+	wantTOC := []TOCItem{{
+		Title:  "Document Heading",
+		Anchor: "document-heading",
+		Level:  1,
+		Children: []TOCItem{
+			{Title: "5.6 广告", Anchor: "56-广告", Level: 2},
+			{Title: "中文标题", Anchor: "中文标题", Level: 2},
+			{Title: "API 接口", Anchor: "api-接口", Level: 2},
+			{Title: "重复 标题", Anchor: "重复-标题", Level: 2},
+			{Title: "重复 标题", Anchor: "重复-标题-1", Level: 2},
+			{Title: "😀", Anchor: "heading", Level: 2},
+		},
+	}}
+	if !reflect.DeepEqual(got.TOC, wantTOC) {
+		t.Fatalf("TOC = %#v, want %#v", got.TOC, wantTOC)
+	}
+}
+
 func TestMarkdownTitleFilenameFallback(t *testing.T) {
 	t.Parallel()
 

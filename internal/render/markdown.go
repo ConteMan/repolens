@@ -83,7 +83,7 @@ func NewMarkdown() *Markdown {
 // front matter metadata.
 func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (MarkdownResult, error) {
 	md := m.variant(opts)
-	ctx := parser.NewContext()
+	ctx := parser.NewContext(parser.WithIDs(newHeadingIDs()))
 	ctx.Set(pageRefContextKey, ref)
 
 	docNode := md.Parser().Parse(text.NewReader(src), parser.WithContext(ctx))

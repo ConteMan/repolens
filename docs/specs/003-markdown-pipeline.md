@@ -10,7 +10,8 @@
 ## 行为
 
 1. **goldmark 组装**：`yuin/goldmark` ＋ `extension.GFM` ＋ `go.abhg.dev/goldmark/anchor`（标题锚点）＋ `go.abhg.dev/goldmark/frontmatter` ＋ `go.abhg.dev/goldmark/toc`（提取 TOC 结构，不内联进正文，交模板渲染侧栏/页首）＋ `go.abhg.dev/goldmark/mermaid`（ClientRenderer 模式：输出 `<pre class="mermaid">`，脚本注入由 theme 层负责）。代码块经 chroma 高亮（与 spec 004 共用 highlighter）。GFM 表格由 NodeRenderer 在 `<table>` 外包裹可聚焦的 `.table-scroll` 区域，Header / Row / Cell 仍沿用 goldmark 默认渲染；不额外创建同名 `region` landmark。
-2. **标题与 TOC**：`frontmatter_title: true` 时 front-matter 的 `title` 为页面标题，否则取首个 H1，再退化为文件名。TOC 仅在标题数 ≥ 阈值（默认 3）且 `toc: true` 时返回。
+2. **标题与 TOC**：`frontmatter_title: true` 时 front-matter 的 `title` 为页面标题，否则取首个 H1，再退化为文件名。TOC 仅在标题数 ≥ 阈值（默认 3）且 `toc: true` 时返回。标题 ID 由完整标题文本生成：先移除首尾 ASCII 空白，Unicode 字母、数字与组合标记保留并转小写，空白及 ASCII `-` / `_` 转为 `-`，其他标点与符号移除；结果为空时回退为 `heading`，同页重复 ID 依次追加 `-1`、`-2`。英文标题沿用 goldmark 的既有结果（如 `Document Heading` → `document-heading`），`5.6 广告` 生成 `56-广告`。标题元素 `id`、标题自链接、TOC `Anchor` 与搜索索引 `headings[].anchor` 必须复用同一个 ID。
+   - 兼容策略：纯 ASCII 标题的既有 fragment 保持不变。旧版本为含非 ASCII 字符标题生成的缺损 fragment 不保留别名；该算法可能让多个不同标题退化为相同基础 ID（如 `heading-N`），无法在不产生重复 ID 或错误跳转的前提下提供可靠兼容。站点重新构建后，外部保存的此类旧 fragment 需要更新。
 3. **链接改写**（ASTTransformer，作用于 Link 与 Image 节点）：
    - 跳过：含 scheme 的绝对 URL、`//` 开头、`#` 开头（页内锚点）、`mailto:` 等；
    - `/` 开头的绝对路径：保持不动（v1 不解释，文档声明）；
@@ -63,6 +64,7 @@ func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (Markdo
 ## 验收
 
 - golden-file 测试：GFM 表格（含长 JSON、URL、token 与可聚焦滚动容器）/ 任务列表、TOC 提取、front-matter 标题、mermaid 代码块输出 `<pre class="mermaid">`、代码块高亮 class 存在；
+- 标题 ID 测试覆盖英文兼容、`5.6 广告`、纯中文、混合语言、重复标题与空结果回退，并断言标题元素、自链接、TOC 与搜索索引使用相同 ID；
 - 链接改写表驱动测试覆盖行为 3 的每一分支（含 fragment 保留、`../` 越根、图片 vs 链接、深层目录相对路径正确性）；
 - 并发 Render 无 data race（`go test -race`）；
 - `gofmt` / `go vet` / `go test` 通过。

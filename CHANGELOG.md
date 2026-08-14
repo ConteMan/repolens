@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Markdown 标题锚点保留 Unicode 字母、数字与组合标记；中文及混合语言标题不再丢失非 ASCII 内容或退化为通用 `heading`，TOC 与搜索章节链接同步使用完整 fragment。纯 ASCII fragment 保持兼容；重新构建后，旧版本生成的缺损非 ASCII fragment 需要更新。
+
 ## [1.6.2] - 2026-08-06
 
 ### Fixed
