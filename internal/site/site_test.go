@@ -408,7 +408,7 @@ func TestSearchJSONIndexesBrowseableFilesAndAllMarkdownHeadings(t *testing.T) {
 	runGit(t, repo, "config", "user.email", "test@example.com")
 	runGit(t, repo, "config", "user.name", "Test User")
 	writeFile(t, repo, "README.md", "# 首页\n\n## 第一节\n\n## 第二节\n")
-	writeFile(t, repo, "docs/中文指南.md", "# 使用指南\n\n## 安装\n\n## 配置\n\n## 部署\n")
+	writeFile(t, repo, "docs/中文指南.md", "# 使用指南\n\n## 安装\n\n## 配置\n\n## 部署\n\n## 5.6 广告\n")
 	writeFile(t, repo, "plain.txt", "plain text\n")
 	writeFile(t, repo, ".repolens.yml", `
 render:
@@ -471,16 +471,22 @@ render:
 		t.Fatalf("guide search entry = %#v", guide)
 	}
 	gotHeadings := make([]string, 0, len(guide.Headings))
+	gotAnchors := make([]string, 0, len(guide.Headings))
 	for _, heading := range guide.Headings {
 		gotHeadings = append(gotHeadings, heading.Text)
+		gotAnchors = append(gotAnchors, heading.Anchor)
 		if heading.Anchor == "" || heading.Level <= 0 {
 			t.Fatalf("heading missing anchor or level: %#v", heading)
 		}
 	}
-	if !slices.Equal(gotHeadings, []string{"使用指南", "安装", "配置", "部署"}) {
+	if !slices.Equal(gotHeadings, []string{"使用指南", "安装", "配置", "部署", "5.6 广告"}) {
 		t.Fatalf("guide headings = %v", gotHeadings)
 	}
+	if !slices.Equal(gotAnchors, []string{"使用指南", "安装", "配置", "部署", "56-广告"}) {
+		t.Fatalf("guide heading anchors = %v", gotAnchors)
+	}
 	guidePage := readOutput(t, outDir, "view/docs/中文指南.md/index.html")
+	assertContains(t, guidePage, `<h2 id="56-广告">5.6 广告 <a class="anchor" href="#56-广告">`)
 	assertNotContains(t, guidePage, `<aside class="toc-panel"`)
 }
 
