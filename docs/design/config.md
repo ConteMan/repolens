@@ -44,6 +44,7 @@ render:                              # 全局默认（第 0 条规则）
     mermaid: true
     math: false
     frontmatter_title: true
+    glossary: false                  # 术语标注与解释；默认关闭，见 spec 017
   html:
     view: embed                      # embed=iframe 进框架 / direct=只链镜像 / source=按代码展示
   code:
@@ -58,6 +59,10 @@ rules:                               # 按序级联，覆盖 render 默认
     render: false                    # 只镜像，不生成浏览页
   - match: "specs/**/*.md"
     markdown: { math: true }
+
+glossary:                            # 仅在 render.markdown.glossary 开启的文件上生效
+  dir: .repolens/glossary            # 公共术语库目录；不存在视为空库
+  strict: true                       # 引用未定义术语时构建失败；false 降级为告警
 
 theme:
   vars:                              # 注入 CSS 变量
@@ -84,6 +89,7 @@ agent:
 
 - **`ignore` vs `rules[].render: false`**：前者"文件当不存在"（两层都排除），后者"可访问但无阅读页"（镜像层保留）。`ignore` 同时是安全功能，文档按此定位撰写；
 - **加密与 Agent 视图互斥**：`access.encrypt.paths` 与 agent 输出的交集构建时检测并告警（lint 规则）。私有站点优先推荐平台层认证（Agent 可走 service token），客户端加密仅留给托管平台完全不可控的场景；
+- **术语库属渲染信任域**：`glossary` 段仓库内外均可写，与其他渲染域配置一致（ADR-005）。`glossary.dir` 只用于读取仓库内文件，不参与输出路径决策；术语条目是仓库作者书写的不可信输入，渲染时按纯文本转义，`source.url` 限 http(s)。开关 `render.markdown.glossary` 参与 `rules` 级联（可对特定目录单独开启），`glossary` 段本身是全站唯一值、不参与级联；
 - **站内搜索是浏览层能力**：`view.search: true` 时输出站点根 `search.json` 并渲染工具栏 / 树顶搜索入口；设为 `false` 时两者都不生成。该开关不参与 `rules` 级联，且不受 `agent.index_json` 影响；
 - **文件树位置统一**：`view.tree_position` 同时控制桌面固定侧栏与浮动树从左侧或右侧出现；窄屏禁用 JavaScript 时仍退化为树在正文前的上下单列，保证导航可读；
 - **侧栏宽度分属两个层级**：`theme.vars.sidebar-width` 是站点作者随构建产物发布的默认值；访问者对桌面固定树的调宽只保存在按部署 base path 隔离的浏览器本地偏好中，不回写配置。浮动树宽度保持独立；
