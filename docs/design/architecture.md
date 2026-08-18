@@ -61,7 +61,7 @@ dist/
 
 规则模型：**(glob 匹配 → 处理管线 → 参数)**，按序级联、后者覆盖前者（editorconfig 语义），全局默认等价第 0 条规则。详见 [config.md](config.md)。
 
-- Markdown：goldmark ＋ 扩展（GFM、脚注、TOC、标题锚点、front-matter、Mermaid）。指向仓库内 `.md` 的相对链接在 **AST 层**（ASTTransformer）改写为 `/view/` 路径，不做渲染后文本替换；
+- Markdown：goldmark ＋ 扩展（GFM、脚注、TOC、标题锚点、front-matter、Mermaid）。指向仓库内 `.md` 的相对链接在 **AST 层**（ASTTransformer）改写为 `/view/` 路径，不做渲染后文本替换；可选的术语标注（`[文本](term:key)` ＋ 仓库内术语库）同样在 AST 层处理，默认关闭，见 ADR-007 与 spec 017；
 - 代码：chroma 构建期高亮，Markdown 代码块与独立代码文件页共用；
 - 用户 HTML：不解析不修改，镜像原样 + iframe 浏览页；
 - 超过 `max_file_size` 的文件与二进制文件：只进镜像层，浏览页给下载链接；
@@ -69,7 +69,7 @@ dist/
 
 ## Agent 视图
 
-- `llms.txt`：站点说明 ＋ 路径约定（浏览页在 `/view/`，原始文件在原路径）＋ 按目录树组织的内容清单；
+- `llms.txt`：站点说明 ＋ 路径约定（浏览页在 `/view/`，原始文件在原路径）＋ 按目录树组织的内容清单；术语库非空时附术语表小节；
 - `llms-full.txt`（可选）：全部文本内容拼接，有大小上限；
 - `index.json`：文件树 ＋ 类型 ＋ 大小 ＋ git 最后修改时间，一次请求拿全貌；
 - 每个浏览页 `<head>` 含 `<link rel="alternate" type="text/markdown">` 指向镜像层原文件。
