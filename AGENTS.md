@@ -36,7 +36,7 @@ GitHub Issues 是任务与进度跟踪面；仓库文档是长期有效的设计
 
 ## 硬规则
 
-1. **文档先行**：改变架构、配置 schema、URL 约定、公开 CLI 行为之前，先更新对应 design 文档或新增 ADR，同一 PR 内文档与代码联动。
+1. **文档先行**：改变架构、配置 schema、URL 约定、公开 CLI 行为之前，先更新对应 design 文档或新增 ADR，同一 PR 内文档与代码联动。变更涉及 `skills/` 已覆盖的能力时，`SKILL.md` 与其 `example/` 一并同步——skill 面向使用者自洽，不引用本仓文档，一致性由维护者保证。
 2. **ADR 不可静默推翻**：要推翻已有 ADR，新增一条 ADR 声明取代关系，说明理由。
 3. **Commit 遵循 Conventional Commits**（见 CONTRIBUTING.md），一个 commit 一个逻辑变更。
 4. **新增依赖需要论证**：Go 直接依赖控制在个位数，候选库必须主流且在维护（参照 ADR-003 / ADR-006）。Node 工具链仅允许用于 `repolens ui` 的开发构建；最终发布仍须是无需 Node 的单二进制。

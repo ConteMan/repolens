@@ -61,8 +61,7 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
    |---|---|
    | `title` | 规范名，必填 |
    | `alias` | 别名、外文名或常见写法 |
-   | `owner` | 归属：行业通用概念，还是某个平台/服务的私有实现 |
-   | `summary` | 脱离本文也成立的通用解释 |
+   | `summary` | 脱离本文也成立的通用解释；术语的归属（行业通用 / 某平台私有）在此说明，不设独立字段 |
    | `page` | **本文语境下**具体指什么；只应出现在 front matter |
    | `warning` | 易混淆点与常见误用 |
    | `source` | `{label, url}`，权威出处 |
@@ -91,7 +90,7 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 
 1. 点击 `.term` 时阻止默认跳转，打开侧向抽屉并直接展示该术语详情；术语表中的锚点仍可通过键盘与直接访问 URL fragment 使用。
 2. 页面存在术语表时显示固定位置的浮动入口，打开时展示本页术语索引（`title` ＋ `alias`），点击条目进入详情，详情可返回索引。
-3. 详情按序展示 `owner`、`title`、`alias`、`summary`、`page`、`warning`、`source`，缺失字段整块省略而非留空。`warning` 使用与其他块可区分的样式。
+3. 详情按序展示 `title`、`alias`、`summary`、`page`、`warning`、`source`，缺失字段整块省略而非留空。`warning` 使用与其他块可区分的样式。
 4. 可访问性：抽屉为 `role="dialog"` ＋ `aria-modal="true"`，打开时焦点移入、Tab 在抽屉内循环，`Escape` 与点击遮罩关闭，关闭后焦点还原到触发元素。`.term` 提供描述其为术语的 `aria-label`。
 5. 抽屉在 pjax 内容替换后随新内容重新初始化（spec 011），不残留上一页的术语数据；替换期间抽屉如为打开状态则关闭。
 6. 样式与脚本随 theme 的既有资源 embed 输出，无外部请求。默认 `layout` 提供完整 DOM；自定义 `layout` 若要保留该能力，必须消费 `PageData.Terms` 并保留等价的术语表结构与 class 约定。
@@ -99,7 +98,7 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 ### 7. 搜索与 Agent 视图
 
 1. `view.search` 开启时，`search.json` 的每个文档条目增加 `terms` 数组，元素为 `{key, title, alias, anchor}`，`anchor` 为 `glossary-<key>`。搜索命中术语时跳转到对应文档的术语表条目。术语不产生独立的搜索文档。
-2. `agent.llms_txt` 开启且术语库非空时，`llms.txt` 增加"术语表"小节，逐条列出 `title`、`alias`、`owner`、`summary` 与定义文件路径。文档私有术语不进入该小节。
+2. `agent.llms_txt` 开启且术语库非空时，`llms.txt` 增加"术语表"小节，逐条列出 `title`、`alias`、`summary` 与定义文件路径。文档私有术语不进入该小节。
 3. `llms-full.txt` 行为不变：它是镜像层原始字节的拼接，不注入渲染期产物；术语库 YAML 文件本身已按普通文件参与其中。
 
 ## 接口契约
@@ -116,7 +115,6 @@ type GlossaryTerm struct {
     Key     string
     Title   string
     Alias   string
-    Owner   string
     Summary string
     Page    string
     Warning string

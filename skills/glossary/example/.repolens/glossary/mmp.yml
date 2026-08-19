@@ -1,5 +1,4 @@
 title: MMP
 alias: Mobile Measurement Partner / 移动归因平台
-owner: 行业通用角色；常见实现为 AppsFlyer、Adjust
-summary: 独立于各投放渠道的第三方归因服务，统一判断用户由哪个渠道带来，并把后续价值信号回传给各渠道。
+summary: 独立于各投放渠道的第三方归因服务，统一判断用户由哪个渠道带来，并把后续价值信号回传给各渠道；常见实现为 AppsFlyer、Adjust。
 warning: MMP 的归因结果与渠道自报数据必然存在差异，差异不等于错误；对账前必须统一 App、日期、时区、币种与归因窗口。

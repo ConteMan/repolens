@@ -1,15 +1,11 @@
 ---
 name: repolens-glossary
 description: 在 Git 文档仓库中建立和维护 repolens 的术语标注与解释：与用户一起确定术语清单、编写术语库条目、在正文插入标注、开启构建配置。当用户要给文档加术语解释、维护已有术语库，或提到 repolens 的 glossary / 术语功能时使用。
-spec: docs/specs/017-glossary-terms.md（repolens 仓库）
-spec_version: 017 草稿
 ---
 
 # repolens 术语标注与解释
 
 帮助用户在**他自己的文档仓库**里建立术语标注，产出符合 repolens 规范的文件，使构建出的站点中被标注的词可以原地展开解释。
-
-本文件是可执行的操作规范。字段语义与渲染行为的最终裁决以 repolens 仓库的 `docs/specs/017-glossary-terms.md` 为准；两者不一致时以 spec 为准并报告差异。
 
 ## 前提
 
@@ -68,8 +64,7 @@ spec_version: 017 草稿
 ```yaml
 title: 广告聚合
 alias: Ad mediation
-owner: 行业通用能力；本仓库场景中的实现为 AppLovin MAX / Google AdMob 中介
-summary: 在多个广告源之间统一请求、竞价或瀑布选择，以提高填充率和收益。
+summary: 行业通用能力：在多个广告源之间统一请求、竞价或瀑布选择，以提高填充率和收益。常见实现有 AppLovin MAX 与 Google AdMob 中介。
 warning: AdMob 既可能是 MAX 内的一个广告源，也可能自己作为主聚合平台。先确认它当前扮演哪种角色，再配置收入入口。
 source:
   label: AppLovin MAX 官方说明
@@ -82,8 +77,7 @@ source:
 |---|---|---|
 | `title` | 是 | 规范名。正文里怎么写不影响它 |
 | `alias` | 否 | 别名、外文名、常见缩写 |
-| `owner` | 否 | 这是行业通用概念，还是某个平台/服务的私有实现。**填不出来时留空**，不要写"通用"凑数 |
-| `summary` | 否 | 脱离本文也成立的通用解释。一到三句 |
+| `summary` | 否 | 脱离本文也成立的通用解释。一到三句。必要时在句中点明归属——是行业通用概念，还是某个平台/服务的私有实现 |
 | `warning` | 否 | 易混点与常见误用。能写出内容说明这个术语值得标 |
 | `source` | 否 | `{label, url}`，权威出处。URL 仅限 http/https |
 | `page` | 否 | **只写在文档 front matter 里**，不写在术语库文件中 |

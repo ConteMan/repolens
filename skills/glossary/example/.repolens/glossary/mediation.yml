@@ -1,7 +1,6 @@
 title: 广告聚合
 alias: Ad mediation
-owner: 行业通用能力
-summary: 在多个广告源之间统一请求、竞价或瀑布选择，以提高填充率和收益。
+summary: 行业通用能力：在多个广告源之间统一请求、竞价或瀑布选择，以提高填充率和收益。常见实现有 AppLovin MAX 与 Google AdMob 中介。
 warning: AdMob 既可能是聚合平台内的一个广告源，也可能自己作为主聚合平台。先确认它当前扮演哪种角色，再配置收入入口。
 source:
   label: AppLovin MAX 官方说明
