@@ -1,0 +1,8 @@
+# 术语标注与解释的最小配置样例。
+render:
+  markdown:
+    glossary: true
+
+glossary:
+  dir: .repolens/glossary
+  strict: true

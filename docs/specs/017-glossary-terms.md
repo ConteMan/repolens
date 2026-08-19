@@ -1,7 +1,7 @@
 # 017: 术语标注与解释
 
 - 状态：草稿
-- 关联：roadmap M11、Issue #73、ADR-007、ADR-001、ADR-002、ADR-005、specs [003](003-markdown-pipeline.md)、[005](005-site-assembly.md)、[006](006-theme-and-templates.md)、[008](008-agent-surface.md)、[011](011-toolbar-and-pjax.md)、[012](012-site-search.md)
+- 关联：roadmap M11、Issue #73、ADR-007、ADR-001、ADR-002、ADR-005、specs [003](003-markdown-pipeline.md)、[018](018-glossary-skill.md)、[005](005-site-assembly.md)、[006](006-theme-and-templates.md)、[008](008-agent-surface.md)、[011](011-toolbar-and-pjax.md)、[012](012-site-search.md)
 
 ## 问题
 

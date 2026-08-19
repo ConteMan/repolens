@@ -75,4 +75,5 @@ go vet ./...          # 静态检查
 - `internal/theme/` — 内置模板与静态资源（go:embed）
 - `internal/server/` — 本地预览 serve + watch
 - `internal/ui/` — React + TypeScript + Base UI 本地管理界面，静态产物 go:embed
+- `skills/` — 面向使用者的 Agent 操作规范（Agent 中立，不进二进制）
 - `docs/` — 设计文档 / ADR / spec / roadmap（也是 repolens 自己的 dogfood 语料）

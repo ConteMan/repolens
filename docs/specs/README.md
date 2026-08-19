@@ -1,6 +1,6 @@
 # 功能规格（Specs）
 
-v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–017（M5–M11，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
+v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–018（M5–M11，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
 
 ## 索引
 
@@ -23,6 +23,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [015](015-resizable-fixed-tree.md) | 桌面固定文件树侧栏调宽 | internal/theme | M9 | 已确认 |
 | [016](016-site-snapshot-freshness.md) | 站点快照新鲜度提示 | internal/site, theme | M10 | 已实现 |
 | [017](017-glossary-terms.md) | 术语标注与解释 | internal/render, site, theme | M11 | 草稿 |
+| [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 草稿 |
 
 ## 依赖与实现顺序
 
