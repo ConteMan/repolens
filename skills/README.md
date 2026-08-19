@@ -27,8 +27,10 @@
 - **原生 skill 机制**：支持 skill 目录的工具（如 Claude Code 的 `.claude/skills/`）可直接放置整个目录，front matter 的 `name` 与 `description` 即为触发元信息；
 - **一次性使用**：把 `SKILL.md` 全文粘贴给 Agent。
 
-## 与 spec 的关系
+## 维护
 
-skill 是操作规范，`docs/specs/` 下的 spec 是格式与行为的最终裁决源。skill 为了能在 repolens 仓库之外独立使用，复述了一部分格式约定；两者的一致性由 `example/` 下的固定样例与 CI 检查保证（见 [spec 018](../docs/specs/018-glossary-skill.md)）。
+`SKILL.md` 是自洽的：使用者按它书写即可，无需查阅 repolens 的设计文档，正文也不引用它们。
 
-skill 随 repolens 版本演进。发现 skill 与 spec 不一致时以 spec 为准，并提 Issue。
+skill 与实现的一致性由 repolens 维护者保证——渲染行为或格式变更时，`docs/specs/` 下的 spec、`SKILL.md` 与 `example/` 在同一 PR 内同步，并由 CI 对 `example/` 的构建检查兜底（见 [spec 018](../docs/specs/018-glossary-skill.md)）。
+
+按 skill 书写却得不到预期结果，属于 repolens 的 bug，请提 Issue。
