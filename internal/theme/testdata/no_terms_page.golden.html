@@ -1,0 +1,108 @@
+<!doctype html>
+<html class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Doc - test</title>
+<script>document.documentElement.className=document.documentElement.className.replace(/\bno-js\b/,"js");</script>
+<link rel="stylesheet" href="../_assets/site.css">
+<link rel="stylesheet" href="../_assets/chroma.css">
+
+
+
+</head>
+<body data-page-kind="markdown" data-tree-position="left">
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>
+  <symbol id="icon-markdown" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/><path d="M5.3 8.2h5.4M5.3 10.7h5.4"/></symbol>
+  <symbol id="icon-html" viewBox="0 0 16 16"><path d="M2 3l1.1 10L8 14.5l4.9-1.5L14 3z"/><path d="M5.5 6.2h5M5.8 8.2h4.4l-.3 2.3L8 11.1l-1.9-.6"/></symbol>
+  <symbol id="icon-code" viewBox="0 0 16 16"><path d="M6.2 4.2L3 8l3.2 3.8M9.8 4.2L13 8l-3.2 3.8"/></symbol>
+  <symbol id="icon-image" viewBox="0 0 16 16"><path d="M2.5 3.5h11v9h-11z"/><path d="M4 11l3-3 2 2 1.2-1.2L13 11"/><circle cx="10.8" cy="5.8" r=".8"/></symbol>
+  <symbol id="icon-binary" viewBox="0 0 16 16"><path d="M3 1.5h10v13H3z"/><path d="M5 5h2v2H5zM9 5h2v2H9zM5 9h2v2H5zM9 9h2v2H9z"/></symbol>
+  <symbol id="icon-tree" viewBox="0 0 16 16"><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h11"/></symbol>
+  <symbol id="icon-back" viewBox="0 0 16 16"><path d="M9.5 3.5L5 8l4.5 4.5"/></symbol>
+  <symbol id="icon-fwd" viewBox="0 0 16 16"><path d="M6.5 3.5L11 8l-4.5 4.5"/></symbol>
+  <symbol id="icon-toc" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="2.8" cy="4" r=".9"/><circle cx="2.8" cy="8" r=".9"/><circle cx="2.8" cy="12" r=".9"/></symbol>
+  <symbol id="icon-minus" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+  <symbol id="icon-width" viewBox="0 0 16 16"><path d="M2 2.5v11M14 2.5v11M5 8h6M5 8l1.6-1.6M5 8l1.6 1.6M11 8L9.4 6.4M11 8l-1.6 1.6"/></symbol>
+  <symbol id="icon-download" viewBox="0 0 16 16"><path d="M8 2.5v7.5M4.8 7l3.2 3 3.2-3M3 13h10"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></symbol>
+  <symbol id="icon-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.7"/><path d="M8 7.2V11"/><circle cx="8" cy="5" r=".35"/></symbol>
+  <symbol id="icon-commit" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M1.5 8h4.3M10.2 8h4.3"/></symbol>
+  <symbol id="icon-pin" viewBox="0 0 16 16"><path d="M6 2.5h4l.5 5 2 2h-9l2-2z"/><path d="M8 9.5V14"/></symbol>
+  <symbol id="icon-expand-all" viewBox="0 0 16 16"><path d="M3 2.5h10M4.5 6L8 9.5 11.5 6M3 13.5h10"/></symbol>
+  <symbol id="icon-collapse-all" viewBox="0 0 16 16"><path d="M3 2.5h10M4.5 10L8 6.5 11.5 10M3 13.5h10"/></symbol>
+  <symbol id="icon-locate" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.5"/><path d="M8 1.5V4M8 12v2.5M1.5 8H4M12 8h2.5"/></symbol>
+</svg>
+<header class="topbar">
+  <div class="tb-group js-only">
+    <button class="tb-btn" id="btn-tree" type="button" title="Repository tree" aria-label="Repository tree" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
+    <button class="tb-btn" id="btn-back" type="button" title="Back" aria-label="Back"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+    <button class="tb-btn" id="btn-fwd" type="button" title="Forward" aria-label="Forward"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
+  </div>
+  <nav class="tb-crumbs" aria-label="Breadcrumbs">
+    
+  </nav>
+  <div class="tb-group">
+    
+    
+    <button class="tb-btn js-only" id="btn-zoom-out" type="button" title="Zoom out" aria-label="Zoom out"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
+    <span class="zoom-readout js-only" id="zoom-readout">100%</span>
+    <button class="tb-btn js-only" id="btn-zoom-in" type="button" title="Zoom in" aria-label="Zoom in"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+    <button class="tb-btn js-only" id="btn-width" type="button" title="Layout width" aria-label="Layout width"><svg class="icon" aria-hidden="true"><use href="#icon-width"></use></svg><span id="width-label">Default</span></button>
+    <span class="tb-sep js-only"></span>
+    <span class="info-wrap js-only" id="info-wrap">
+      <button class="tb-btn" id="btn-info" type="button" title="Page information" aria-label="Page information" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
+      <div class="info-panel" role="dialog" aria-label="Page information">
+        <div class="info-row"><span>Path</span><code data-page-path></code></div>
+        <div class="info-row"><span>Type</span><b>Markdown</b></div>
+        
+        
+        <div class="info-actions"></div>
+      </div>
+    </span>
+    
+    
+    
+  </div>
+</header>
+<div class="shell">
+  <aside class="sidebar">
+    <nav class="tree-nav" id="tree-src" aria-label="Repository tree">
+      <div class="tree-actions js-only" role="group" aria-label="Repository tree actions">
+  <button class="tree-action" type="button" data-tree-action="expand" title="Expand all" aria-label="Expand all"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="collapse" title="Collapse all" aria-label="Collapse all"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="locate" title="Locate current file" aria-label="Locate current file"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
+</div>
+      
+    </nav>
+  </aside>
+  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="Resize repository tree" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
+  <main class="content" id="content">
+    <h1>Doc</h1>
+    
+
+
+  <article class="page page-markdown"><p>plain</p></article>
+
+
+  </main>
+</div>
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+
+<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">
+  <div class="overlay-head">
+    <span>test · Repository tree</span>
+    <button class="tb-btn" id="btn-pin-tree" type="button" title="Pin as sidebar"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>Pin</button>
+  </div>
+  <nav class="overlay-tree" id="overlay-tree" aria-label="Repository tree"></nav>
+</div>
+
+
+
+<script defer src="../_assets/site.js"></script>
+</body>
+</html>

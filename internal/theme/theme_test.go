@@ -733,11 +733,38 @@ func TestGlossaryAppendixAndDrawer(t *testing.T) {
 		t.Fatalf("Page() error = %v", err)
 	}
 	blank := empty.String()
-	for _, not := range []string{`class="glossary-appendix"`, `id="glossary-ui"`, `id="btn-glossary"`, `id="glossary-drawer"`} {
+	for _, not := range []string{`class="glossary-appendix"`, `id="glossary-ui"`, `id="btn-glossary"`, `id="glossary-drawer"`, `id="icon-glossary"`, `id="icon-close"`} {
 		if strings.Contains(blank, not) {
 			t.Fatalf("page without terms unexpectedly contains %q\n%s", not, blank)
 		}
 	}
+}
+
+func TestNoTermsPageBytesMatchBaseline(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	var out bytes.Buffer
+	err = renderer.Page(&out, PageData{
+		Title:     "Doc",
+		SiteTitle: "test",
+		Kind:      "markdown",
+		Body:      html("<p>plain</p>"),
+		RelRoot:   "../",
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	got := out.String()
+	for _, not := range []string{`id="icon-glossary"`, `id="icon-close"`, `glossary-appendix`, `id="glossary-ui"`} {
+		if strings.Contains(got, not) {
+			t.Fatalf("no-terms page contains %q", not)
+		}
+	}
+	assertGoldenExact(t, "no_terms_page.golden.html", got)
 }
 
 func TestGlossaryAssets(t *testing.T) {
@@ -804,6 +831,24 @@ func readTestOutput(t *testing.T, root, rel string) string {
 		t.Fatalf("read %s: %v", rel, err)
 	}
 	return string(data)
+}
+
+func assertGoldenExact(t *testing.T, name, got string) {
+	t.Helper()
+	path := filepath.Join("testdata", name)
+	if os.Getenv("UPDATE_GOLDEN") == "1" {
+		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+			t.Fatalf("update golden %s: %v", name, err)
+		}
+		return
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read golden %s: %v", name, err)
+	}
+	if got != string(want) {
+		t.Fatalf("golden %s byte mismatch (len got=%d want=%d)\n--- got ---\n%s\n--- want ---\n%s", name, len(got), len(want), got, want)
+	}
 }
 
 func assertGoldenCompact(t *testing.T, name, got string) {

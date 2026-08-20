@@ -3,8 +3,7 @@
      the class/id conventions (.glossary-appendix, .glossary-entry,
      id="glossary-<key>", data-glossary). The drawer reads this DOM; do not
      inline a second copy of the term data. */}}
-{{define "glossary-appendix"}}
-{{if .Terms}}
+{{define "glossary-appendix"}}{{if .Terms}}
 <section class="glossary-appendix" id="glossary" data-glossary-index="{{index .UI "glossary_index"}}" data-glossary-back="{{index .UI "glossary_back"}}" data-glossary-close="{{index .UI "glossary_close"}}">
   <h2>{{index .UI "glossary"}}</h2>
   {{range .Terms}}
@@ -18,5 +17,4 @@
   </article>
   {{end}}
 </section>
-{{end}}
-{{end}}
+{{end}}{{end}}
