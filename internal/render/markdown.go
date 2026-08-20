@@ -74,6 +74,10 @@ type MarkdownResult struct {
 	// Terms holds the terms referenced on this page after front-matter
 	// overrides, in first-appearance order and de-duplicated by key.
 	Terms []GlossaryTerm
+	// Warnings holds recoverable issues from this page's front-matter
+	// glossary entries (invalid source URL, truncated fields). Public
+	// library problems are reported by site.LoadGlossary, not here.
+	Warnings []string
 }
 
 type markdownVariantKey struct {
@@ -103,9 +107,9 @@ func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (Markdo
 	docNode := md.Parser().Parse(text.NewReader(src), parser.WithContext(ctx))
 	doc := docNode.(*ast.Document)
 
-	terms, err := applyGlossary(doc, src, ref, opts)
+	terms, warnings, err := applyGlossary(doc, src, ref, opts)
 	if err != nil {
-		return MarkdownResult{}, err
+		return MarkdownResult{Warnings: warnings}, err
 	}
 
 	meta := copyMeta(doc.OwnerDocument().Meta())
@@ -139,6 +143,7 @@ func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (Markdo
 		HasMermaid: hasMermaid,
 		Meta:       meta,
 		Terms:      terms,
+		Warnings:   warnings,
 	}, nil
 }
 
