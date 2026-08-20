@@ -5,6 +5,7 @@ import (
 	"html"
 	"html/template"
 	"net/url"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -182,37 +183,74 @@ func mergePageGlossary(public Glossary, meta map[string]any, path string) (Gloss
 	return out, warnings
 }
 
+// glossaryFrontMatter is the YAML keys applyGlossaryOverrides honors.
+// The skill consistency test compares this set to SKILL.md.
+type glossaryFrontMatter struct {
+	Title   string `yaml:"title"`
+	Alias   string `yaml:"alias"`
+	Summary string `yaml:"summary"`
+	Page    string `yaml:"page"`
+	Warning string `yaml:"warning"`
+	Source  any    `yaml:"source"`
+}
+
+// GlossaryFrontMatterFields returns the YAML keys honored by document
+// front-matter glossary overlays.
+func GlossaryFrontMatterFields() []string {
+	return yamlFieldNames(glossaryFrontMatter{})
+}
+
+func yamlFieldNames(v any) []string {
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	names := make([]string, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("yaml")
+		name, _, _ := strings.Cut(tag, ",")
+		if name == "" || name == "-" {
+			continue
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 func applyGlossaryOverrides(term GlossaryTerm, fields map[string]any, path, key string) (GlossaryTerm, []string) {
 	var warnings []string
-	if s, ok := nonEmptyString(fields["title"]); ok {
-		s, w := cutGlossaryField(s, path, key, "title")
-		warnings = append(warnings, w...)
-		term.Title = ParseGlossaryText(s)
-	}
-	if s, ok := nonEmptyString(fields["alias"]); ok {
-		s, w := cutGlossaryField(s, path, key, "alias")
-		warnings = append(warnings, w...)
-		term.Alias = ParseGlossaryText(s)
-	}
-	if s, ok := nonEmptyString(fields["summary"]); ok {
-		s, w := cutGlossaryField(s, path, key, "summary")
-		warnings = append(warnings, w...)
-		term.Summary = ParseGlossaryText(s)
-	}
-	if s, ok := nonEmptyString(fields["page"]); ok {
-		s, w := cutGlossaryField(s, path, key, "page")
-		warnings = append(warnings, w...)
-		term.Page = ParseGlossaryText(s)
-	}
-	if s, ok := nonEmptyString(fields["warning"]); ok {
-		s, w := cutGlossaryField(s, path, key, "warning")
-		warnings = append(warnings, w...)
-		term.Warning = ParseGlossaryText(s)
-	}
-	if raw, ok := fields["source"]; ok && isNonEmptySource(raw) {
-		src, srcWarnings := parseGlossarySource(raw, path, key)
-		term.Source = src
-		warnings = append(warnings, srcWarnings...)
+	for _, name := range GlossaryFrontMatterFields() {
+		switch name {
+		case "source":
+			raw, ok := fields[name]
+			if !ok || !isNonEmptySource(raw) {
+				continue
+			}
+			src, srcWarnings := parseGlossarySource(raw, path, key)
+			term.Source = src
+			warnings = append(warnings, srcWarnings...)
+		default:
+			s, ok := nonEmptyString(fields[name])
+			if !ok {
+				continue
+			}
+			s, w := cutGlossaryField(s, path, key, name)
+			warnings = append(warnings, w...)
+			text := ParseGlossaryText(s)
+			switch name {
+			case "title":
+				term.Title = text
+			case "alias":
+				term.Alias = text
+			case "summary":
+				term.Summary = text
+			case "page":
+				term.Page = text
+			case "warning":
+				term.Warning = text
+			}
+		}
 	}
 	term.Key = key
 	return term, warnings
