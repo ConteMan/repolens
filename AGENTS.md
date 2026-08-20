@@ -14,6 +14,8 @@ repolens 是一个 Go 编写的单二进制 CLI 工具：把任意 Git 仓库原
 
 GitHub Issues 是任务与进度跟踪面；仓库文档是长期有效的设计、合同与决策面。Roadmap 只维护范围、依赖和里程碑完成标准，不在仓库文件中另建任务清单。
 
+Roadmap 中的 **M 编号是 Spec 的分组与验收单元**，用来回答「这批东西什么时候算做完」，不对应 GitHub Milestone——本项目不使用 GitHub Milestone 跟踪进度，发布节奏由 semver tag 与 CHANGELOG 承载。
+
 - `bug`：行为与文档、Spec 或已确认合同不一致；
 - `design-gap`：实现与**已评审冻结**的 Pencil 设计基线不一致；探索稿不得作为该标签的事实源；
 - `enhancement`：现有 Spec 与 Roadmap 范围内可以直接消化的改进；
@@ -22,7 +24,7 @@ GitHub Issues 是任务与进度跟踪面；仓库文档是长期有效的设计
 处理 Issue 时：
 
 1. 先搜索现有 Issue；重复问题回到原 Issue 补充证据；
-2. Issue 标题、正文和讨论评论使用中文；正文说明问题、期望、影响和可复现证据，阶段性交付挂到对应 Milestone；
+2. Issue 标题、正文和讨论评论使用中文；正文说明问题、期望、影响和可复现证据；
 3. `spec-needed` 先由维护者确认方向，再更新文档合同，最后进入实现；
 4. UI 差距必须引用 `.pen` 路径、节点 ID、页面/状态/视口和截图；只有可关闭重开且通过验收的 `.pen` 才能成为设计基线；
 5. PR 使用 `Closes #N` 闭环 Issue；没有关联 Issue 时在 PR 中说明原因。

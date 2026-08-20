@@ -35,7 +35,7 @@ Issue 使用以下标签分流：
 - `enhancement`：现有 Spec 与 Roadmap 范围内的改进；
 - `spec-needed`：必须先新增或修订 Spec、ADR 或 Roadmap 的需求。
 
-`spec-needed` 在维护者确认方向、文档合同更新前不得进入实现。阶段性交付挂到对应 Milestone。UI 的 `design-gap` 必须提供 `.pen` 路径、节点 ID、页面/状态/视口和截图；仍在探索、无法关闭重开或没有节点映射的 Pencil 文件不是设计事实源。
+`spec-needed` 在维护者确认方向、文档合同更新前不得进入实现。UI 的 `design-gap` 必须提供 `.pen` 路径、节点 ID、页面/状态/视口和截图；仍在探索、无法关闭重开或没有节点映射的 Pencil 文件不是设计事实源。
 
 Issue 标题、正文和讨论评论使用中文；代码片段、标识符、文件路径和必要的技术术语保留原文。
 
