@@ -34,6 +34,7 @@ func TestLinkRewriteBranches(t *testing.T) {
 		{name: "scheme relative", raw: "//cdn.example.com/a.png", want: "//cdn.example.com/a.png"},
 		{name: "page anchor", raw: "#intro", want: "#intro"},
 		{name: "mailto", raw: "mailto:dev@example.com", want: "mailto:dev@example.com"},
+		{name: "term scheme skipped", raw: "term:mediation", want: "term:mediation"},
 		{name: "root absolute", raw: "/docs/a.md", want: "/docs/a.md"},
 		{name: "view link with fragment", raw: "../README.md#top", want: "../../README.md/#top"},
 		{name: "dot-slash prefix", raw: "./other.md", want: "../other.md/"},

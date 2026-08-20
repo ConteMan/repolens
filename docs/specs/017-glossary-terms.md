@@ -140,6 +140,10 @@ type GlossaryText struct {
     HTML template.HTML
 }
 
+// ParseGlossaryText 把术语字段的原始字符串转为 Text / HTML 两种形态。
+// site.LoadGlossary 与 Render 的 front matter 合并共用此函数，避免两处各写一份解析。
+func ParseGlossaryText(raw string) GlossaryText
+
 type GlossarySource struct {
     Label GlossaryText
     URL   string
