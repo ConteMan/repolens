@@ -128,7 +128,7 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 ### 7. 搜索与 Agent 视图
 
 1. `view.search` 开启时，`search.json` 的每个文档条目增加 `terms` 数组，元素为 `{key, title, alias, anchor}`，`anchor` 为 `glossary-<key>`。搜索命中术语时跳转到对应文档的术语表条目。术语不产生独立的搜索文档。
-2. `agent.llms_txt` 开启且术语库非空时，`llms.txt` 增加"术语表"小节，逐条列出 `title`、`alias`、`summary` 与定义文件路径。文档私有术语不进入该小节。
+2. `agent.llms_txt` 开启且术语库非空时，`llms.txt` 增加"术语表"小节，逐条列出 `title`、`alias`、`summary` 与 `DefinedIn` 路径。文档私有术语没有独立定义文件，不进入该小节。
 3. `llms-full.txt` 行为不变：它是镜像层原始字节的拼接，不注入渲染期产物；术语库 YAML 文件本身已按普通文件参与其中。
 
 ## 接口契约
@@ -161,6 +161,10 @@ type GlossaryTerm struct {
     Page    GlossaryText
     Warning GlossaryText
     Source  *GlossarySource
+    // DefinedIn 是条目的定义文件在仓库中的路径，由 LoadGlossary 填充；
+    // front matter 中定义的私有术语留空。llms.txt 术语表小节需要它，
+    // 且 .yml 与 .yaml 都合法，路径不能由 key 推导。
+    DefinedIn string
 }
 
 // IsIncomplete 报告条目是否处于待补全状态：Summary 与 Page 均为空。
