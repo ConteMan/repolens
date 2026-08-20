@@ -12,6 +12,7 @@ import (
 
 	"github.com/ConteMan/repolens/internal/config"
 	"github.com/ConteMan/repolens/internal/render"
+	"github.com/ConteMan/repolens/internal/theme"
 	"github.com/goccy/go-yaml"
 )
 
@@ -209,6 +210,7 @@ func anyMarkdownUsesGlossary(cfg *config.Config, files []fileEntry) bool {
 
 func (b *Builder) prepareGlossary(root string, files []fileEntry, stats *Stats) error {
 	b.glossary = nil
+	b.termLabel = ""
 	b.buildWarns = nil
 	b.incomplete = nil
 	b.seenOnPage = nil
@@ -216,6 +218,11 @@ func (b *Builder) prepareGlossary(root string, files []fileEntry, stats *Stats) 
 	if b.cfg == nil || !anyMarkdownUsesGlossary(b.cfg, files) {
 		return nil
 	}
+	lang := ""
+	if b.cfg != nil {
+		lang = b.cfg.Site.Language
+	}
+	b.termLabel = theme.UIStrings(lang)["glossary_term_label"]
 	glossary, warnings, err := LoadGlossary(root, b.cfg.Glossary.Dir)
 	if err != nil {
 		return err
@@ -243,6 +250,7 @@ func (b *Builder) markdownRenderOptions(repoPath string) render.MarkdownOptions 
 	}
 	if md.Glossary {
 		md.Terms = b.glossary
+		md.GlossaryTermLabel = b.termLabel
 	}
 	return md
 }

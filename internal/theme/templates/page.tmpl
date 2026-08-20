@@ -5,6 +5,7 @@
 {{else}}
   <article class="page page-{{.Kind}}">{{.Body}}</article>
 {{end}}
+{{template "glossary-appendix" .}}
 {{end}}
 
 {{define "toc-item"}}<a class="toc-link toc-level-{{.Level}}" href="#{{.Anchor}}">{{.Title}}</a>{{range .Children}}{{template "toc-item" .}}{{end}}{{end}}
