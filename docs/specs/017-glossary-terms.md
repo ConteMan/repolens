@@ -13,7 +13,9 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 
 ### 1. 启用与降级
 
-1. 特性由 `render.markdown.glossary` 控制，默认 `false`，可被 `rules` 级联覆盖。未启用时管线不加载术语库、不注册术语相关的 AST 处理与模板片段，输出与不存在本特性时逐字节一致（ADR-007 准入条件一）。
+1. 特性由 `render.markdown.glossary` 控制，默认 `false`，可被 `rules` 级联覆盖。未启用时不加载术语库、不输出术语表与增强层资源。
+   **零影响的判定对象是不含术语标注语法的仓库**——这类仓库的产物与不存在本特性时逐字节一致（ADR-007 准入条件一）；判定不要求「未启用时完全不检查 AST」，因为含标注语法的文件即使未启用也必须处理（见本节第 6 条），否则会输出 `href="term:"` 的坏链接。
+   实现上应先对源码做一次廉价的子串预检，不含标注语法时直接跳过全部术语处理，使零影响仓库不承担 AST 遍历开销。
 2. 术语库目录由顶层 `glossary.dir` 指定，默认 `.repolens/glossary`。目录不存在时视为空术语库，不报错。
 3. `glossary.strict` 为三档枚举，默认 `refs`。它区分两种不完整状态——**未定义**（引用了不存在的 key，属笔误或漏建）与**待补全**（条目存在但解释未写完，属写作中的正常中间状态）：
 
@@ -95,6 +97,7 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
    搜索索引使用纯文本形态是必须的：否则查询 `af_ad_revenue` 无法命中标题为 `` `af_ad_revenue` `` 的术语。
 4. `source.url` 仅接受 `http` 与 `https`，其他 scheme 忽略该 `source` 并告警。渲染为带 `rel="noreferrer"` 的链接，与"私有站点不泄露访问痕迹"的约束一致。
 5. 单条目各字段长度上限 2000 字符（按原始字符串计，含反引号），超出截断并告警，避免异常数据撑爆每一个引用页面。
+6. **告警有两条渠道，按数据来源分工**：公共术语库的问题由 `LoadGlossary` 在构建期集中产出；front matter 中定义或覆盖的条目由 `Render` 通过 `MarkdownResult.Warnings` 产出，携带文档路径与 key。front matter 的问题不得静默丢弃——私有术语只在本页可见，作者拿不到任何其他反馈。site 层负责汇总两条渠道的告警并输出。
 
 ### 5. 页内术语表（单一事实源）
 
@@ -186,6 +189,9 @@ type MarkdownResult struct {
     // 既有字段省略
     // Terms 为本页引用到的术语，已合并 front matter 覆盖，按首次出现顺序去重。
     Terms []GlossaryTerm
+    // Warnings 为本次渲染中可恢复的问题，当前只由 front matter 的术语定义产生
+    // （非法 source.url、字段截断）。构建必须失败的情况仍走 error。
+    Warnings []string
 }
 ```
 
@@ -241,6 +247,8 @@ type GlossaryConfig struct {
 - 行内代码测试覆盖：成对反引号渲染为 `<code>` 且内部字符转义、未配对反引号按字面输出、空反引号对按字面输出、无转义符语义，并断言同一字段的 `Text` 形态已去除标记；
 - 出口形态测试断言 `aria-label`、`search.json` 的 `terms[]` 与 `llms.txt` 术语表小节使用纯文本形态，页内术语表与抽屉使用 HTML 形态；
 - 安全测试覆盖：字段中的 HTML 与行内代码之外的 Markdown 被转义、反引号内的 HTML 被转义、`javascript:` 等非 http(s) 的 `source.url` 被拒绝并告警、超长字段截断；
+- 告警渠道测试断言：front matter 中的非法 `source.url` 与字段截断产生 `MarkdownResult.Warnings` 条目且携带 key，公共术语库的同类问题产生 `LoadGlossary` warnings，两者不重复计入；
+- 零影响测试断言：不含标注语法的源码不触发术语相关的 AST 遍历（子串预检生效）；
 - `LoadGlossary` 测试覆盖：目录缺失返回空库无错、非法文件名告警跳过、`.yml` 与 `.yaml` 同 key 冲突报错、YAML 解析失败报错；
 - golden-file 测试断言术语表 DOM 结构、`id` 与 `href` 对应关系、只含本页引用术语且按首次出现顺序排列、多语言标题；
 - 主题测试断言抽屉 ARIA 属性、焦点行为与打印样式；Playwright 验证点击打开、Escape 关闭、焦点还原、无 JavaScript 时锚点跳转可用、pjax 切换后抽屉状态与数据正确重置；
