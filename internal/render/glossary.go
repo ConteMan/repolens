@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -120,7 +121,9 @@ func cloneGlossaryTerm(t GlossaryTerm) GlossaryTerm {
 	return t
 }
 
-func mergePageGlossary(public Glossary, meta map[string]any) Glossary {
+const glossaryFieldLimit = 2000
+
+func mergePageGlossary(public Glossary, meta map[string]any, path string) (Glossary, []string) {
 	out := make(Glossary, len(public))
 	for k, t := range public {
 		key := strings.ToLower(k)
@@ -133,18 +136,25 @@ func mergePageGlossary(public Glossary, meta map[string]any) Glossary {
 
 	raw, ok := meta["glossary"]
 	if !ok || raw == nil {
-		return out
+		return out, nil
 	}
 	entries := asStringMap(raw)
 	if entries == nil {
-		return out
+		return out, nil
 	}
-	for rawKey, rawVal := range entries {
+	keys := make([]string, 0, len(entries))
+	for rawKey := range entries {
+		keys = append(keys, rawKey)
+	}
+	sort.Strings(keys)
+
+	var warnings []string
+	for _, rawKey := range keys {
 		key := strings.ToLower(strings.TrimSpace(rawKey))
 		if !validGlossaryKey(key) {
 			continue
 		}
-		fields := asStringMap(rawVal)
+		fields := asStringMap(entries[rawKey])
 		if fields == nil {
 			continue
 		}
@@ -152,49 +162,96 @@ func mergePageGlossary(public Glossary, meta map[string]any) Glossary {
 		if !exists {
 			term = GlossaryTerm{Key: key}
 		}
-		out[key] = applyGlossaryOverrides(term, fields, key)
+		var fieldWarnings []string
+		term, fieldWarnings = applyGlossaryOverrides(term, fields, path, key)
+		out[key] = term
+		warnings = append(warnings, fieldWarnings...)
 	}
-	return out
+	return out, warnings
 }
 
-func applyGlossaryOverrides(term GlossaryTerm, fields map[string]any, key string) GlossaryTerm {
+func applyGlossaryOverrides(term GlossaryTerm, fields map[string]any, path, key string) (GlossaryTerm, []string) {
+	var warnings []string
 	if s, ok := nonEmptyString(fields["title"]); ok {
+		s, w := cutGlossaryField(s, path, key, "title")
+		warnings = append(warnings, w...)
 		term.Title = ParseGlossaryText(s)
 	}
 	if s, ok := nonEmptyString(fields["alias"]); ok {
+		s, w := cutGlossaryField(s, path, key, "alias")
+		warnings = append(warnings, w...)
 		term.Alias = ParseGlossaryText(s)
 	}
 	if s, ok := nonEmptyString(fields["summary"]); ok {
+		s, w := cutGlossaryField(s, path, key, "summary")
+		warnings = append(warnings, w...)
 		term.Summary = ParseGlossaryText(s)
 	}
 	if s, ok := nonEmptyString(fields["page"]); ok {
+		s, w := cutGlossaryField(s, path, key, "page")
+		warnings = append(warnings, w...)
 		term.Page = ParseGlossaryText(s)
 	}
 	if s, ok := nonEmptyString(fields["warning"]); ok {
+		s, w := cutGlossaryField(s, path, key, "warning")
+		warnings = append(warnings, w...)
 		term.Warning = ParseGlossaryText(s)
 	}
 	if raw, ok := fields["source"]; ok && isNonEmptySource(raw) {
-		term.Source = parseGlossarySource(raw)
+		src, srcWarnings := parseGlossarySource(raw, path, key)
+		term.Source = src
+		warnings = append(warnings, srcWarnings...)
 	}
 	term.Key = key
-	return term
+	return term, warnings
 }
 
-func parseGlossarySource(v any) *GlossarySource {
+func parseGlossarySource(v any, path, key string) (*GlossarySource, []string) {
 	m := asStringMap(v)
 	if m == nil {
-		return nil
+		return nil, nil
 	}
 	label, _ := asString(m["label"])
 	rawURL, _ := asString(m["url"])
+
+	var warnings []string
+	var w []string
+	label, w = cutGlossaryField(label, path, key, "source.label")
+	warnings = append(warnings, w...)
+	rawURL, w = cutGlossaryField(rawURL, path, key, "source.url")
+	warnings = append(warnings, w...)
 	rawURL = strings.TrimSpace(rawURL)
 	if !httpOrHTTPS(rawURL) {
-		return nil
+		warnings = append(warnings, glossaryTermWarning(path, key, fmt.Sprintf("invalid source URL %q (only http/https allowed); source ignored", rawURL)))
+		return nil, warnings
 	}
 	return &GlossarySource{
 		Label: ParseGlossaryText(label),
 		URL:   rawURL,
+	}, warnings
+}
+
+func cutGlossaryField(s, path, key, field string) (string, []string) {
+	s, truncated := truncateGlossaryField(s)
+	if !truncated {
+		return s, nil
 	}
+	return s, []string{glossaryTermWarning(path, key, fmt.Sprintf("field %q truncated to %d characters", field, glossaryFieldLimit))}
+}
+
+func truncateGlossaryField(s string) (string, bool) {
+	n := 0
+	for i := range s {
+		if n == glossaryFieldLimit {
+			return s[:i], true
+		}
+		n++
+	}
+	return s, false
+}
+
+func glossaryTermWarning(path, key, msg string) string {
+	return fmt.Sprintf("glossary term %q at %s: %s", key, path, msg)
 }
 
 func isNonEmptySource(v any) bool {

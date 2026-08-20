@@ -66,20 +66,28 @@ func (h termHit) reportKey() string {
 	return h.dest
 }
 
-func applyGlossary(doc *ast.Document, src []byte, ref PageRef, opts MarkdownOptions) ([]GlossaryTerm, error) {
-	hits := collectTermHits(doc, src)
+func applyGlossary(doc *ast.Document, src []byte, ref PageRef, opts MarkdownOptions) ([]GlossaryTerm, []string, error) {
+	return applyGlossaryWithWalk(doc, src, ref, opts, collectTermHits)
+}
+
+func applyGlossaryWithWalk(doc *ast.Document, src []byte, ref PageRef, opts MarkdownOptions, walk func(*ast.Document, []byte) []termHit) ([]GlossaryTerm, []string, error) {
+	if !containsTermScheme(src) {
+		return nil, nil, nil
+	}
+
+	hits := walk(doc, src)
 	if len(hits) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if !opts.Glossary {
 		for _, hit := range hits {
 			unwrapInline(hit.link)
 		}
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	pageTerms := mergePageGlossary(opts.Terms, doc.Meta())
+	pageTerms, warnings := mergePageGlossary(opts.Terms, doc.Meta(), ref.Path)
 	failUndefined := opts.GlossaryStrict.effective() != GlossaryStrictOff
 
 	type resolved struct {
@@ -105,7 +113,7 @@ func applyGlossary(doc *ast.Document, src []byte, ref PageRef, opts MarkdownOpti
 		resolvedHits = append(resolvedHits, resolved{hit: hit, term: term, ok: true})
 	}
 	if len(undef) > 0 {
-		return nil, errors.Join(undef...)
+		return nil, warnings, errors.Join(undef...)
 	}
 
 	seen := make(map[string]struct{}, len(resolvedHits))
@@ -122,7 +130,24 @@ func applyGlossary(doc *ast.Document, src []byte, ref PageRef, opts MarkdownOpti
 		seen[item.term.Key] = struct{}{}
 		terms = append(terms, item.term)
 	}
-	return terms, nil
+	return terms, warnings, nil
+}
+
+// containsTermScheme is a cheap, case-insensitive substring check for the
+// term: annotation scheme. A hit is not proof of a real *ast.Link; callers
+// still walk the AST. A miss skips all glossary processing.
+func containsTermScheme(src []byte) bool {
+	const n = len("term:")
+	if len(src) < n {
+		return false
+	}
+	needle := []byte("term:")
+	for i := 0; i <= len(src)-n; i++ {
+		if bytes.EqualFold(src[i:i+n], needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func lookupPageTerm(page Glossary, hit termHit) (GlossaryTerm, bool) {

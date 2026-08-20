@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/yuin/goldmark/ast"
 )
 
 func sampleGlossary() Glossary {
@@ -630,6 +632,56 @@ See [bad](term:xss).
 	requireNoTermHref(t, string(got.HTML))
 }
 
+func TestContainsTermScheme(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		src  string
+		want bool
+	}{
+		{name: "empty", src: "", want: false},
+		{name: "plain markdown", src: "# Hello\n\nNo annotations here.\n", want: false},
+		{name: "inline annotation", src: "See [x](term:mediation).\n", want: true},
+		{name: "uppercase scheme", src: "See [x](TERM:mediation).\n", want: true},
+		{name: "reference definition", src: "[x][m]\n\n[m]: term:mediation\n", want: true},
+		{name: "angle destination", src: "[x](<term:foo>)\n", want: true},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := containsTermScheme([]byte(tt.src)); got != tt.want {
+				t.Fatalf("containsTermScheme() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGlossaryPrecheckSkipsWalk(t *testing.T) {
+	t.Parallel()
+
+	walked := false
+	walk := func(*ast.Document, []byte) []termHit {
+		walked = true
+		return nil
+	}
+
+	if _, _, err := applyGlossaryWithWalk(nil, []byte("# Hello\n\nplain text\n"), PageRef{Path: "docs/a.md"}, MarkdownOptions{Glossary: true, Terms: sampleGlossary()}, walk); err != nil {
+		t.Fatalf("applyGlossaryWithWalk() error = %v", err)
+	}
+	if walked {
+		t.Fatal("glossary AST walk ran for source without term: annotation")
+	}
+
+	if _, _, err := applyGlossaryWithWalk(nil, []byte("See [x](term:mediation).\n"), PageRef{Path: "docs/a.md"}, MarkdownOptions{Glossary: true}, walk); err != nil {
+		t.Fatalf("applyGlossaryWithWalk() error = %v", err)
+	}
+	if !walked {
+		t.Fatal("glossary AST walk skipped after precheck hit")
+	}
+}
+
 func TestGlossaryInvalidSourceURLDropped(t *testing.T) {
 	t.Parallel()
 
@@ -652,6 +704,103 @@ See [广告聚合](term:mediation).
 	}
 	if got.Terms[0].Source != nil {
 		t.Fatalf("javascript: source kept: %+v", got.Terms[0].Source)
+	}
+	if len(got.Warnings) != 1 {
+		t.Fatalf("Warnings = %#v, want 1", got.Warnings)
+	}
+	for _, want := range []string{"mediation", "docs/a.md", "javascript:alert(1)"} {
+		if !strings.Contains(got.Warnings[0], want) {
+			t.Fatalf("warning %q missing %q", got.Warnings[0], want)
+		}
+	}
+}
+
+func TestGlossaryFrontMatterFieldTruncated(t *testing.T) {
+	t.Parallel()
+
+	long := strings.Repeat("x", glossaryFieldLimit+1)
+	src := fmt.Sprintf(`---
+glossary:
+  mediation:
+    summary: %q
+---
+
+See [广告聚合](term:mediation).
+`, long)
+	got, err := NewMarkdown().Render([]byte(src), PageRef{Path: "docs/a.md"}, MarkdownOptions{
+		Glossary: true,
+		Terms:    sampleGlossary(),
+	})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	if got.Terms[0].Summary.Text != strings.Repeat("x", glossaryFieldLimit) {
+		t.Fatalf("Summary.Text len = %d, want %d", len(got.Terms[0].Summary.Text), glossaryFieldLimit)
+	}
+	if len(got.Warnings) != 1 {
+		t.Fatalf("Warnings = %#v, want 1", got.Warnings)
+	}
+	for _, want := range []string{"mediation", "docs/a.md", "summary"} {
+		if !strings.Contains(got.Warnings[0], want) {
+			t.Fatalf("warning %q missing %q", got.Warnings[0], want)
+		}
+	}
+}
+
+func TestGlossaryPublicLibraryIssuesDoNotWarn(t *testing.T) {
+	t.Parallel()
+
+	lib := sampleGlossary()
+	term := lib["mediation"]
+	term.Summary = ParseGlossaryText(strings.Repeat("p", glossaryFieldLimit+50))
+	term.Source = &GlossarySource{
+		Label: ParseGlossaryText("Exploit"),
+		URL:   "javascript:alert(1)",
+	}
+	lib["mediation"] = term
+
+	got, err := NewMarkdown().Render([]byte("See [广告聚合](term:mediation).\n"), PageRef{Path: "docs/a.md"}, MarkdownOptions{
+		Glossary: true,
+		Terms:    lib,
+	})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	if got.Warnings != nil {
+		t.Fatalf("Warnings = %#v, want nil for public-library issues", got.Warnings)
+	}
+	if got.Terms[0].Summary.Text != strings.Repeat("p", glossaryFieldLimit+50) {
+		t.Fatal("public summary was truncated in Render")
+	}
+	if got.Terms[0].Source == nil || got.Terms[0].Source.URL != "javascript:alert(1)" {
+		t.Fatalf("public source rewritten: %+v", got.Terms[0].Source)
+	}
+}
+
+func TestGlossaryExactFieldLimitHasNoWarning(t *testing.T) {
+	t.Parallel()
+
+	exact := strings.Repeat("x", glossaryFieldLimit)
+	src := fmt.Sprintf(`---
+glossary:
+  mediation:
+    summary: %q
+---
+
+See [广告聚合](term:mediation).
+`, exact)
+	got, err := NewMarkdown().Render([]byte(src), PageRef{Path: "docs/a.md"}, MarkdownOptions{
+		Glossary: true,
+		Terms:    sampleGlossary(),
+	})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	if got.Terms[0].Summary.Text != exact {
+		t.Fatalf("Summary.Text = %q", got.Terms[0].Summary.Text)
+	}
+	if got.Warnings != nil {
+		t.Fatalf("Warnings = %#v, want nil at exact limit", got.Warnings)
 	}
 }
 
