@@ -1,6 +1,6 @@
 # Roadmap
 
-> 里程碑叙事在此维护；具体任务与进度以 GitHub Issues / Milestones 为准。修改 v1 In / Out 边界需维护者确认。
+> 里程碑叙事在此维护；具体任务与进度以 GitHub Issues 为准。修改 v1 In / Out 边界需维护者确认。
 
 ## v1 范围
 
@@ -44,6 +44,8 @@
 
 ## 里程碑
 
+M 编号是 Spec 的分组与验收单元——把一批相关 Spec 聚成一个可验收的整体，「验收」列定义它什么时候算做完。它不对应 GitHub Milestone，也不承载发布节奏（后者由 semver tag 与 CHANGELOG 承担）。
+
 | 里程碑 | 内容 | Specs | 验收 |
 |---|---|---|---|
 | M1 骨架 | 仓库规范、设计文档、CLI 脚手架、CI 门禁 | — | `repolens version` 可用，CI 绿 ✅ 已完成 |
@@ -57,4 +59,4 @@
 | M9 浏览体验增强 | 桌面固定文件树侧栏调宽 | [015](specs/README.md) | #58 关闭、视觉基线冻结、Spec 015 自动化与质量门禁全绿 |
 | M10 站点新鲜度 | 新部署检测与非阻塞更新提示 | [016](specs/README.md) | #35 关闭、静态托管与 `serve` 场景验收、质量门禁全绿 |
 
-> v1.x 首轮推进顺序为 M7 → M5 → M6 → M8；后续增强由独立 Milestone 与 Spec 承接，不改变 `output` 信任域或部署边界。
+> v1.x 首轮推进顺序为 M7 → M5 → M6 → M8；后续增强由独立里程碑与 Spec 承接，不改变 `output` 信任域或部署边界。

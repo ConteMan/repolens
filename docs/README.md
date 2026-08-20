@@ -12,7 +12,7 @@
 - **功能规格**
   - [Specs 索引](specs/README.md) — 单个功能的行为细节与验收标准
 - **规划**
-  - [Roadmap](roadmap.md) — v1 范围（In / Out）与里程碑 M1–M4
+  - [Roadmap](roadmap.md) — v1 与 v1.x 范围（In / Out）与里程碑
 
 ## 阅读路径（新成员 / 新 Agent）
 

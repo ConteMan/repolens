@@ -35,7 +35,7 @@ Use these labels to route work:
 - `enhancement`: an improvement that fits the current Specs and roadmap;
 - `spec-needed`: work that requires a new or revised Spec, ADR, or roadmap decision before implementation.
 
-Do not implement `spec-needed` work until a maintainer confirms the direction and the document contract is updated. Attach staged delivery to the relevant milestone. A UI `design-gap` must include the `.pen` path, node ID, screen/state/viewport, and screenshot. An exploratory Pencil file that cannot be closed and reopened or lacks node mapping is not a design source of truth.
+Do not implement `spec-needed` work until a maintainer confirms the direction and the document contract is updated. A UI `design-gap` must include the `.pen` path, node ID, screen/state/viewport, and screenshot. An exploratory Pencil file that cannot be closed and reopened or lacks node mapping is not a design source of truth.
 
 Write issue titles, bodies, and discussion comments in Chinese. Keep code snippets, identifiers, file paths, and necessary technical terms in their original form.
 
