@@ -102,12 +102,18 @@ The three `strict` levels separate two different problems: referencing a term th
 
 When a repository does not use the feature, build output is byte-for-byte identical to a build without it.
 
-The bundled [agent instructions](skills/glossary/SKILL.md) can be handed to a coding agent so it helps you collect terms and write them in the right format.
+The bundled [agent instructions](skills/repolens-glossary/SKILL.md) can be handed to a coding agent so it helps you collect terms and write them in the right format. They ship inside the binary and install into the directories your agent scans with one command:
+
+```sh
+repolens skill install glossary
+```
+
+The command detects install locations from the agent directories in your repository (`.claude/`, `.codex/`, `.cursor/`, `.github/`), falling back to the neutral `.agents/skills/` path when none are found; `--global` installs into your user profile instead. After upgrading repolens, `repolens skill update` refreshes copies offline, leaving locally edited ones untouched.
 
 ## Documentation
 
 - [Architecture](docs/design/architecture.md)
-- [Glossary agent skill](skills/glossary/SKILL.md)
+- [Glossary agent skill](skills/repolens-glossary/SKILL.md)
 - [Configuration model](docs/design/config.md)
 - [Deployment guide](docs/deploy.md)
 - [Architecture decision records](docs/decisions/README.md)
