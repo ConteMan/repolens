@@ -42,9 +42,13 @@ func renderGlossaryLink(w util.BufWriter, _ []byte, node ast.Node, entering bool
 		_, _ = w.Write(util.EscapeHTML([]byte(n.key)))
 		_, _ = w.WriteString(`" data-glossary="`)
 		_, _ = w.Write(util.EscapeHTML([]byte(n.key)))
-		_, _ = w.WriteString(`" aria-label="`)
-		_, _ = w.Write(util.EscapeHTML([]byte(n.ariaLabel)))
-		_, _ = w.WriteString(`">`)
+		_, _ = w.WriteString(`"`)
+		if n.ariaLabel != "" {
+			_, _ = w.WriteString(` aria-label="`)
+			_, _ = w.Write(util.EscapeHTML([]byte(n.ariaLabel)))
+			_, _ = w.WriteString(`"`)
+		}
+		_, _ = w.WriteString(`>`)
 		return ast.WalkContinue, nil
 	}
 	_, _ = w.WriteString(`</a>`)
@@ -129,7 +133,8 @@ func applyGlossaryWithWalk(doc *ast.Document, src []byte, ref PageRef, opts Mark
 			unwrapInline(item.hit.link)
 			continue
 		}
-		replaceLinkWithTerm(item.hit.link, item.term.Key, item.term.Title.Text)
+		label := formatTermAriaLabel(opts.GlossaryTermLabel, nodeText(src, item.hit.link))
+		replaceLinkWithTerm(item.hit.link, item.term.Key, label)
 		if _, dup := seen[item.term.Key]; dup {
 			continue
 		}

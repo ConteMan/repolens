@@ -118,6 +118,13 @@ func ValidGlossaryKey(key string) bool {
 	return glossaryKeyPattern.MatchString(key)
 }
 
+func formatTermAriaLabel(format, display string) string {
+	if strings.TrimSpace(format) == "" {
+		return ""
+	}
+	return strings.Replace(format, "%s", display, 1)
+}
+
 func cloneGlossaryTerm(t GlossaryTerm) GlossaryTerm {
 	if t.Source != nil {
 		src := *t.Source
