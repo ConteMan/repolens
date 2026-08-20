@@ -15,8 +15,18 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 
 1. 特性由 `render.markdown.glossary` 控制，默认 `false`，可被 `rules` 级联覆盖。未启用时管线不加载术语库、不注册术语相关的 AST 处理与模板片段，输出与不存在本特性时逐字节一致（ADR-007 准入条件一）。
 2. 术语库目录由顶层 `glossary.dir` 指定，默认 `.repolens/glossary`。目录不存在时视为空术语库，不报错。
-3. `glossary.strict` 默认 `true`：启用状态下引用了未定义的术语 key 时构建失败，并给出文件路径、行号与 key。`false` 时降级为告警。
-4. **未启用时的降级是确定的**：`glossary: false` 的文件中出现术语标注语法时，渲染为纯文本显示文本，不生成链接、不留残余标记。非 strict 模式下引用未定义 key 时同样如此。任何配置组合下都不得输出 `href` 指向 `term:` 的链接。
+3. `glossary.strict` 为三档枚举，默认 `refs`。它区分两种不完整状态——**未定义**（引用了不存在的 key，属笔误或漏建）与**待补全**（条目存在但解释未写完，属写作中的正常中间状态）：
+
+   | 取值 | 未定义引用 | 待补全条目 |
+   |---|---|---|
+   | `off` | 告警 | 放行 |
+   | `refs`（默认） | 构建失败 | 放行 |
+   | `complete` | 构建失败 | 构建失败 |
+
+   构建失败必须给出文件路径、行号与 key；待补全的报告给出术语库文件路径与 key。
+4. **待补全的判定**：条目合并文档级覆盖后 `summary` 与 `page` 均为空。只写 `page` 不写 `summary` 视为完整——本文特化的解释已足够。
+5. **两档默认值服务两个场景**：`refs` 让作者可以先标注、后补解释，写作中途的构建与预览不被打断；`complete` 由构建者在外部配置中覆盖，作为合并门禁拦住未写完的条目。仓库内配置与外部配置的优先级按 ADR-005 既有语义，不引入新机制。
+6. **未启用时的降级是确定的**：`glossary: false` 的文件中出现术语标注语法时，渲染为纯文本显示文本，不生成链接、不留残余标记。`off` 档下引用未定义 key 时同样如此。任何配置组合下都不得输出 `href` 指向 `term:` 的链接。
 
 ### 2. 标注语法
 
@@ -66,9 +76,25 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
    | `warning` | 易混淆点与常见误用 |
    | `source` | `{label, url}`，权威出处 |
 
-2. 所有字段按**纯文本**处理：不解析 Markdown、不允许内嵌 HTML，渲染时整体 HTML 转义。术语库是仓库作者书写的不可信输入（ADR-005、ADR-007）。
-3. `source.url` 仅接受 `http` 与 `https`，其他 scheme 忽略该 `source` 并告警。渲染为带 `rel="noreferrer"` 的链接，与"私有站点不泄露访问痕迹"的约束一致。
-4. 单条目各字段长度上限 2000 字符，超出截断并告警，避免异常数据撑爆每一个引用页面。
+2. 字段内容按**纯文本 ＋ 行内代码**处理。术语库是仓库作者书写的不可信输入（ADR-005、ADR-007），因此不解析完整 Markdown，只识别一种标记：
+   - 成对的单反引号之间的内容渲染为 `<code>`，其中的字符一律 HTML 转义，不再解析任何标记；
+   - 未配对的反引号按字面字符输出；一对反引号之间内容为空时，两个反引号均按字面输出；
+   - 不支持转义符：字面反引号即落单反引号，无 `\``  写法；
+   - 反引号之外的一切按纯文本 HTML 转义，`**粗体**`、链接语法与内嵌 HTML 均原样显示。
+
+   之所以只开这一个口子：术语解释高频出现字段名、事件名与 SDK 标识符（`af_ad_revenue`、`OnPaidEventListener`），纯文本渲染它们可读性明显不足；而完整 Markdown 会把链接、图片与原始 HTML 一并引入不可信输入的渲染路径。
+3. **每个字段有两种形态**，渲染出口用 HTML 形态，非 HTML 出口一律用纯文本形态（去掉反引号标记后的字符串）：
+
+   | 出口 | 形态 |
+   |---|---|
+   | 页内术语表、抽屉 | HTML |
+   | `.term` 的 `aria-label` | 纯文本 |
+   | `search.json` 的 `terms[]` | 纯文本 |
+   | `llms.txt` 术语表小节 | 纯文本 |
+
+   搜索索引使用纯文本形态是必须的：否则查询 `af_ad_revenue` 无法命中标题为 `` `af_ad_revenue` `` 的术语。
+4. `source.url` 仅接受 `http` 与 `https`，其他 scheme 忽略该 `source` 并告警。渲染为带 `rel="noreferrer"` 的链接，与"私有站点不泄露访问痕迹"的约束一致。
+5. 单条目各字段长度上限 2000 字符（按原始字符串计，含反引号），超出截断并告警，避免异常数据撑爆每一个引用页面。
 
 ### 5. 页内术语表（单一事实源）
 
@@ -106,29 +132,50 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 ```go
 package render
 
+// GlossaryText 是术语字段的两种形态。Text 为去掉行内代码标记后的纯文本，
+// 用于 aria-label、搜索索引与 llms.txt；HTML 为渲染结果，行内代码为
+// <code>，其余内容 HTML 转义。两者由同一原始字符串产生。
+type GlossaryText struct {
+    Text string
+    HTML template.HTML
+}
+
 type GlossarySource struct {
-    Label string
+    Label GlossaryText
     URL   string
 }
 
 type GlossaryTerm struct {
     Key     string
-    Title   string
-    Alias   string
-    Summary string
-    Page    string
-    Warning string
+    Title   GlossaryText
+    Alias   GlossaryText
+    Summary GlossaryText
+    Page    GlossaryText
+    Warning GlossaryText
     Source  *GlossarySource
 }
+
+// IsIncomplete 报告条目是否处于待补全状态：Summary 与 Page 均为空。
+// 判定在合并 front matter 覆盖之后进行，因此只对 MarkdownResult.Terms
+// 的元素有意义，对公共术语库条目无意义。
+func (t GlossaryTerm) IsIncomplete() bool
+
+type GlossaryStrictness string
+
+const (
+    GlossaryStrictOff      GlossaryStrictness = "off"
+    GlossaryStrictRefs     GlossaryStrictness = "refs"
+    GlossaryStrictComplete GlossaryStrictness = "complete"
+)
 
 // Glossary 是构建期解析完成的公共术语库，按归一化 key 索引；渲染期只读，可并发使用。
 type Glossary map[string]GlossaryTerm
 
 type MarkdownOptions struct {
     // 既有字段省略
-    Glossary       bool      // 启用术语标注
-    GlossaryStrict bool      // 未定义 key 时返回错误
-    Terms          Glossary  // 公共术语库，nil 视为空
+    Glossary       bool               // 启用术语标注
+    GlossaryStrict GlossaryStrictness // 空值等同 GlossaryStrictRefs
+    Terms          Glossary           // 公共术语库，nil 视为空
 }
 
 type MarkdownResult struct {
@@ -160,11 +207,13 @@ package config
 
 type GlossaryConfig struct {
     Dir    string // 默认 .repolens/glossary
-    Strict bool   // 默认 true
+    Strict string // "off" / "refs" / "complete"，加载时校验，默认 "refs"
 }
 ```
 
-`render` 不读取文件系统，术语库由 `site` 加载后经 `MarkdownOptions` 注入，与 `render` 不导入 `internal/config` 的既有约定一致。front matter 覆盖在 `Render` 内部完成，不改变公共术语库。
+`render` 不读取文件系统，术语库由 `site` 加载后经 `MarkdownOptions` 注入，与 `render` 不导入 `internal/config` 的既有约定一致；`config` 也不导入 `render`，`Strict` 在 `config` 中是校验过的字符串，由 `site` 映射为 `GlossaryStrictness`。front matter 覆盖在 `Render` 内部完成，不改变公共术语库。
+
+待补全的判定依赖 front matter 覆盖，因此发生在渲染之后：`site` 遍历各页 `MarkdownResult.Terms`，在 `complete` 档下汇总 `IsIncomplete()` 为真的条目并使构建失败。`LoadGlossary` 不参与该判定。
 
 `Markdown` 当前按 `[anchors][mermaid]` 预构建 goldmark 变体（`variants [2][2]`），本特性再加一维会让该结构继续劣化，实现时改为按选项组合缓存。
 
@@ -172,7 +221,8 @@ type GlossaryConfig struct {
 
 - **不做启发式自动标注**：不扫描正文自动识别术语、不基于外部词表自动加注（ADR-007 决策 2）；
 - 不提供全站术语索引页面：本期只有页内术语表与本页索引，全站术语页涉及新的 URL 约定（ADR-001），需要单独决策；
-- 术语字段不支持 Markdown、不支持嵌套术语引用、不支持图片；
+- 术语字段只支持行内代码一种标记，不支持其余 Markdown、不支持嵌套术语引用、不支持图片；
+- 不提供独立的 lint 命令：`complete` 档的构建失败即是合并门禁，`repolens glossary` 子命令是独立的后续决策；
 - 不做术语的多语言变体：一个 key 一份内容，站点语言由 `site.language` 决定的只是内置字符串；
 - 不引入新的 Go 依赖：YAML 解析复用 `goccy/go-yaml`；
 - 不改变镜像层：术语标注只影响浏览层渲染结果；
@@ -181,9 +231,12 @@ type GlossaryConfig struct {
 ## 验收
 
 - 未启用时对含术语标注的仓库构建，产物与移除本特性的构建逐字节一致；
-- 表驱动测试覆盖语法解析：合法 key、大小写归一化、非法 key、带 query/fragment、图片节点、未定义 key 在 strict / 非 strict 下的行为、未启用时剥离为纯文本，并断言任何组合下产物中不出现 `href="term:`；
+- 表驱动测试覆盖语法解析：合法 key、大小写归一化、非法 key、带 query/fragment、图片节点、未定义 key 在 `off` / `refs` / `complete` 三档下的行为、未启用时剥离为纯文本，并断言任何组合下产物中不出现 `href="term:`；
+- strict 档位测试覆盖：`refs` 下待补全条目放行且构建成功、`complete` 下同一仓库构建失败并报出术语库文件路径与 key、只写 `page` 不写 `summary` 在 `complete` 下视为完整、外部配置覆盖仓库内 `strict` 生效；
 - 合并测试覆盖：公共库单独生效、front matter 字段级覆盖、`source` 整体替换、私有术语只在本文可见、合并后 `title` 为空按未定义处理；
-- 安全测试覆盖：字段中的 HTML 与 Markdown 被转义、`javascript:` 等非 http(s) 的 `source.url` 被拒绝并告警、超长字段截断；
+- 行内代码测试覆盖：成对反引号渲染为 `<code>` 且内部字符转义、未配对反引号按字面输出、空反引号对按字面输出、无转义符语义，并断言同一字段的 `Text` 形态已去除标记；
+- 出口形态测试断言 `aria-label`、`search.json` 的 `terms[]` 与 `llms.txt` 术语表小节使用纯文本形态，页内术语表与抽屉使用 HTML 形态；
+- 安全测试覆盖：字段中的 HTML 与行内代码之外的 Markdown 被转义、反引号内的 HTML 被转义、`javascript:` 等非 http(s) 的 `source.url` 被拒绝并告警、超长字段截断；
 - `LoadGlossary` 测试覆盖：目录缺失返回空库无错、非法文件名告警跳过、`.yml` 与 `.yaml` 同 key 冲突报错、YAML 解析失败报错；
 - golden-file 测试断言术语表 DOM 结构、`id` 与 `href` 对应关系、只含本页引用术语且按首次出现顺序排列、多语言标题；
 - 主题测试断言抽屉 ARIA 属性、焦点行为与打印样式；Playwright 验证点击打开、Escape 关闭、焦点还原、无 JavaScript 时锚点跳转可用、pjax 切换后抽屉状态与数据正确重置；

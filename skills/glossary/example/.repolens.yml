@@ -5,4 +5,4 @@ render:
 
 glossary:
   dir: .repolens/glossary
-  strict: true
+  strict: refs
