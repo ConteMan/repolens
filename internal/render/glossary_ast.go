@@ -106,6 +106,12 @@ func applyGlossaryWithWalk(doc *ast.Document, src []byte, ref PageRef, opts Mark
 					Line: hit.line,
 					Key:  hit.reportKey(),
 				})
+			} else {
+				warnings = append(warnings, undefinedGlossaryRefError{
+					Path: ref.Path,
+					Line: hit.line,
+					Key:  hit.reportKey(),
+				}.Error())
 			}
 			resolvedHits = append(resolvedHits, resolved{hit: hit})
 			continue
@@ -210,7 +216,7 @@ func parseTermDestination(dest string) (string, bool) {
 	if u.RawQuery != "" || u.Fragment != "" {
 		return key, false
 	}
-	if !validGlossaryKey(key) {
+	if !ValidGlossaryKey(key) {
 		return key, false
 	}
 	return key, true

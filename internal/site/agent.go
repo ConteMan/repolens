@@ -150,8 +150,41 @@ func (b *Builder) writeLLMSTxt(outDir string, entries []agentMarkdownEntry) erro
 		for _, ref := range refs {
 			fmt.Fprintf(&buf, "- %s\n", ref)
 		}
+		buf.WriteString("\n")
 	}
+	b.writeLLMSGlossary(&buf)
 	return os.WriteFile(filepath.Join(outDir, llmsTxtPath), buf.Bytes(), agentOutputPerm)
+}
+
+func (b *Builder) writeLLMSGlossary(buf *bytes.Buffer) {
+	if len(b.glossary) == 0 {
+		return
+	}
+	keys := make([]string, 0, len(b.glossary))
+	for key := range b.glossary {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	heading := "Glossary"
+	if strings.HasPrefix(strings.ToLower(b.cfg.Site.Language), "zh") {
+		heading = "术语表"
+	}
+	fmt.Fprintf(buf, "## %s\n\n", heading)
+	for _, key := range keys {
+		term := b.glossary[key]
+		fmt.Fprintf(buf, "- **%s**", term.Title.Text)
+		if term.Alias.Text != "" {
+			fmt.Fprintf(buf, " (%s)", term.Alias.Text)
+		}
+		if term.Summary.Text != "" {
+			fmt.Fprintf(buf, ": %s", term.Summary.Text)
+		}
+		buf.WriteByte('\n')
+		if term.DefinedIn != "" {
+			fmt.Fprintf(buf, "  %s\n", term.DefinedIn)
+		}
+	}
+	buf.WriteByte('\n')
 }
 
 func (b *Builder) writeLLMSFull(outDir string, files []fileEntry) error {

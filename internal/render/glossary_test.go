@@ -390,6 +390,10 @@ func TestGlossaryMerge(t *testing.T) {
 
 	t.Run("field-level override", func(t *testing.T) {
 		t.Parallel()
+		lib := sampleGlossary()
+		med := lib["mediation"]
+		med.DefinedIn = ".repolens/glossary/mediation.yml"
+		lib["mediation"] = med
 		src := []byte(`---
 glossary:
   mediation:
@@ -424,6 +428,9 @@ See [广告聚合](term:mediation).
 		}
 		if lib["mediation"].Page.Text != "" {
 			t.Fatal("public glossary Page was mutated")
+		}
+		if got.Terms[0].DefinedIn != ".repolens/glossary/mediation.yml" {
+			t.Fatalf("DefinedIn = %q, want public library path", got.Terms[0].DefinedIn)
 		}
 	})
 
@@ -801,6 +808,27 @@ See [广告聚合](term:mediation).
 	}
 	if got.Warnings != nil {
 		t.Fatalf("Warnings = %#v, want nil at exact limit", got.Warnings)
+	}
+}
+
+func TestGlossaryOffUndefinedWarns(t *testing.T) {
+	t.Parallel()
+
+	got, err := NewMarkdown().Render([]byte("See [missing](term:unknown).\n"), PageRef{Path: "docs/a.md"}, MarkdownOptions{
+		Glossary:       true,
+		GlossaryStrict: GlossaryStrictOff,
+		Terms:          sampleGlossary(),
+	})
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	if len(got.Warnings) != 1 {
+		t.Fatalf("Warnings = %#v, want 1", got.Warnings)
+	}
+	for _, want := range []string{"unknown", "docs/a.md", ":1"} {
+		if !strings.Contains(got.Warnings[0], want) {
+			t.Fatalf("warning %q missing %q", got.Warnings[0], want)
+		}
 	}
 }
 

@@ -148,6 +148,9 @@ type GlossaryText struct {
 // site.LoadGlossary 与 Render 的 front matter 合并共用此函数，避免两处各写一份解析。
 func ParseGlossaryText(raw string) GlossaryText
 
+// ValidGlossaryKey 报告 key 是否符合 ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$。
+func ValidGlossaryKey(key string) bool
+
 type GlossarySource struct {
     Label GlossaryText
     URL   string
@@ -194,8 +197,8 @@ type MarkdownResult struct {
     // 既有字段省略
     // Terms 为本页引用到的术语，已合并 front matter 覆盖，按首次出现顺序去重。
     Terms []GlossaryTerm
-    // Warnings 为本次渲染中可恢复的问题，当前只由 front matter 的术语定义产生
-    // （非法 source.url、字段截断）。构建必须失败的情况仍走 error。
+    // Warnings 为本次渲染中可恢复的问题：front matter 的非法 source.url /
+    // 字段截断，以及 GlossaryStrictOff 下的未定义引用。构建必须失败的情况仍走 error。
     Warnings []string
 }
 ```

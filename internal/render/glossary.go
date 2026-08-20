@@ -77,6 +77,9 @@ type GlossaryTerm struct {
 	Page    GlossaryText
 	Warning GlossaryText
 	Source  *GlossarySource
+	// DefinedIn is the repo-relative path of the public glossary file.
+	// Private front-matter terms leave it empty.
+	DefinedIn string
 }
 
 // IsIncomplete reports whether the term still lacks an explanation after
@@ -109,7 +112,9 @@ type Glossary map[string]GlossaryTerm
 
 var glossaryKeyPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 
-func validGlossaryKey(key string) bool {
+// ValidGlossaryKey reports whether key matches the glossary key pattern
+// ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$.
+func ValidGlossaryKey(key string) bool {
 	return glossaryKeyPattern.MatchString(key)
 }
 
@@ -151,7 +156,7 @@ func mergePageGlossary(public Glossary, meta map[string]any, path string) (Gloss
 	var warnings []string
 	for _, rawKey := range keys {
 		key := strings.ToLower(strings.TrimSpace(rawKey))
-		if !validGlossaryKey(key) {
+		if !ValidGlossaryKey(key) {
 			continue
 		}
 		fields := asStringMap(entries[rawKey])
