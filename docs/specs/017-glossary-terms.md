@@ -63,7 +63,8 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 
 3. 合并语义为**字段级覆盖**：公共库条目为基底，front matter 中出现且非空的字段整体替换同名字段（`source` 作为整体替换，不做字段内深合并）。公共库不存在的 key 视为该文档的私有术语，只在本文档内可见。
 4. 合并后 `title` 为空的条目按未定义 key 处理。
-5. 术语库文件本身不被隐式排除：照常进入镜像层与浏览层，作者需要排除时使用 `ignore`。
+5. **`page` 只在 front matter 中生效**：公共术语库文件中出现 `page` 时忽略该字段并告警。它是本文语境的解释，写进公共库会污染所有引用该术语的文档——`SKILL.md` 已把它列为常见错误，因而更需要明确反馈而非静默忽略。
+6. 术语库文件本身不被隐式排除：照常进入镜像层与浏览层，作者需要排除时使用 `ignore`。
 
 ### 4. 字段与安全
 
@@ -153,6 +154,10 @@ func ParseGlossaryText(raw string) GlossaryText
 
 // ValidGlossaryKey 报告 key 是否符合 ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$。
 func ValidGlossaryKey(key string) bool
+
+// GlossaryFrontMatterFields 返回 front matter 覆盖实际认可的 YAML 键，
+// 由 spec 018 的字段名一致性检查消费，避免检查方重复维护一份字段清单。
+func GlossaryFrontMatterFields() []string
 
 type GlossarySource struct {
     Label GlossaryText
@@ -263,7 +268,7 @@ type GlossaryConfig struct {
 - 安全测试覆盖：字段中的 HTML 与行内代码之外的 Markdown 被转义、反引号内的 HTML 被转义、`javascript:` 等非 http(s) 的 `source.url` 被拒绝并告警、超长字段截断；
 - 告警渠道测试断言：front matter 中的非法 `source.url` 与字段截断产生 `MarkdownResult.Warnings` 条目且携带 key，公共术语库的同类问题产生 `LoadGlossary` warnings，两者不重复计入；
 - 零影响测试断言：不含标注语法的源码不触发术语相关的 AST 遍历（子串预检生效）；
-- `LoadGlossary` 测试覆盖：目录缺失返回空库无错、非法文件名告警跳过、`.yml` 与 `.yaml` 同 key 冲突报错、YAML 解析失败报错；
+- `LoadGlossary` 测试覆盖：目录缺失返回空库无错、非法文件名告警跳过、`.yml` 与 `.yaml` 同 key 冲突报错、YAML 解析失败报错、库文件中的 `page` 被忽略并告警；
 - golden-file 测试断言术语表 DOM 结构、`id` 与 `href` 对应关系、只含本页引用术语且按首次出现顺序排列、多语言标题；
 - 主题测试断言抽屉 ARIA 属性、焦点行为与打印样式；Playwright 验证点击打开、Escape 关闭、焦点还原、无 JavaScript 时锚点跳转可用、pjax 切换后抽屉状态与数据正确重置；
 - `search.json` 测试断言 `terms` 数组结构与 anchor 一致性；`llms.txt` 测试断言术语表小节内容与私有术语不入内；
