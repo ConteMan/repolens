@@ -106,13 +106,16 @@ repolens 面向的是"仓库原样即站点"的文档，作者没有地方安放
 2. 正文中的标注渲染为：
 
    ```html
-   <a class="term" href="#glossary-mediation" data-glossary="mediation">广告聚合</a>
+   <a class="term" href="#glossary-mediation" data-glossary="mediation"
+      aria-label="广告聚合（术语，查看解释）">广告聚合</a>
    ```
 
    无 JavaScript 时它是一个可用的页内锚点链接，跳转到术语表条目；每页无 JS 完整可读的约束（ADR-002）因此成立。
-3. 术语表是本页术语数据的**唯一事实源**。不额外内联 JSON、不重复输出术语数据；增强层的抽屉从该 DOM 读取内容。
-4. 打印样式：术语表保留并展开，抽屉与浮动入口隐藏。
-5. 小节标题为内置多语言字符串：中文"术语"、英文"Glossary"。
+3. **`aria-label` 的文案**为「显示文本 ＋ 固定说明」，不是术语标题的重复——`aria-label` 会覆盖链接文本，若二者相同则屏幕阅读器读到的与普通链接无异，读者无从知道这里可以展开解释。内置字符串为中文 `%s（术语，查看解释）`、英文 `%s (term, view definition)`，`%s` 为正文中的显示文本。
+   文案是本地化资源，属 theme 层；`render` 保持语言无关，经 `MarkdownOptions.GlossaryTermLabel` 接收格式串，由 `site` 从 `theme.UIStrings` 取值后传入。该字段为空时不输出 `aria-label`。
+4. 术语表是本页术语数据的**唯一事实源**。不额外内联 JSON、不重复输出术语数据；增强层的抽屉从该 DOM 读取内容。
+5. 打印样式：术语表保留并展开，抽屉与浮动入口隐藏。theme 目前没有 `@media print` 块，需要新建。
+6. 小节标题为内置多语言字符串：中文"术语"、英文"Glossary"。
 
 ### 6. 增强层：解释抽屉
 
@@ -191,6 +194,9 @@ type MarkdownOptions struct {
     Glossary       bool               // 启用术语标注
     GlossaryStrict GlossaryStrictness // 空值等同 GlossaryStrictRefs
     Terms          Glossary           // 公共术语库，nil 视为空
+    // GlossaryTermLabel 是 .term 的 aria-label 格式串，含单个 %s（显示文本）。
+    // 由 site 从 theme.UIStrings 取值传入，使 render 保持语言无关；空则不输出 aria-label。
+    GlossaryTermLabel string
 }
 
 type MarkdownResult struct {
