@@ -58,6 +58,7 @@ type RepositoryMarkdownOptionsSettings struct {
 	Mermaid          *bool `yaml:"mermaid" json:"mermaid"`
 	Math             *bool `yaml:"math" json:"math"`
 	FrontmatterTitle *bool `yaml:"frontmatter_title" json:"frontmatter_title"`
+	Glossary         *bool `yaml:"glossary" json:"glossary"`
 }
 
 // RepositoryHTMLOptionsSettings contains editable HTML rendering options.
@@ -437,7 +438,7 @@ func clearUnsetFileOptionsSettings(root *ast.MappingNode, section string, settin
 	if err := clearUnsetNestedSettingsSection(root, section, "markdown", []settingValue{
 		{key: "toc", value: settings.Markdown.TOC}, {key: "toc_min_headings", value: settings.Markdown.TOCMinHeadings},
 		{key: "anchors", value: settings.Markdown.Anchors}, {key: "mermaid", value: settings.Markdown.Mermaid},
-		{key: "math", value: settings.Markdown.Math}, {key: "frontmatter_title", value: settings.Markdown.FrontmatterTitle},
+		{key: "math", value: settings.Markdown.Math}, {key: "frontmatter_title", value: settings.Markdown.FrontmatterTitle}, {key: "glossary", value: settings.Markdown.Glossary},
 	}); err != nil {
 		return err
 	}
@@ -605,6 +606,7 @@ func applyFileOptionsSettings(root *ast.MappingNode, section string, settings Re
 		{key: "mermaid", value: settings.Markdown.Mermaid},
 		{key: "math", value: settings.Markdown.Math},
 		{key: "frontmatter_title", value: settings.Markdown.FrontmatterTitle},
+		{key: "glossary", value: settings.Markdown.Glossary},
 	}); err != nil {
 		return err
 	}
@@ -725,6 +727,7 @@ func applyRuleSettings(node *ast.MappingNode, rule RepositoryRuleSettings) error
 		{key: "mermaid", value: rule.Markdown.Mermaid},
 		{key: "math", value: rule.Markdown.Math},
 		{key: "frontmatter_title", value: rule.Markdown.FrontmatterTitle},
+		{key: "glossary", value: rule.Markdown.Glossary},
 	}); err != nil {
 		return err
 	}
@@ -744,7 +747,7 @@ func clearUnsetRuleSettings(node *ast.MappingNode, rule RepositoryRuleSettings) 
 	if err := clearUnsetNestedValues(node, "markdown", []settingValue{
 		{key: "toc", value: rule.Markdown.TOC}, {key: "toc_min_headings", value: rule.Markdown.TOCMinHeadings},
 		{key: "anchors", value: rule.Markdown.Anchors}, {key: "mermaid", value: rule.Markdown.Mermaid},
-		{key: "math", value: rule.Markdown.Math}, {key: "frontmatter_title", value: rule.Markdown.FrontmatterTitle},
+		{key: "math", value: rule.Markdown.Math}, {key: "frontmatter_title", value: rule.Markdown.FrontmatterTitle}, {key: "glossary", value: rule.Markdown.Glossary},
 	}); err != nil {
 		return err
 	}
@@ -793,6 +796,7 @@ func hasFileOptionsSettings(settings RepositoryFileOptionsSettings) bool {
 		{value: settings.Markdown.Mermaid},
 		{value: settings.Markdown.Math},
 		{value: settings.Markdown.FrontmatterTitle},
+		{value: settings.Markdown.Glossary},
 		{value: settings.HTML.View},
 		{value: settings.Code.LineNumbers},
 		{value: settings.Code.Theme},

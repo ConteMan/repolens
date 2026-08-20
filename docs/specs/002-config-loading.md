@@ -11,7 +11,7 @@
 
 1. **Schema 定义**：按 design/config.md 的 schema 定义 Go 结构体（YAML tag），所有字段有零值可用的默认值。`max_file_size` / `max_size` 支持 `5MB` 风格的人类可读写法（自定义 UnmarshalYAML）。
 2. **加载顺序与优先级**：内置默认值 ← 仓库内 `.repolens.yml`（树根，若存在）← 外部 `--config` 文件 ← CLI flag。逐字段覆盖（非整段替换）；`rules` 为例外：仓库内与外部的规则**拼接**（仓库内在前、外部在后，外部因此天然后置覆盖）。
-3. **信任域白名单**：仓库内配置只允许 `site` / `ignore` / `render` / `rules` / `theme` / `view` / `agent`。出现 `source` / `output` / `access` 时忽略该段并产生 Warning（不报错）。
+3. **信任域白名单**：仓库内配置只允许 `site` / `ignore` / `render` / `rules` / `glossary` / `theme` / `view` / `agent`。出现 `source` / `output` / `access` 时忽略该段并产生 Warning（不报错）。`glossary` 属渲染域（spec 017），全站唯一、不参与 `rules` 级联。
 4. **规则级联求值**：`OptionsFor(path)` 从全局 `render` 出发，按序对每条 `match` 命中的规则做字段级覆盖，返回最终 `FileOptions`。glob 语义为 doublestar（`**` 跨目录），匹配对象是 repo 相对斜杠路径。依赖 `github.com/bmatcuk/doublestar/v4`（主流且在维护，符合 ADR-003 标准，本 spec 即为其论证记录）。
 5. **ignore 求值**：`Ignored(path)` 按 `ignore` glob 列表判断；`.git/**` 与 `.repolens.yml` 恒被忽略。
 6. **校验与告警**：加密路径与 agent 输出开启时的交集告警（design/config.md 的 lint 规则）；未知字段告警（yaml 严格模式）；Warning 统一返回给调用方，由 CLI 决定输出方式。
@@ -24,7 +24,7 @@ package config
 type Config struct {
     Source Source; Output Output; Access Access
     Site Site; Ignore []string; Render FileOptions
-    Rules []Rule; Theme Theme; View View; Agent Agent
+    Rules []Rule; Glossary GlossaryConfig; Theme Theme; View View; Agent Agent
 }
 
 type Rule struct {
