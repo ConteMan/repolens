@@ -23,7 +23,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [015](015-resizable-fixed-tree.md) | 桌面固定文件树侧栏调宽 | internal/theme | M9 | 已确认 |
 | [016](016-site-snapshot-freshness.md) | 站点快照新鲜度提示 | internal/site, theme | M10 | 已实现 |
 | [017](017-glossary-terms.md) | 术语标注与解释 | internal/render, site, theme | M11 | 已实现 |
-| [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 已确认 |
+| [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 已实现 |
 
 ## 依赖与实现顺序
 
