@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-20
+
+### Added
+
+- `repolens skill` 命令族（`install` / `list` / `update`）：随二进制分发的 Agent 操作规范现在一条命令即可装到编码 Agent 实际扫描的目录，不必再手工复制文件。安装位置按仓库或用户主目录中的 Agent 配置探测（`.claude/`、`.codex/`、`.cursor/`、Copilot 的 `.github/skills/` 与 `.github/copilot-instructions.md`），都没探测到时回退到多家识别的中立路径 `.agents/skills/`；`--target` 显式指定，`--global` 装到个人目录，`--dry-run` 只报告不落盘。安装时把来源、版本与正文摘要写进 SKILL.md front matter 的 `metadata`，随文件走，因此升级 repolens 后 `repolens skill update` 无需联网即可把过期副本刷新到当前版本。被本地改动过的副本、以及位置上同名但非 repolens 安装的 skill 一律跳过并告警，`--force` 才覆盖；写入只碰 `SKILL.md` 一个文件，同目录下使用者自己补充的内容不受影响。
+
+### Changed
+
+- 术语标注 skill 的目录由 `skills/glossary/` 改名为 `skills/repolens-glossary/`。Agent Skills 规范要求 front matter 的 `name` 与父目录名一致，原目录名不符合该约束，改名后可被合规工具正确发现。`SKILL.md` 内容本身未变；此前按旧路径手工复制过该文件的仓库不受影响，改用 `repolens skill install glossary` 即可。
+
 ## [1.7.0] - 2026-08-20
 
 ### Added
@@ -165,7 +175,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/ConteMan/repolens/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/ConteMan/repolens/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/ConteMan/repolens/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/ConteMan/repolens/compare/v1.6.1...v1.6.2
