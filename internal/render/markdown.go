@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
@@ -33,6 +34,15 @@ type MarkdownOptions struct {
 	Anchors          bool
 	Mermaid          bool
 	FrontmatterTitle bool
+
+	// Glossary enables term annotations in the browsing-layer HTML.
+	Glossary bool
+	// GlossaryStrict controls undefined-key handling. An empty value equals
+	// GlossaryStrictRefs.
+	GlossaryStrict GlossaryStrictness
+	// Terms is the build-time public glossary, indexed by normalized key.
+	// It is read-only; Render never mutates it. A nil map is an empty library.
+	Terms Glossary
 }
 
 // PageRef identifies the current source file and resolves in-repository links.
@@ -61,22 +71,26 @@ type MarkdownResult struct {
 	TOC        []TOCItem
 	HasMermaid bool
 	Meta       map[string]any
+	// Terms holds the terms referenced on this page after front-matter
+	// overrides, in first-appearance order and de-duplicated by key.
+	Terms []GlossaryTerm
+}
+
+type markdownVariantKey struct {
+	anchors bool
+	mermaid bool
 }
 
 // Markdown renders Markdown documents. It is safe to reuse concurrently.
 type Markdown struct {
-	variants [2][2]goldmark.Markdown // indexed [anchors][mermaid], 0=off 1=on
+	mu       sync.Mutex
+	variants map[markdownVariantKey]goldmark.Markdown
 }
 
-// NewMarkdown assembles the reusable Markdown rendering pipelines.
+// NewMarkdown assembles a Markdown renderer that caches goldmark pipelines by
+// option combination.
 func NewMarkdown() *Markdown {
-	m := &Markdown{}
-	for anchors := range 2 {
-		for mermaids := range 2 {
-			m.variants[anchors][mermaids] = newGoldmark(anchors == 1, mermaids == 1)
-		}
-	}
-	return m
+	return &Markdown{variants: make(map[markdownVariantKey]goldmark.Markdown)}
 }
 
 // Render converts a Markdown document into HTML and extracts title, TOC, and
@@ -88,6 +102,11 @@ func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (Markdo
 
 	docNode := md.Parser().Parse(text.NewReader(src), parser.WithContext(ctx))
 	doc := docNode.(*ast.Document)
+
+	terms, err := applyGlossary(doc, src, ref, opts)
+	if err != nil {
+		return MarkdownResult{}, err
+	}
 
 	meta := copyMeta(doc.OwnerDocument().Meta())
 	title := pageTitle(src, doc, ref.Path, meta, opts.FrontmatterTitle)
@@ -119,19 +138,20 @@ func (m *Markdown) Render(src []byte, ref PageRef, opts MarkdownOptions) (Markdo
 		TOC:        resultTOC,
 		HasMermaid: hasMermaid,
 		Meta:       meta,
+		Terms:      terms,
 	}, nil
 }
 
 func (m *Markdown) variant(opts MarkdownOptions) goldmark.Markdown {
-	anchorIndex := 0
-	if opts.Anchors {
-		anchorIndex = 1
+	key := markdownVariantKey{anchors: opts.Anchors, mermaid: opts.Mermaid}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if md, ok := m.variants[key]; ok {
+		return md
 	}
-	mermaidIndex := 0
-	if opts.Mermaid {
-		mermaidIndex = 1
-	}
-	return m.variants[anchorIndex][mermaidIndex]
+	md := newGoldmark(key.anchors, key.mermaid)
+	m.variants[key] = md
+	return md
 }
 
 func newGoldmark(withAnchors, withMermaid bool) goldmark.Markdown {
@@ -165,6 +185,7 @@ func newGoldmark(withAnchors, withMermaid bool) goldmark.Markdown {
 				// GFM's table renderer uses priority 500. A lower priority is
 				// registered later and only overrides KindTable.
 				util.Prioritized(markdownTableRenderer{}, 400),
+				util.Prioritized(glossaryLinkRenderer{}, 100),
 			),
 		),
 	)
