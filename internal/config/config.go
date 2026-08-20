@@ -17,16 +17,25 @@ const repoConfigName = ".repolens.yml"
 
 // Config is the fully merged repolens configuration.
 type Config struct {
-	Source Source      `yaml:"source"`
-	Output Output      `yaml:"output"`
-	Access Access      `yaml:"access"`
-	Site   Site        `yaml:"site"`
-	Ignore []string    `yaml:"ignore"`
-	Render FileOptions `yaml:"render"`
-	Rules  []Rule      `yaml:"rules"`
-	Theme  Theme       `yaml:"theme"`
-	View   View        `yaml:"view"`
-	Agent  Agent       `yaml:"agent"`
+	Source   Source         `yaml:"source"`
+	Output   Output         `yaml:"output"`
+	Access   Access         `yaml:"access"`
+	Site     Site           `yaml:"site"`
+	Ignore   []string       `yaml:"ignore"`
+	Render   FileOptions    `yaml:"render"`
+	Rules    []Rule         `yaml:"rules"`
+	Glossary GlossaryConfig `yaml:"glossary"`
+	Theme    Theme          `yaml:"theme"`
+	View     View           `yaml:"view"`
+	Agent    Agent          `yaml:"agent"`
+}
+
+// GlossaryConfig is the site-wide glossary library location and strictness.
+// It is a render-domain value: repository and external config may both set
+// it, and it does not participate in rules cascade.
+type GlossaryConfig struct {
+	Dir    string `yaml:"dir"`
+	Strict string `yaml:"strict"`
 }
 
 // Source configures where content comes from. It is trusted-only.
@@ -96,6 +105,7 @@ type MarkdownOptions struct {
 	Mermaid          bool `yaml:"mermaid"`
 	Math             bool `yaml:"math"`
 	FrontmatterTitle bool `yaml:"frontmatter_title"`
+	Glossary         bool `yaml:"glossary"`
 }
 
 // HTMLOptions configures browser pages for HTML files.
@@ -180,6 +190,9 @@ func Load(repoRoot, externalPath string, flags Flags) (*Config, []Warning, error
 	}
 
 	applyFlags(&cfg, flags)
+	if err := normalizeAndValidateGlossary(&cfg); err != nil {
+		return nil, warnings, err
+	}
 	warnings = append(warnings, lintConfig(cfg)...)
 	return &cfg, warnings, nil
 }
@@ -247,6 +260,10 @@ func defaultConfig() Config {
 				Theme:       "github",
 			},
 			MaxFileSize: int64(5 * 1024 * 1024),
+		},
+		Glossary: GlossaryConfig{
+			Dir:    ".repolens/glossary",
+			Strict: "refs",
 		},
 		View: View{
 			TreePosition:    "left",
@@ -432,16 +449,17 @@ func parseByteSize(text string) (int64, error) {
 }
 
 type configPatch struct {
-	Source *sourcePatch      `yaml:"source"`
-	Output *outputPatch      `yaml:"output"`
-	Access *accessPatch      `yaml:"access"`
-	Site   *sitePatch        `yaml:"site"`
-	Ignore *[]string         `yaml:"ignore"`
-	Render *fileOptionsPatch `yaml:"render"`
-	Rules  *[]rulePatch      `yaml:"rules"`
-	Theme  *themePatch       `yaml:"theme"`
-	View   *viewPatch        `yaml:"view"`
-	Agent  *agentPatch       `yaml:"agent"`
+	Source   *sourcePatch      `yaml:"source"`
+	Output   *outputPatch      `yaml:"output"`
+	Access   *accessPatch      `yaml:"access"`
+	Site     *sitePatch        `yaml:"site"`
+	Ignore   *[]string         `yaml:"ignore"`
+	Render   *fileOptionsPatch `yaml:"render"`
+	Rules    *[]rulePatch      `yaml:"rules"`
+	Glossary *glossaryPatch    `yaml:"glossary"`
+	Theme    *themePatch       `yaml:"theme"`
+	View     *viewPatch        `yaml:"view"`
+	Agent    *agentPatch       `yaml:"agent"`
 }
 
 type sourcePatch struct {
@@ -486,6 +504,12 @@ type markdownOptionsPatch struct {
 	Mermaid          *bool `yaml:"mermaid"`
 	Math             *bool `yaml:"math"`
 	FrontmatterTitle *bool `yaml:"frontmatter_title"`
+	Glossary         *bool `yaml:"glossary"`
+}
+
+type glossaryPatch struct {
+	Dir    *string `yaml:"dir"`
+	Strict *string `yaml:"strict"`
 }
 
 type htmlOptionsPatch struct {
@@ -594,6 +618,9 @@ func applyPatch(cfg *Config, patch configPatch) {
 	if patch.Theme != nil {
 		applyThemePatch(&cfg.Theme, patch.Theme)
 	}
+	if patch.Glossary != nil {
+		applyGlossaryPatch(&cfg.Glossary, patch.Glossary)
+	}
 	if patch.View != nil {
 		applyViewPatch(&cfg.View, patch.View)
 	}
@@ -689,6 +716,36 @@ func applyMarkdownPatch(dst *MarkdownOptions, patch *markdownOptionsPatch) {
 	}
 	if patch.FrontmatterTitle != nil {
 		dst.FrontmatterTitle = *patch.FrontmatterTitle
+	}
+	if patch.Glossary != nil {
+		dst.Glossary = *patch.Glossary
+	}
+}
+
+func applyGlossaryPatch(dst *GlossaryConfig, patch *glossaryPatch) {
+	if patch.Dir != nil {
+		dst.Dir = *patch.Dir
+	}
+	if patch.Strict != nil {
+		dst.Strict = *patch.Strict
+	}
+}
+
+func normalizeAndValidateGlossary(cfg *Config) error {
+	if strings.TrimSpace(cfg.Glossary.Dir) == "" {
+		cfg.Glossary.Dir = ".repolens/glossary"
+	}
+	strict := strings.TrimSpace(cfg.Glossary.Strict)
+	if strict == "" {
+		cfg.Glossary.Strict = "refs"
+		return nil
+	}
+	switch strict {
+	case "off", "refs", "complete":
+		cfg.Glossary.Strict = strict
+		return nil
+	default:
+		return fmt.Errorf("glossary.strict %q is invalid; expected off, refs, or complete", cfg.Glossary.Strict)
 	}
 }
 

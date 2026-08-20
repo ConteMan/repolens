@@ -357,6 +357,7 @@ func repositorySettingsFromEffectiveConfig(effective config.Config, repositoryRu
 				TOC: boolPointer(effective.Render.Markdown.TOC), TOCMinHeadings: intPointer(effective.Render.Markdown.TOCMinHeadings),
 				Anchors: boolPointer(effective.Render.Markdown.Anchors), Mermaid: boolPointer(effective.Render.Markdown.Mermaid),
 				Math: boolPointer(effective.Render.Markdown.Math), FrontmatterTitle: boolPointer(effective.Render.Markdown.FrontmatterTitle),
+				Glossary: boolPointer(effective.Render.Markdown.Glossary),
 			},
 			HTML:        config.RepositoryHTMLOptionsSettings{View: stringPointer(effective.Render.HTML.View)},
 			Code:        config.RepositoryCodeOptionsSettings{LineNumbers: boolPointer(effective.Render.Code.LineNumbers), Theme: stringPointer(effective.Render.Code.Theme)},
@@ -416,6 +417,7 @@ func repositorySettingSources(settings config.RepositorySettings) map[string]str
 	mark("render.markdown.mermaid", settings.Render.Markdown.Mermaid)
 	mark("render.markdown.math", settings.Render.Markdown.Math)
 	mark("render.markdown.frontmatter_title", settings.Render.Markdown.FrontmatterTitle)
+	mark("render.markdown.glossary", settings.Render.Markdown.Glossary)
 	mark("render.html.view", settings.Render.HTML.View)
 	mark("render.code.line_numbers", settings.Render.Code.LineNumbers)
 	mark("render.code.theme", settings.Render.Code.Theme)
@@ -443,6 +445,7 @@ func repositorySettingSources(settings config.RepositorySettings) map[string]str
 			mark(prefix+".markdown.mermaid", rule.Markdown.Mermaid)
 			mark(prefix+".markdown.math", rule.Markdown.Math)
 			mark(prefix+".markdown.frontmatter_title", rule.Markdown.FrontmatterTitle)
+			mark(prefix+".markdown.glossary", rule.Markdown.Glossary)
 			mark(prefix+".html.view", rule.HTML.View)
 			mark(prefix+".code.line_numbers", rule.Code.LineNumbers)
 			mark(prefix+".code.theme", rule.Code.Theme)

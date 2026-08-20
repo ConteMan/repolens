@@ -41,8 +41,12 @@ func TestLoadTable(t *testing.T) {
 				}
 				if !cfg.Render.Render || !cfg.Render.Markdown.TOC || !cfg.Render.Markdown.Anchors ||
 					!cfg.Render.Markdown.Mermaid || !cfg.Render.Markdown.FrontmatterTitle ||
-					cfg.Render.Markdown.Math || cfg.Render.Markdown.TOCMinHeadings != 3 {
+					cfg.Render.Markdown.Math || cfg.Render.Markdown.Glossary ||
+					cfg.Render.Markdown.TOCMinHeadings != 3 {
 					t.Fatalf("markdown defaults = %#v", cfg.Render.Markdown)
+				}
+				if cfg.Glossary.Dir != ".repolens/glossary" || cfg.Glossary.Strict != "refs" {
+					t.Fatalf("glossary defaults = %#v", cfg.Glossary)
 				}
 				if cfg.Render.HTML.View != "embed" {
 					t.Fatalf("html view = %q", cfg.Render.HTML.View)
@@ -242,6 +246,115 @@ view:
 			tt.assert(t, cfg, warnings)
 		})
 	}
+}
+
+func TestGlossaryConfig(t *testing.T) {
+	t.Parallel()
+
+	t.Run("repository can set glossary", func(t *testing.T) {
+		t.Parallel()
+		repoRoot := t.TempDir()
+		writeFile(t, filepath.Join(repoRoot, repoConfigName), `
+glossary:
+  dir: docs/terms
+  strict: complete
+render:
+  markdown:
+    glossary: true
+`)
+		cfg, warnings, err := Load(repoRoot, "", Flags{})
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if len(warnings) != 0 {
+			t.Fatalf("warnings = %v, want none", warnings)
+		}
+		if cfg.Glossary.Dir != "docs/terms" || cfg.Glossary.Strict != "complete" {
+			t.Fatalf("glossary = %#v", cfg.Glossary)
+		}
+		if !cfg.Render.Markdown.Glossary {
+			t.Fatal("render.markdown.glossary = false, want true")
+		}
+	})
+
+	t.Run("external overrides repository strict", func(t *testing.T) {
+		t.Parallel()
+		repoRoot := t.TempDir()
+		writeFile(t, filepath.Join(repoRoot, repoConfigName), `
+glossary:
+  strict: refs
+`)
+		ext := filepath.Join(t.TempDir(), "external.yml")
+		writeFile(t, ext, `
+glossary:
+  strict: complete
+`)
+		cfg, warnings, err := Load(repoRoot, ext, Flags{})
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if len(warnings) != 0 {
+			t.Fatalf("warnings = %v, want none", warnings)
+		}
+		if cfg.Glossary.Strict != "complete" {
+			t.Fatalf("strict = %q, want complete", cfg.Glossary.Strict)
+		}
+	})
+
+	t.Run("invalid strict errors", func(t *testing.T) {
+		t.Parallel()
+		repoRoot := t.TempDir()
+		writeFile(t, filepath.Join(repoRoot, repoConfigName), `
+glossary:
+  strict: maybe
+`)
+		_, _, err := Load(repoRoot, "", Flags{})
+		if err == nil {
+			t.Fatal("Load() error = nil, want invalid strict")
+		}
+		msg := err.Error()
+		for _, want := range []string{"maybe", "off", "refs", "complete"} {
+			if !strings.Contains(msg, want) {
+				t.Fatalf("error %q missing %q", msg, want)
+			}
+		}
+	})
+
+	t.Run("rule glossary does not reset other markdown fields", func(t *testing.T) {
+		t.Parallel()
+		repoRoot := t.TempDir()
+		writeFile(t, filepath.Join(repoRoot, repoConfigName), `
+render:
+  markdown:
+    math: true
+    mermaid: true
+    glossary: false
+rules:
+  - match: "docs/**"
+    markdown: { glossary: true }
+`)
+		cfg, warnings, err := Load(repoRoot, "", Flags{})
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if len(warnings) != 0 {
+			t.Fatalf("warnings = %v, want none", warnings)
+		}
+		opts := cfg.OptionsFor("docs/a.md")
+		if !opts.Markdown.Glossary {
+			t.Fatal("docs glossary = false, want true")
+		}
+		if !opts.Markdown.Math || !opts.Markdown.Mermaid || !opts.Markdown.TOC {
+			t.Fatalf("rule glossary reset other markdown fields: %#v", opts.Markdown)
+		}
+		other := cfg.OptionsFor("README.md")
+		if other.Markdown.Glossary {
+			t.Fatal("README glossary inherited the docs rule")
+		}
+		if !other.Markdown.Math {
+			t.Fatal("README math = false, want global true")
+		}
+	})
 }
 
 func TestUnknownFieldWarning(t *testing.T) {
