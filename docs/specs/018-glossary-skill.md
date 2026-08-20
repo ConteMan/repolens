@@ -31,7 +31,7 @@ skills/glossary/
 ├── SKILL.md                              # front matter 含 name / description
 └── example/
     ├── .repolens.yml                     # 开启 render.markdown.glossary 与 glossary 段
-    ├── .repolens/glossary/<key>.yml      # 至少两条公共术语，覆盖 source 有无两种情况
+    ├── .repolens/glossary/<key>.yml      # 至少两条公共术语，覆盖 source 有无、行内代码有无
     └── docs/<file>.md                    # 含正文标注、front matter 的 page 覆盖与私有术语
 ```
 
@@ -51,6 +51,6 @@ CI 检查项：example 构建成功；产物中存在 `id="glossary"` 的术语�
 - 全文不含具体 Agent 产品的工具名与加载机制依赖（`skills/README.md` 的接入方式说明除外）；
 - 全文不引用 spec、ADR 或其他 repolens 内部文档路径，不出现要求使用者自行核对规范的表述；
 - SKILL.md 中的字段表、语法、配置片段与 spec 017 一致（由维护者在同一 PR 内保证）；
-- example 覆盖：正文标注、front matter `page` 覆盖、私有术语、含 `source` 与不含 `source` 的条目；
+- example 覆盖：正文标注、front matter `page` 覆盖、私有术语、含 `source` 与不含 `source` 的条目、字段中的行内代码；
 - spec 017 实现后，CI 对 example 的构建检查通过，且断言上述四个检查项；
 - `gofmt -l .`、`go vet ./...`、`go test ./...`、`go build ./...` 全部通过。

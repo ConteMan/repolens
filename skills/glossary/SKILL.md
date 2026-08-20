@@ -61,11 +61,13 @@ description: 在 Git 文档仓库中建立和维护 repolens 的术语标注与�
 
 每个术语一个文件：`<glossary.dir>/<key>.yml`，**文件名即 key**，文件内不写 key 字段。
 
+解释需要斟酌措辞时，可以先建只有 `title` 的骨架条目，把正文标注写完再回头补——默认的 `refs` 档允许这种中间状态，构建和预览都不会失败（见第 7 步）。但不要把骨架留到提交：没有 `summary` 也没有 `page` 的条目，在站点上就是一个点开只有标题、没有任何解释的术语。
+
 ```yaml
 title: 广告聚合
 alias: Ad mediation
 summary: 行业通用能力：在多个广告源之间统一请求、竞价或瀑布选择，以提高填充率和收益。常见实现有 AppLovin MAX 与 Google AdMob 中介。
-warning: AdMob 既可能是 MAX 内的一个广告源，也可能自己作为主聚合平台。先确认它当前扮演哪种角色，再配置收入入口。
+warning: AdMob 既可能是 MAX 内的一个广告源，也可能自己作为主聚合平台。先确认它当前扮演哪种角色，再配置收入入口。Android 展示级收入通过 `OnPaidEventListener` 获取。
 source:
   label: AppLovin MAX 官方说明
   url: https://developers.applovin.com/en/max/getting-started/
@@ -82,7 +84,14 @@ source:
 | `source` | 否 | `{label, url}`，权威出处。URL 仅限 http/https |
 | `page` | 否 | **只写在文档 front matter 里**，不写在术语库文件中 |
 
-所有字段是**纯文本**：不解析 Markdown、不允许内嵌 HTML，写 `**粗体**` 只会原样显示。需要提及字段名或代码标识符时直接写，不加反引号。单字段不超过 2000 字符。
+字段内容是**纯文本 ＋ 行内代码**：
+
+- 成对的单反引号之间的内容渲染为代码样式，用来写字段名、事件名、SDK 标识符，例如 `` `af_ad_revenue` ``、`` `OnPaidEventListener` ``；
+- 除此之外不解析任何 Markdown，写 `**粗体**` 或链接语法只会原样显示，内嵌 HTML 同样原样显示；
+- 落单的反引号按字面字符输出，没有转义写法；
+- 单字段不超过 2000 字符。
+
+只在确实是标识符时用反引号，不要拿它当强调用——普通名词加了反引号只会让解释更难读。
 
 `summary` 与 `page` 的分工是这套格式的核心，不要混：
 
@@ -135,8 +144,18 @@ render:
     glossary: true
 glossary:
   dir: .repolens/glossary
-  strict: true
+  strict: refs
 ```
+
+`strict` 有三档，决定构建在什么情况下失败：
+
+| 取值 | 引用了不存在的术语 | 条目存在但解释还没写 |
+|---|---|---|
+| `off` | 告警 | 放行 |
+| `refs`（默认） | 构建失败 | 放行 |
+| `complete` | 构建失败 | 构建失败 |
+
+**仓库里写 `refs`。**它允许先标注、后补解释，你在写作中途仍然能构建和预览。`complete` 是给 CI 用的——由构建者在外部配置里覆盖，拦住解释没写完就想合并的改动。不要为了"严格一点"在仓库内直接写 `complete`，那会让作者无法预览半成品。
 
 只有部分目录需要术语功能时，用规则级联而不是全局开启：
 
@@ -156,7 +175,16 @@ rules:
 repolens build . -o /tmp/repolens-check
 ```
 
-`strict: true` 下引用了未定义的术语会直接构建失败，并给出文件、行号与 key。构建通过后确认渲染结果：浏览页正文末尾应出现术语表小节，被标注的词是指向该小节的链接。
+`refs` 档下引用了不存在的术语会直接构建失败，并给出文件、行号与 key。构建通过后确认渲染结果：浏览页正文末尾应出现术语表小节，被标注的词是指向该小节的链接。
+
+想在提交前确认没有遗漏的解释，用 `complete` 档跑一次：
+
+```sh
+printf 'glossary:\n  strict: complete\n' > /tmp/glossary-gate.yml
+```
+```sh
+repolens build . -o /tmp/repolens-check --config /tmp/glossary-gate.yml
+```
 
 不能执行命令时，按下面的清单逐项核对。
 
@@ -165,8 +193,8 @@ repolens build . -o /tmp/repolens-check
 - [ ] 每个 `term:` 引用都有对应的术语库文件或 front matter 定义；
 - [ ] 每个术语库文件名符合 `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`，且文件内没有 key 字段；
 - [ ] 没有语义重复的 key；
-- [ ] 所有条目都有 `title`；
-- [ ] 字段内没有 Markdown 标记或 HTML；
+- [ ] 所有条目都有 `title`，且 `summary` 与 `page` 至少有一个非空；
+- [ ] 字段内除行内代码外没有 Markdown 标记或 HTML，反引号成对；
 - [ ] `source.url` 都是 http/https；
 - [ ] `page` 只出现在文档 front matter，没有写进术语库文件；
 - [ ] 正文文字未被改动，只增加了链接语法；
