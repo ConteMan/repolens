@@ -1,7 +1,7 @@
 # 018: 术语标注 Agent Skill
 
-- 状态：已实现
-- 关联：roadmap M11、Issue #73、[spec 017](017-glossary-terms.md)、[ADR-007](../decisions/ADR-007-optional-repo-conventions.md)
+- 状态：已实现（行为 1 被修订、行为 8 与一条非目标被 [spec 019](019-skill-install.md) 取代）
+- 关联：roadmap M11、Issue #73、[spec 017](017-glossary-terms.md)、[spec 019](019-skill-install.md)、[ADR-007](../decisions/ADR-007-optional-repo-conventions.md)
 
 ## 问题
 
@@ -13,7 +13,7 @@
 
 ## 行为
 
-1. **位置与形态**：skill 存放于仓库顶层 `skills/<name>/`，主文件为 `SKILL.md`——YAML front matter 提供 `name` 与 `description`，正文为纯 Markdown 操作规范。术语标注 skill 为 `skills/glossary/`。
+1. **位置与形态**：skill 存放于仓库顶层 `skills/<name>/`，主文件为 `SKILL.md`——YAML front matter 提供 `name` 与 `description`，正文为纯 Markdown 操作规范。术语标注 skill 为 `skills/repolens-glossary/`（目录名必须等于 front matter 的 `name`，见 spec 019 行为 2）。
 2. **Agent 中立**：不出现具体产品的工具名与加载机制，不依赖任何一家的目录约定或配置格式；需要执行的动作写为 shell 命令，并给出无法执行命令时的替代路径（自查清单）。任何能读写文件的编码 Agent 都可直接使用。
 3. **职责边界**：skill 承载判断标准与协作流程——范围确认、读者画像、术语取舍、key 命名、标注密度、增量维护、常见错误。skill 不重新实现校验逻辑：正确性由 `repolens build` 在 `strict` 模式下裁决。
 4. **自包含且自洽**：skill 在使用者的仓库中独立工作，那里没有 repolens 的设计文档。因此 SKILL.md **不引用 spec、ADR 或任何 repolens 内部文档**，也不声明规范源与版本——正文即是使用者需要的全部规范。
@@ -29,7 +29,7 @@
    - 字段中的行内代码渲染为 `<code>`；
    - `strict: refs` 下构建成功（即 example 中不存在未定义引用）；
    - 产物中不出现 `href="term:`。
-8. **不进入二进制**：skill 不 `go:embed`、不随发布二进制分发、不参与站点构建输出。它随源码仓库分发，使用者复制或引用文件路径即可。
+8. ~~**不进入二进制**：skill 不 `go:embed`、不随发布二进制分发、不参与站点构建输出。它随源码仓库分发，使用者复制或引用文件路径即可。~~ 被 [spec 019](019-skill-install.md) 取代：skill 内嵌进二进制并由 `repolens skill install` 安装。仍不参与站点构建输出。
 
 ## 接口契约
 
@@ -49,7 +49,7 @@ skills/glossary/
 ## 边界与非目标
 
 - 不提供 `repolens glossary` 子命令（lint / add / list / candidates）：那是独立的后续决策，skill 不预设它们存在；
-- 不为特定 Agent 产品提供适配层、安装脚本或打包格式；
+- ~~不为特定 Agent 产品提供适配层、安装脚本或打包格式；~~ 被 [spec 019](019-skill-install.md) 部分取代：提供安装命令与各产品 skill 目录的适配；仍不提供打包格式；
 - 不约束 skill 之外的仓库内容，不要求使用者的仓库采用任何目录结构；
 - 不做多语言版本：skill 正文与仓库文档语言约定一致（中文）；
 - `skills/` 下暂只有术语标注一项，不预先建立通用的 skill 框架或索引机制。

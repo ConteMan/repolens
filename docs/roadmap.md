@@ -33,6 +33,7 @@
 - 站点快照新鲜度：已打开页面通过同源元数据检测新部署并提供主动重新加载提示（[016](specs/016-site-snapshot-freshness.md)）
 - 术语标注与解释：仓库可选约定，正文标注 ＋ 页内术语表 ＋ 解释抽屉，默认关闭（[017](specs/017-glossary-terms.md)，准入边界见 [ADR-007](decisions/ADR-007-optional-repo-conventions.md)；spec 与 ADR 确认前不进入实现）
 - 术语标注 Agent Skill：随版本分发的 Agent 中立操作规范，约束术语库的建立与长期维护（[018](specs/018-glossary-skill.md)）
+- Skill 安装与更新：skill 内嵌进二进制，`repolens skill install / list / update` 按 Agent Skills 开放标准探测各产品的 skill 目录并离线保持副本最新（[019](specs/019-skill-install.md)）
 
 ### Out（v2 及以后，实现前需先修订本文档）
 
@@ -63,5 +64,6 @@ M 编号是 Spec 的分组与验收单元——把一批相关 Spec 聚成一个
 | M9 浏览体验增强 | 桌面固定文件树侧栏调宽 | [015](specs/README.md) | #58 关闭、视觉基线冻结、Spec 015 自动化与质量门禁全绿 |
 | M10 站点新鲜度 | 新部署检测与非阻塞更新提示 | [016](specs/README.md) | #35 关闭、静态托管与 `serve` 场景验收、质量门禁全绿 |
 | M11 术语标注 | 术语标注、页内术语表与解释抽屉，随附 Agent Skill | [017–018](specs/README.md) | 未启用时产物零差异、无 JS 可读、搜索与 `llms.txt` 集成、example fixture 构建检查通过、质量门禁全绿 |
+| M12 Skill 分发 | skill 内嵌二进制，安装/列出/更新子命令与多 Agent 目录适配 | [019](specs/README.md) | 干净仓库一条命令装好、重复执行幂等、本地修改不被覆盖、离线更新生效、质量门禁全绿 |
 
 > v1.x 首轮推进顺序为 M7 → M5 → M6 → M8；后续增强由独立里程碑与 Spec 承接，不改变 `output` 信任域或部署边界。
