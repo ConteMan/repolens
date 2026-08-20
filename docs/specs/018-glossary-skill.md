@@ -1,6 +1,6 @@
 # 018: 术语标注 Agent Skill
 
-- 状态：已确认
+- 状态：已实现
 - 关联：roadmap M11、Issue #73、[spec 017](017-glossary-terms.md)、[ADR-007](../decisions/ADR-007-optional-repo-conventions.md)
 
 ## 问题
