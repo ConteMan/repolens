@@ -91,6 +91,9 @@ type PageData struct {
 	DirEntries       []DirEntry
 	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
 	Lang string
+	// Terms are the glossary entries referenced on this page, after
+	// front-matter overrides, in first-appearance order.
+	Terms []render.GlossaryTerm
 }
 
 // New creates a Renderer from built-in templates plus optional user overrides.

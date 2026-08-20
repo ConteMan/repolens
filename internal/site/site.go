@@ -44,6 +44,12 @@ type Builder struct {
 	theme    *theme.Renderer
 	markdown *render.Markdown
 	version  string
+
+	glossary   render.Glossary
+	buildWarns []config.Warning
+	incomplete map[string]render.GlossaryTerm
+	seenOnPage map[string]string
+	notedPages map[string]struct{}
 }
 
 type Stats struct {
@@ -86,6 +92,9 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 
 	files, err := b.collectFiles(tree)
 	if err != nil {
+		return stats, err
+	}
+	if err := b.prepareGlossary(tree.Root, files, &stats); err != nil {
 		return stats, err
 	}
 	if err := validateSnapshotPath(files); err != nil {
@@ -168,9 +177,13 @@ func (b *Builder) Build(ctx context.Context, tree *source.Tree, outDir string) (
 			return stats, err
 		}
 	}
+	if err := b.failIfIncomplete(); err != nil {
+		return stats, err
+	}
 	if err := b.writeAgentOutputs(outDir, model, time.Now()); err != nil {
 		return stats, err
 	}
+	stats.Warnings = append(stats.Warnings, b.buildWarns...)
 	stats.Warnings = append(stats.Warnings, agentWarnings(b.cfg)...)
 	if err := checkRelativeLinks(outDir, generatedRootIndex, generated404); err != nil {
 		return stats, err
@@ -445,30 +458,31 @@ func (m siteModel) browserURLForFile(file fileEntry) string {
 
 func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) error {
 	currentURL := viewFileURL(file.Path)
-	body, toc, title, hasMermaid, err := b.fileBody(model, currentURL, file)
+	content, err := b.fileBody(model, currentURL, file)
 	if err != nil {
 		return err
 	}
-	if title == "" {
-		title = path.Base(file.Path)
+	if content.Title == "" {
+		content.Title = path.Base(file.Path)
 	}
 	kind := pageKind(file, b.cfg.OptionsFor(file.Path))
 	data := theme.PageData{
-		Title:         title,
+		Title:         content.Title,
 		Breadcrumbs:   breadcrumbs(currentURL, file.Path, false),
 		Tree:          buildTree(model, currentURL, file.Path, b.cfg.View.TreeExpandDepth),
 		Kind:          kind,
-		Body:          body,
-		TOC:           toc,
+		Body:          content.HTML,
+		TOC:           content.TOC,
 		MirrorHref:    render.RelTo(currentURL, mirrorURL(file.Path)),
 		SourceHref:    sourceHref(currentURL, file, b.cfg.OptionsFor(file.Path)),
 		FileSize:      file.Size,
 		RepoPath:      file.Path,
 		LastCommit:    file.LastCommit,
-		HasMermaid:    hasMermaid,
+		HasMermaid:    content.HasMermaid,
 		HidePageTitle: kind == "markdown",
 		SnapshotID:    model.snapshotID,
 		HeadExtra:     alternateHead(currentURL, file.Path),
+		Terms:         content.Terms,
 	}
 	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
@@ -510,14 +524,23 @@ func (b *Builder) writeSourcePage(outDir string, model siteModel, file fileEntry
 	return b.writePage(outDir, currentURL, page)
 }
 
-func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (template.HTML, []render.TOCItem, string, bool, error) {
+type pageContent struct {
+	HTML       template.HTML
+	TOC        []render.TOCItem
+	Title      string
+	HasMermaid bool
+	Terms      []render.GlossaryTerm
+}
+
+func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (pageContent, error) {
 	opts := b.cfg.OptionsFor(file.Path)
 	switch file.Kind {
 	case render.KindMarkdown:
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
 		if err != nil {
-			return "", nil, "", false, err
+			return pageContent{}, err
 		}
+		mdOpts := b.markdownRenderOptions(file.Path)
 		result, err := b.markdown.Render(data, render.PageRef{
 			Path: file.Path,
 			Resolve: func(target string) string {
@@ -530,65 +553,66 @@ func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (
 				}
 				return "mirror"
 			},
-		}, render.MarkdownOptions{
-			TOC:              opts.Markdown.TOC,
-			TOCMinHeadings:   opts.Markdown.TOCMinHeadings,
-			Anchors:          opts.Markdown.Anchors,
-			Mermaid:          opts.Markdown.Mermaid,
-			FrontmatterTitle: opts.Markdown.FrontmatterTitle,
-		})
+		}, mdOpts)
 		if err != nil {
-			return "", nil, "", false, err
+			return pageContent{}, err
 		}
-		return result.HTML, result.TOC, result.Title, result.HasMermaid, nil
+		b.noteMarkdownResult(file.Path, result)
+		return pageContent{
+			HTML:       result.HTML,
+			TOC:        result.TOC,
+			Title:      result.Title,
+			HasMermaid: result.HasMermaid,
+			Terms:      result.Terms,
+		}, nil
 	case render.KindHTML:
 		switch opts.HTML.View {
 		case "direct":
-			return htmlDirectBody(currentURL, file.Path), nil, path.Base(file.Path), false, nil
+			return pageContent{HTML: htmlDirectBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 		case "source":
 			data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
 			if err != nil {
-				return "", nil, "", false, err
+				return pageContent{}, err
 			}
 			code, err := render.Code(data, file.Path, render.CodeOptions{
 				LineNumbers: opts.Code.LineNumbers,
 				Theme:       opts.Code.Theme,
 			})
 			if err != nil {
-				return "", nil, "", false, err
+				return pageContent{}, err
 			}
-			return code.HTML, nil, path.Base(file.Path), false, nil
+			return pageContent{HTML: code.HTML, Title: path.Base(file.Path)}, nil
 		default:
-			return htmlEmbedBody(currentURL, file.Path), nil, path.Base(file.Path), false, nil
+			return pageContent{HTML: htmlEmbedBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 		}
 	case render.KindCode:
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
 		if err != nil {
-			return "", nil, "", false, err
+			return pageContent{}, err
 		}
 		code, err := render.Code(data, file.Path, render.CodeOptions{
 			LineNumbers: opts.Code.LineNumbers,
 			Theme:       opts.Code.Theme,
 		})
 		if err != nil {
-			return "", nil, "", false, err
+			return pageContent{}, err
 		}
-		return code.HTML, nil, path.Base(file.Path), false, nil
+		return pageContent{HTML: code.HTML, Title: path.Base(file.Path)}, nil
 	case render.KindImage:
-		return imageBody(currentURL, file.Path), nil, path.Base(file.Path), false, nil
+		return pageContent{HTML: imageBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 	default:
-		return binaryBody(currentURL, file), nil, path.Base(file.Path), false, nil
+		return pageContent{HTML: binaryBody(currentURL, file), Title: path.Base(file.Path)}, nil
 	}
 }
 
 func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error {
 	currentURL := viewDirURL(dir)
-	body, toc, title, hasMermaid, lastCommit, err := b.dirBody(model, currentURL, dir)
+	content, lastCommit, err := b.dirBody(model, currentURL, dir)
 	if err != nil {
 		return err
 	}
-	if title == "" {
-		title = dirTitle(dir)
+	if content.Title == "" {
+		content.Title = dirTitle(dir)
 	}
 	_, hasMarkdownBody := b.dirDocFile(model, dir)
 	if _, hasMergedIndex := model.mergedIndexByDir[dir]; hasMergedIndex {
@@ -601,18 +625,19 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		}
 	}
 	data := theme.PageData{
-		Title:         title,
+		Title:         content.Title,
 		Breadcrumbs:   breadcrumbs(currentURL, dir, true),
 		Tree:          buildTree(model, currentURL, treeCurrentPath, b.cfg.View.TreeExpandDepth),
 		Kind:          "dir",
-		Body:          body,
-		TOC:           toc,
+		Body:          content.HTML,
+		TOC:           content.TOC,
 		LastCommit:    lastCommit,
-		HasMermaid:    hasMermaid,
+		HasMermaid:    content.HasMermaid,
 		HidePageTitle: hasMarkdownBody,
 		RepoPath:      dir,
 		SnapshotID:    model.snapshotID,
 		DirEntries:    dirEntries(model, currentURL, dir),
+		Terms:         content.Terms,
 	}
 	b.fillCommonPageData(currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
@@ -632,29 +657,25 @@ func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
 	}
 }
 
-func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTML, []render.TOCItem, string, bool, *source.Commit, error) {
-	var toc []render.TOCItem
-	var title string
-	var hasMermaid bool
-	var lastCommit *source.Commit
-	var body template.HTML
-
+func (b *Builder) dirBody(model siteModel, currentURL, dir string) (pageContent, *source.Commit, error) {
 	if index, ok := model.mergedIndexByDir[dir]; ok {
-		body, toc, _, hasMermaid, err := b.fileBody(model, currentURL, index)
+		content, err := b.fileBody(model, currentURL, index)
 		if err != nil {
-			return "", nil, "", false, nil, err
+			return pageContent{}, nil, err
 		}
 		// 合并页标题留空走 dirTitle 回退：fileBody 对 HTML 恒返回
 		// 文件名 "index.html"，作为目录页标题无意义。
-		return body, toc, "", hasMermaid, index.LastCommit, nil
+		content.Title = ""
+		return content, index.LastCommit, nil
 	}
 
+	var content pageContent
+	var lastCommit *source.Commit
 	if readme, ok := b.dirDocFile(model, dir); ok {
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(readme.Path)))
 		if err != nil {
-			return "", nil, "", false, nil, err
+			return pageContent{}, nil, err
 		}
-		opts := b.cfg.OptionsFor(readme.Path)
 		result, err := b.markdown.Render(data, render.PageRef{
 			Path: readme.Path,
 			Resolve: func(target string) string {
@@ -667,24 +688,22 @@ func (b *Builder) dirBody(model siteModel, currentURL, dir string) (template.HTM
 				}
 				return "mirror"
 			},
-		}, render.MarkdownOptions{
-			TOC:              opts.Markdown.TOC,
-			TOCMinHeadings:   opts.Markdown.TOCMinHeadings,
-			Anchors:          opts.Markdown.Anchors,
-			Mermaid:          opts.Markdown.Mermaid,
-			FrontmatterTitle: opts.Markdown.FrontmatterTitle,
-		})
+		}, b.markdownRenderOptions(readme.Path))
 		if err != nil {
-			return "", nil, "", false, nil, err
+			return pageContent{}, nil, err
 		}
+		b.noteMarkdownResult(readme.Path, result)
 		html := rebaseRenderedLinks(string(result.HTML), viewFileURL(readme.Path), currentURL)
-		body = template.HTML(html)
-		toc = result.TOC
-		title = result.Title
-		hasMermaid = result.HasMermaid
+		content = pageContent{
+			HTML:       template.HTML(html),
+			TOC:        result.TOC,
+			Title:      result.Title,
+			HasMermaid: result.HasMermaid,
+			Terms:      result.Terms,
+		}
 		lastCommit = readme.LastCommit
 	}
-	return body, toc, title, hasMermaid, lastCommit, nil
+	return content, lastCommit, nil
 }
 
 func (b *Builder) writePage(outDir, pageURL string, data theme.PageData) error {

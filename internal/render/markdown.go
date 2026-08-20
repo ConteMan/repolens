@@ -74,8 +74,9 @@ type MarkdownResult struct {
 	// Terms holds the terms referenced on this page after front-matter
 	// overrides, in first-appearance order and de-duplicated by key.
 	Terms []GlossaryTerm
-	// Warnings holds recoverable issues from this page's front-matter
-	// glossary entries (invalid source URL, truncated fields). Public
+	// Warnings holds recoverable issues from this page: front-matter
+	// glossary entries (invalid source URL, truncated fields) and
+	// undefined term references when GlossaryStrict is off. Public
 	// library problems are reported by site.LoadGlossary, not here.
 	Warnings []string
 }

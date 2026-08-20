@@ -21,6 +21,14 @@ type searchDoc struct {
 	Kind     string          `json:"kind"`
 	View     string          `json:"view"`
 	Headings []searchHeading `json:"headings"`
+	Terms    []searchTerm    `json:"terms,omitempty"`
+}
+
+type searchTerm struct {
+	Key    string `json:"key"`
+	Title  string `json:"title"`
+	Alias  string `json:"alias"`
+	Anchor string `json:"anchor"`
 }
 
 type searchHeading struct {
@@ -37,24 +45,23 @@ func (b *Builder) writeSearchJSON(outDir string, model siteModel) error {
 		}
 		title := path.Base(file.Path)
 		headings := make([]searchHeading, 0)
+		var terms []searchTerm
 		if file.Kind == render.KindMarkdown {
 			data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
 			if err != nil {
 				return err
 			}
-			opts := b.cfg.OptionsFor(file.Path)
-			result, err := b.markdown.Render(data, render.PageRef{Path: file.Path}, render.MarkdownOptions{
-				TOC:              true,
-				TOCMinHeadings:   1,
-				Anchors:          opts.Markdown.Anchors,
-				Mermaid:          false,
-				FrontmatterTitle: opts.Markdown.FrontmatterTitle,
-			})
+			mdOpts := b.markdownRenderOptions(file.Path)
+			mdOpts.TOC = true
+			mdOpts.TOCMinHeadings = 1
+			mdOpts.Mermaid = false
+			result, err := b.markdown.Render(data, render.PageRef{Path: file.Path}, mdOpts)
 			if err != nil {
 				return err
 			}
 			title = result.Title
 			headings = flattenSearchTOC(result.TOC)
+			terms = searchTermsFrom(result.Terms)
 		}
 		docs = append(docs, searchDoc{
 			Path:     file.Path,
@@ -62,6 +69,7 @@ func (b *Builder) writeSearchJSON(outDir string, model siteModel) error {
 			Kind:     file.KindName,
 			View:     model.browserURLForFile(file),
 			Headings: headings,
+			Terms:    terms,
 		})
 	}
 
@@ -71,6 +79,22 @@ func (b *Builder) writeSearchJSON(outDir string, model siteModel) error {
 	}
 	data = append(data, '\n')
 	return os.WriteFile(filepath.Join(outDir, searchJSONPath), data, 0o644)
+}
+
+func searchTermsFrom(terms []render.GlossaryTerm) []searchTerm {
+	if len(terms) == 0 {
+		return nil
+	}
+	out := make([]searchTerm, 0, len(terms))
+	for _, term := range terms {
+		out = append(out, searchTerm{
+			Key:    term.Key,
+			Title:  term.Title.Text,
+			Alias:  term.Alias.Text,
+			Anchor: "glossary-" + term.Key,
+		})
+	}
+	return out
 }
 
 func flattenSearchTOC(items []render.TOCItem) []searchHeading {
