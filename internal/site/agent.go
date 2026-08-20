@@ -150,7 +150,6 @@ func (b *Builder) writeLLMSTxt(outDir string, entries []agentMarkdownEntry) erro
 		for _, ref := range refs {
 			fmt.Fprintf(&buf, "- %s\n", ref)
 		}
-		buf.WriteString("\n")
 	}
 	b.writeLLMSGlossary(&buf)
 	return os.WriteFile(filepath.Join(outDir, llmsTxtPath), buf.Bytes(), agentOutputPerm)
@@ -159,6 +158,9 @@ func (b *Builder) writeLLMSTxt(outDir string, entries []agentMarkdownEntry) erro
 func (b *Builder) writeLLMSGlossary(buf *bytes.Buffer) {
 	if len(b.glossary) == 0 {
 		return
+	}
+	if buf.Len() > 0 && !bytes.HasSuffix(buf.Bytes(), []byte("\n\n")) {
+		buf.WriteByte('\n')
 	}
 	keys := make([]string, 0, len(b.glossary))
 	for key := range b.glossary {
