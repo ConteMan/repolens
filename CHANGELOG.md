@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-20
+
 ### Added
 
 - 术语标注与解释（默认关闭，`render.markdown.glossary`）。正文用 `[显示文本](term:key)` 标注术语——这是标准 Markdown 链接，在 GitHub 与任意 Markdown 渲染器下仍然合法可读；解释写在仓库内 `.repolens/glossary/<key>.yml`，文档 front matter 可覆盖本文语境的含义或定义只在本页可见的私有术语。浏览页在正文后输出仅含本页引用术语的术语表，标注是指向它的锚点，关闭 JavaScript、打印和被 Agent 抓取时解释都不丢失；启用 JavaScript 时点击术语原地展开解释抽屉。`glossary.strict` 三档（`off` / `refs` / `complete`）区分「引用了不存在的术语」与「解释尚未写完」，前者任何时候都让构建失败，后者默认放行、可由构建者在外部配置中覆盖为 `complete` 充当合并门禁。术语同时进入站内搜索索引与 `llms.txt` 术语表小节。未使用该特性的仓库产物逐字节不变。
@@ -163,7 +165,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.6.3...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/ConteMan/repolens/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/ConteMan/repolens/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/ConteMan/repolens/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/ConteMan/repolens/compare/v1.6.0...v1.6.1
