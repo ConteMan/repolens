@@ -18,11 +18,12 @@ import (
 
 const glossaryFieldLimit = 2000
 
+// glossaryFile is a public library entry. page is front-matter only
+// (spec 017 / SKILL.md) and is not a YAML field here.
 type glossaryFile struct {
 	Title   string          `yaml:"title"`
 	Alias   string          `yaml:"alias"`
 	Summary string          `yaml:"summary"`
-	Page    string          `yaml:"page"`
 	Warning string          `yaml:"warning"`
 	Source  *glossarySource `yaml:"source"`
 }
@@ -112,8 +113,6 @@ func termFromFile(key, rel string, raw glossaryFile) (render.GlossaryTerm, []str
 	warnings = append(warnings, w...)
 	summary, w := cutLoadedField(raw.Summary, rel, key, "summary")
 	warnings = append(warnings, w...)
-	page, w := cutLoadedField(raw.Page, rel, key, "page")
-	warnings = append(warnings, w...)
 	warning, w := cutLoadedField(raw.Warning, rel, key, "warning")
 	warnings = append(warnings, w...)
 
@@ -122,7 +121,6 @@ func termFromFile(key, rel string, raw glossaryFile) (render.GlossaryTerm, []str
 		Title:     render.ParseGlossaryText(title),
 		Alias:     render.ParseGlossaryText(alias),
 		Summary:   render.ParseGlossaryText(summary),
-		Page:      render.ParseGlossaryText(page),
 		Warning:   render.ParseGlossaryText(warning),
 		DefinedIn: rel,
 	}
