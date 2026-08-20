@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -352,6 +353,64 @@ See [广告聚合](term:mediation).
 		assertNotContains(t, root, `class="term"`)
 		assertNotContains(t, root, `href="term:`)
 	})
+}
+
+func TestLLMSTxtEmptyGlossaryMatchesDisabledSection(t *testing.T) {
+	t.Parallel()
+
+	repo := newAgentTestRepo(t)
+	disabledDir, _, err := buildSite(t, repo)
+	if err != nil {
+		t.Fatalf("disabled Build() error = %v", err)
+	}
+	emptyDir, _, err := buildSiteWithConfig(t, repo, func(cfg *config.Config) {
+		cfg.Render.Markdown.Glossary = true
+	})
+	if err != nil {
+		t.Fatalf("empty-library Build() error = %v", err)
+	}
+
+	disabledLLMS := readOutput(t, disabledDir, "llms.txt")
+	emptyLLMS := readOutput(t, emptyDir, "llms.txt")
+	if disabledLLMS != emptyLLMS {
+		t.Fatalf("llms.txt with empty glossary differs from glossary section skipped\n--- disabled ---\n%s\n--- empty library ---\n%s", disabledLLMS, emptyLLMS)
+	}
+	assertNotContains(t, disabledLLMS, "## 术语表")
+	assertNotContains(t, disabledLLMS, "## Glossary")
+	if strings.HasSuffix(disabledLLMS, "\n\n") {
+		t.Fatal("llms.txt has a trailing blank line when the glossary section is absent")
+	}
+
+	disabledSearch := readOutput(t, disabledDir, "search.json")
+	emptySearch := readOutput(t, emptyDir, "search.json")
+	if disabledSearch != emptySearch {
+		t.Fatalf("search.json bytes differ when glossary library is empty")
+	}
+	if strings.Contains(disabledSearch, `"terms"`) {
+		t.Fatal("search.json grew a terms field while no terms are referenced")
+	}
+
+	disabledIndex := stripJSONBuiltAt(readOutput(t, disabledDir, "index.json"))
+	emptyIndex := stripJSONBuiltAt(readOutput(t, emptyDir, "index.json"))
+	if disabledIndex != emptyIndex {
+		t.Fatalf("index.json bytes differ when glossary library is empty (ignoring built_at)")
+	}
+
+	disabledPage := stripSnapshotNoise(readOutput(t, disabledDir, "view/README.md/index.html"))
+	emptyPage := stripSnapshotNoise(readOutput(t, emptyDir, "view/README.md/index.html"))
+	if disabledPage != emptyPage {
+		t.Fatalf("browse page bytes differ when glossary library is empty (ignoring snapshot)")
+	}
+}
+
+func stripJSONBuiltAt(s string) string {
+	return regexp.MustCompile(`"built_at": "[^"]*"`).ReplaceAllString(s, `"built_at": ""`)
+}
+
+func stripSnapshotNoise(s string) string {
+	s = regexp.MustCompile(`data-snapshot-id="[^"]*"`).ReplaceAllString(s, `data-snapshot-id=""`)
+	s = regexp.MustCompile(`"snapshot": "[^"]*"`).ReplaceAllString(s, `"snapshot": ""`)
+	return s
 }
 
 func newGlossaryGitRepo(t *testing.T, files map[string]string) string {
