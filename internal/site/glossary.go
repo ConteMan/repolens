@@ -35,8 +35,8 @@ type glossarySource struct {
 
 // LoadGlossary reads the public glossary library from dir under root.
 // A missing directory is an empty library. warnings are recoverable
-// (invalid filenames, invalid URLs, truncated fields); err is for
-// key conflicts and YAML parse failures.
+// (invalid filenames, invalid URLs, truncated fields, page in a
+// library file); err is for key conflicts and YAML parse failures.
 func LoadGlossary(root, dir string) (render.Glossary, []string, error) {
 	abs := filepath.Join(root, filepath.FromSlash(dir))
 	entries, err := os.ReadDir(abs)
@@ -101,8 +101,20 @@ func LoadGlossary(root, dir string) (render.Glossary, []string, error) {
 		term, fieldWarnings := termFromFile(key, rel, raw)
 		out[key] = term
 		warnings = append(warnings, fieldWarnings...)
+		if glossaryLibraryHasPage(data) {
+			warnings = append(warnings, fmt.Sprintf("glossary term %q at %s: field \"page\" is only allowed in document front matter; ignored", key, rel))
+		}
 	}
 	return out, warnings, nil
+}
+
+func glossaryLibraryHasPage(data []byte) bool {
+	var raw map[string]any
+	if err := yaml.Unmarshal(data, &raw); err != nil || raw == nil {
+		return false
+	}
+	_, ok := raw["page"]
+	return ok
 }
 
 func termFromFile(key, rel string, raw glossaryFile) (render.GlossaryTerm, []string) {

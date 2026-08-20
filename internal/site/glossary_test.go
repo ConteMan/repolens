@@ -99,6 +99,30 @@ func TestLoadGlossary(t *testing.T) {
 			t.Fatalf("warnings = %v", warnings)
 		}
 	})
+
+	t.Run("library page is ignored with warning", func(t *testing.T) {
+		t.Parallel()
+		root := t.TempDir()
+		writeFile(t, root, ".repolens/glossary/mediation.yml", "title: Mediation\nsummary: A layer.\npage: 库文件里的本文解释不应生效。\n")
+		got, warnings, err := LoadGlossary(root, ".repolens/glossary")
+		if err != nil {
+			t.Fatalf("LoadGlossary() error = %v", err)
+		}
+		term := got["mediation"]
+		if term.Page.Text != "" || term.Page.HTML != "" {
+			t.Fatalf("Page = %+v, want empty", term.Page)
+		}
+		if term.Summary.Text != "A layer." {
+			t.Fatalf("Summary = %q", term.Summary.Text)
+		}
+		if len(warnings) != 1 {
+			t.Fatalf("warnings = %v, want 1", warnings)
+		}
+		w := warnings[0]
+		if !strings.Contains(w, "page") || !strings.Contains(w, "mediation") || !strings.Contains(w, ".repolens/glossary/mediation.yml") {
+			t.Fatalf("warning = %q", w)
+		}
+	})
 }
 
 func TestGlossaryBuild(t *testing.T) {
@@ -332,6 +356,39 @@ See [广告聚合](term:mediation).
 		}
 		if lib != 1 || page != 1 {
 			t.Fatalf("warnings = %#v, want one lib and one page", stats.Warnings)
+		}
+	})
+
+	t.Run("library page does not appear on referencing pages", func(t *testing.T) {
+		t.Parallel()
+		const leaked = "库文件里的本文解释不应出现在任何引用页"
+		repo := newGlossaryGitRepo(t, map[string]string{
+			".repolens.yml": `render:
+  markdown:
+    glossary: true
+`,
+			".repolens/glossary/mediation.yml": "title: Mediation\nsummary: A layer.\npage: " + leaked + "\n",
+			"README.md":                        "See [广告聚合](term:mediation).\n",
+			"docs/guide.md":                    "Also [聚合](term:mediation).\n",
+		})
+		outDir, stats, err := buildSite(t, repo)
+		if err != nil {
+			t.Fatalf("Build() error = %v", err)
+		}
+		found := 0
+		for _, w := range stats.Warnings {
+			if strings.Contains(w.Msg, "page") && strings.Contains(w.Msg, "mediation") && strings.Contains(w.Msg, ".repolens/glossary/mediation.yml") {
+				found++
+			}
+		}
+		if found != 1 {
+			t.Fatalf("warnings = %#v, want one library page warning", stats.Warnings)
+		}
+		for _, rel := range []string{"view/README.md/index.html", "view/docs/guide.md/index.html"} {
+			html := readOutput(t, outDir, rel)
+			assertNotContains(t, html, leaked)
+			assertNotContains(t, html, `class="glossary-field glossary-page"`)
+			assertContains(t, html, `data-glossary="mediation"`)
 		}
 	})
 
