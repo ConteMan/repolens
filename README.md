@@ -102,12 +102,18 @@ glossary:
 
 仓库里没有用到这个特性时，构建产物与该特性不存在时逐字节一致。
 
-配套的 [Agent 操作规范](skills/glossary/SKILL.md) 可以直接交给编码 Agent，让它配合你整理术语、写入正确格式。
+配套的 [Agent 操作规范](skills/repolens-glossary/SKILL.md) 可以直接交给编码 Agent，让它配合你整理术语、写入正确格式。它随二进制分发，一条命令装到你的 Agent 认得的目录：
+
+```sh
+repolens skill install glossary
+```
+
+命令按仓库里的 Agent 目录探测安装位置（`.claude/`、`.codex/`、`.cursor/`、`.github/`），都没探测到则写入中立路径 `.agents/skills/`；`--global` 装到个人目录。升级 repolens 后 `repolens skill update` 离线把副本更新到当前版本，改动过的副本不会被覆盖。
 
 ## 文档
 
 - [架构总览](docs/design/architecture.md)
-- [术语标注 Agent Skill](skills/glossary/SKILL.md)
+- [术语标注 Agent Skill](skills/repolens-glossary/SKILL.md)
 - [配置模型](docs/design/config.md)
 - [部署指南](docs/deploy.md)
 - [架构决策记录（ADR）](docs/decisions/README.md)

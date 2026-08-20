@@ -81,9 +81,9 @@ func readGlossarySkill(t *testing.T) string {
 
 func glossarySkillDir(t *testing.T) string {
 	t.Helper()
-	dir := filepath.Join("..", "..", "skills", "glossary")
+	dir := filepath.Join("..", "..", "skills", "repolens-glossary")
 	if _, err := os.Stat(filepath.Join(dir, "SKILL.md")); err != nil {
-		t.Fatalf("skills/glossary/SKILL.md: %v", err)
+		t.Fatalf("skills/repolens-glossary/SKILL.md: %v", err)
 	}
 	return dir
 }

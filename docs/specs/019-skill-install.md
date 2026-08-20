@@ -1,6 +1,6 @@
 # 019: Skill 安装与更新
 
-- 状态：已确认（2026-08-20 维护者确认方向）
+- 状态：已实现
 - 关联：roadmap M12、Issue #80、[spec 018](018-glossary-skill.md)（本 spec 取代其部分条款）、[ADR-007](../decisions/ADR-007-optional-repo-conventions.md)
 
 ## 问题
@@ -31,15 +31,17 @@ Agent Skills 规范要求 front matter 的 `name` 必须等于父目录名。现
 
 ### 3. 已知安装目标
 
-| key | 项目级目录 | 个人级目录 | 探测信号（项目级） |
-|---|---|---|---|
-| `claude` | `.claude/skills/` | `~/.claude/skills/` | `.claude/` 存在 |
-| `codex` | `.codex/skills/` | `~/.codex/skills/` | `.codex/` 存在 |
-| `cursor` | `.cursor/skills/` | `~/.cursor/skills/` | `.cursor/` 存在 |
-| `copilot` | `.github/skills/` | `~/.config/github-copilot/skills/` | `.github/skills/` 或 `.github/copilot-instructions.md` 存在 |
-| `agents` | `.agents/skills/` | `~/.agents/skills/` | `.agents/` 存在 |
+| key | 项目级目录 | 项目级探测信号 | 个人级目录 | 个人级探测信号 |
+|---|---|---|---|---|
+| `claude` | `.claude/skills/` | `.claude/` 存在 | `~/.claude/skills/` | `~/.claude/` 存在 |
+| `codex` | `.codex/skills/` | `.codex/` 存在 | `~/.codex/skills/` | `~/.codex/` 存在 |
+| `cursor` | `.cursor/skills/` | `.cursor/` 存在 | `~/.cursor/skills/` | `~/.cursor/` 存在 |
+| `copilot` | `.github/skills/` | `.github/skills/` 或 `.github/copilot-instructions.md` 存在 | `~/.config/github-copilot/skills/` | `~/.config/github-copilot/` 存在 |
+| `agents` | `.agents/skills/` | `.agents/` 存在 | `~/.agents/skills/` | `~/.agents/` 存在 |
 
-`copilot` 的探测信号不能只看 `.github/` 是否存在——几乎每个仓库都有该目录（CI 配置），据此判定会给所有人装一份用不到的副本。
+**探测信号必须与写入作用域同源**：项目级探测当前仓库，个人级探测用户主目录。用仓库信号决定个人级安装位置是错的——用户主目录装了 Claude Code、当前仓库恰好没有 `.claude/` 时，`--global` 会把副本写进 `~/.agents/skills/`，而 Claude Code 根本不扫那里。
+
+`copilot` 的项目级信号不能只看 `.github/` 是否存在——几乎每个仓库都有该目录（CI 配置），据此判定会给所有人装一份用不到的副本。
 
 个人级目录的 `~` 按 `os.UserHomeDir()` 解析；解析失败时个人级目标整体不可用，报错而非静默跳过。
 
@@ -48,7 +50,9 @@ Agent Skills 规范要求 front matter 的 `name` 必须等于父目录名。现
 无参数，输出两段：
 
 - **内置**：名称、短名、版本、`description` 首句；
-- **已安装**：扫描全部已知目标（项目级 ＋ 个人级），逐条给出路径、记录的版本、状态（`最新` / `过期（1.6.3 → 1.7.0）` / `本地已修改`）。
+- **已安装**：扫描全部已知目标（项目级 ＋ 个人级），逐条给出路径、记录的版本、状态（`最新` / `过期（1.6.3 → 1.7.0）` / `本地已修改` / `非 repolens 安装`）。
+
+  最后一种是目标位置存在同名 skill 但没有 provenance 的情形。必须显示出来——否则「未列出」与「install 被挡住」对不上，使用者无从判断为什么装不进去。
 
 没有任何已安装副本时，第二段输出一行提示与 `repolens skill install` 的用法，不报错。
 
@@ -57,7 +61,7 @@ Agent Skills 规范要求 front matter 的 `name` 必须等于父目录名。现
 参数为 skill 名（完整名或短名）。行为：
 
 1. **确定目标**：给了 `--target` 就用给定的（逗号分隔多个 key，未知 key 报错并列出合法值）；没给就按行为 3 的信号探测，装到全部探测到的目标；一个信号都没探到时装到 `agents`（中立路径），并在输出中说明这是兜底选择以及如何用 `--target` 指定。
-2. **确定作用域**：默认项目级，写入 `--dir` 指定的目录（默认当前工作目录）；`--global` 改为个人级。
+2. **确定作用域**：默认项目级，探测并写入 `--dir` 指定的目录（默认当前工作目录）；`--global` 改为个人级，此时探测与写入都在用户主目录下，`--dir` 不再影响安装位置。
 3. **写入** `<target>/<skill-name>/SKILL.md`，注入行为 6 的 provenance。目录不存在则创建。
 4. **报告**：逐个目标一行，写明绝对路径与动作（新建 / 更新 / 跳过），末尾提示重启 Agent 会话使其重新扫描 skill 目录。
 
@@ -70,6 +74,8 @@ Agent Skills 规范要求 front matter 的 `name` 必须等于父目录名。现
 | 存在，有 provenance，版本不同且未被本地修改 | 覆盖 |
 | 存在，有 provenance，正文已被本地修改 | **跳过并告警**，提示 `--force` |
 | 存在，无 provenance（使用者自有的同名 skill） | **跳过并告警**，提示 `--force` |
+
+判断只依据**记录的版本**与**正文是否被本地改过**，不与内置内容逐字节比对——因此开发态（版本为 `dev`）下改了内置 SKILL.md 再 install，副本不会被刷新；此时用 `repolens skill update`（行为 7 对 `dev` 一律重写）或 `--force`。这一取舍让 install 保持幂等。
 
 `--force` 覆盖上表的两种告警情形。任何情况下只写 `SKILL.md` 这一个文件，不删除、不改动目标 skill 目录下的其他文件——使用者可能在同目录补充了自己的 `references/`。写入采用「临时文件 ＋ rename」的原子替换。
 
@@ -154,8 +160,10 @@ type Target struct {
 	Detected bool
 }
 
+func KnownTargetKeys() []string
 func Targets(root string, scope Scope) ([]Target, error)
-func Detect(root string) ([]Target, error) // project scope, Detected only
+func Detect(root string, scope Scope) ([]Target, error)  // Detected only, signals resolved in scope
+func ResolveTargets(root string, scope Scope, keys []string) ([]Target, error) // unknown key errors with the legal values
 
 type State int // StateAbsent | StateCurrent | StateOutdated | StateModified | StateForeign
 
@@ -168,7 +176,7 @@ type Installed struct {
 	State   State
 }
 
-func Scan(root string) ([]Installed, error)
+func Scan(root, version string) ([]Installed, error) // version is cli.ResolveVersion(); passed in so this package does not import internal/cli
 
 type Options struct {
 	Force  bool
@@ -184,8 +192,15 @@ type Result struct {
 	Warning string
 }
 
+// Warning texts, exported so the CLI formats one wording per condition.
+const (
+	WarnModified  = "..." // provenance copy with a locally edited body
+	WarnForeign   = "..." // same-name skill without repolens provenance
+	WarnUnbundled = "..." // provenance names a skill no longer shipped
+)
+
 func Install(s Skill, t Target, version string, opts Options) (Result, error)
-func Update(root string, opts Options) ([]Result, error)
+func Update(root, version string, opts Options) ([]Result, error) // version same as Install / Scan
 ```
 
 `internal/cli` 新增 `newSkillCmd()`，挂载 `list` / `install` / `update` 三个子命令，注册进 `newRootCmd()`。CLI 层只负责 flag 解析与输出格式化，判断逻辑全部在 `internal/skill`。
@@ -218,6 +233,7 @@ spec 018 的状态维持「已实现」，在其文首标注被本 spec 修订�
 - `repolens skill list` 在无已安装副本、有最新副本、有过期副本、有本地修改副本四种情形下输出正确状态；
 - 在一个既无 `.claude/` 也无其他信号的干净仓库中 `repolens skill install glossary`，产物落在 `.agents/skills/repolens-glossary/SKILL.md`，且输出说明了兜底原因；
 - 在同时存在 `.claude/` 与 `.codex/` 的仓库中不带 `--target` 安装，两处各得到一份，输出列出两条绝对路径；
+- 仓库只有 `.cursor/`、用户主目录只有 `~/.claude/` 时：项目级安装落在 `.cursor/skills/`，`--global` 落在 `~/.claude/skills/`——两个作用域各按自己的信号判断，互不串用；
 - `--target` 传入未知 key 时报错并列出合法值，不产生任何写入；
 - `--dry-run` 在上述所有情形下不产生任何文件系统写入；
 - 重复执行同一条 install 命令是幂等的：第二次全部报告「已是最新」，文件字节不变；
