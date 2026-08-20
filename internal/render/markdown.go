@@ -43,6 +43,11 @@ type MarkdownOptions struct {
 	// Terms is the build-time public glossary, indexed by normalized key.
 	// It is read-only; Render never mutates it. A nil map is an empty library.
 	Terms Glossary
+	// GlossaryTermLabel is the aria-label format for .term links, with a
+	// single %s placeholder for the visible link text. Empty omits the
+	// attribute. Site fills this from theme.UIStrings so render stays
+	// language-agnostic.
+	GlossaryTermLabel string
 }
 
 // PageRef identifies the current source file and resolves in-repository links.

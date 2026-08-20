@@ -127,9 +127,9 @@ func TestGlossarySyntax(t *testing.T) {
 		{
 			name: "valid key",
 			src:  "See [广告聚合](term:mediation).\n",
-			opts: MarkdownOptions{Glossary: true, Terms: lib},
+			opts: MarkdownOptions{Glossary: true, Terms: lib, GlossaryTermLabel: "%s（术语，查看解释）"},
 			contains: []string{
-				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="Mediation">广告聚合</a>`,
+				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="广告聚合（术语，查看解释）">广告聚合</a>`,
 			},
 			wantKeys: []string{"mediation"},
 		},
@@ -246,15 +246,24 @@ func TestGlossarySyntax(t *testing.T) {
 			wantKeys: []string{"mediation"},
 		},
 		{
-			name: "inline code title used as aria-label text form",
+			name: "aria-label uses display text plus format",
 			src:  "See [自然量](term:organic).\n",
-			opts: MarkdownOptions{Glossary: true, Terms: lib},
+			opts: MarkdownOptions{Glossary: true, Terms: lib, GlossaryTermLabel: "%s (term, view definition)"},
 			contains: []string{
-				`aria-label="organic traffic"`,
+				`aria-label="自然量 (term, view definition)"`,
 				`data-glossary="organic"`,
 			},
-			wantKeys:  []string{"organic"},
-			ariaLabel: "organic traffic",
+			wantKeys: []string{"organic"},
+		},
+		{
+			name: "empty label format omits aria-label",
+			src:  "See [广告聚合](term:mediation).\n",
+			opts: MarkdownOptions{Glossary: true, Terms: lib},
+			contains: []string{
+				`<a class="term" href="#glossary-mediation" data-glossary="mediation">广告聚合</a>`,
+			},
+			notContains: []string{`aria-label=`},
+			wantKeys:    []string{"mediation"},
 		},
 		{
 			name: "duplicate refs keep first-seen order",
@@ -269,9 +278,9 @@ func TestGlossarySyntax(t *testing.T) {
 		{
 			name: "emphasis inside display text",
 			src:  "[**bold**](term:mediation)\n",
-			opts: MarkdownOptions{Glossary: true, Terms: lib},
+			opts: MarkdownOptions{Glossary: true, Terms: lib, GlossaryTermLabel: "%s (term, view definition)"},
 			contains: []string{
-				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="Mediation"><strong>bold</strong></a>`,
+				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="bold (term, view definition)"><strong>bold</strong></a>`,
 			},
 			wantKeys: []string{"mediation"},
 		},
@@ -623,7 +632,8 @@ See [bad](term:xss).
 	if string(term.Title.HTML) != "&lt;img src=x onerror=alert(1)&gt;" {
 		t.Fatalf("Title.HTML = %q", term.Title.HTML)
 	}
-	requireContains(t, string(got.HTML), `aria-label="&lt;img src=x onerror=alert(1)&gt;"`)
+	requireContains(t, string(got.HTML), `data-glossary="xss"`)
+	requireNotContains(t, string(got.HTML), `aria-label=`)
 	if !strings.Contains(string(term.Summary.HTML), "<code>&lt;script&gt;</code>") {
 		t.Fatalf("Summary.HTML = %q", term.Summary.HTML)
 	}
