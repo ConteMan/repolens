@@ -46,6 +46,7 @@ type Builder struct {
 	version  string
 
 	glossary   render.Glossary
+	termLabel  string
 	buildWarns []config.Warning
 	incomplete map[string]render.GlossaryTerm
 	seenOnPage map[string]string

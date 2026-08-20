@@ -1261,3 +1261,202 @@ body[data-info="open"] .info-panel {
     max-width: none;
   }
 }
+
+a.term {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.18em;
+}
+
+.glossary-appendix {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.glossary-appendix > h2 {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+}
+
+.glossary-entry {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--subtle);
+}
+
+.glossary-entry:last-child {
+  margin-bottom: 0;
+}
+
+.glossary-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.02rem;
+}
+
+.glossary-alias {
+  margin: 0 0 0.7rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.glossary-field {
+  margin: 0.65rem 0 0;
+}
+
+.glossary-field-label {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.glossary-field-body {
+  overflow-wrap: anywhere;
+}
+
+.glossary-warning {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.glossary-source {
+  margin: 0.7rem 0 0;
+  font-size: 0.9rem;
+}
+
+.glossary-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  display: inline-flex;
+  width: 2.6rem;
+  height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg);
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+  cursor: pointer;
+}
+
+.glossary-fab .icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-basis: 1.15rem;
+}
+
+.glossary-fab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.glossary-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  background: rgb(0 0 0 / 32%);
+}
+
+.glossary-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 42;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 92vw);
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 14%);
+}
+
+.glossary-drawer[hidden],
+.glossary-scrim[hidden] {
+  display: none !important;
+}
+
+.glossary-drawer-head {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.glossary-drawer-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.98rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glossary-drawer-body {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 1rem 1.5rem;
+  overflow: auto;
+}
+
+.glossary-index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.glossary-index-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  margin: 0 0 0.45rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: inherit;
+  background: var(--subtle);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.glossary-index-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.glossary-index-alias {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.glossary-drawer .glossary-entry {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media print {
+  .glossary-fab,
+  .glossary-scrim,
+  .glossary-drawer {
+    display: none !important;
+  }
+
+  .glossary-appendix {
+    display: block;
+  }
+}

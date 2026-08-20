@@ -424,6 +424,16 @@ var uiZH = map[string]string{
 	"kind_image":           "图片",
 	"kind_binary":          "二进制",
 	"kind_dir":             "目录",
+	"glossary":             "术语",
+	"glossary_term_label":  "%s（术语，查看解释）",
+	"glossary_fab":         "本页术语",
+	"glossary_index":       "本页术语",
+	"glossary_back":        "返回列表",
+	"glossary_close":       "关闭",
+	"glossary_summary":     "通用含义",
+	"glossary_page":        "本文语境",
+	"glossary_warning":     "注意",
+	"glossary_source":      "来源",
 }
 
 var uiEN = map[string]string{
@@ -480,4 +490,14 @@ var uiEN = map[string]string{
 	"kind_image":           "Image",
 	"kind_binary":          "Binary",
 	"kind_dir":             "Directory",
+	"glossary":             "Glossary",
+	"glossary_term_label":  "%s (term, view definition)",
+	"glossary_fab":         "Terms on this page",
+	"glossary_index":       "Terms on this page",
+	"glossary_back":        "Back to list",
+	"glossary_close":       "Close",
+	"glossary_summary":     "General meaning",
+	"glossary_page":        "In this page",
+	"glossary_warning":     "Note",
+	"glossary_source":      "Source",
 }

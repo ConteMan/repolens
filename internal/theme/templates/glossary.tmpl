@@ -1,0 +1,22 @@
+{{/* glossary-appendix is the page-local glossary. Custom layouts that keep
+     the drawer must consume PageData.Terms and preserve this structure and
+     the class/id conventions (.glossary-appendix, .glossary-entry,
+     id="glossary-<key>", data-glossary). The drawer reads this DOM; do not
+     inline a second copy of the term data. */}}
+{{define "glossary-appendix"}}
+{{if .Terms}}
+<section class="glossary-appendix" id="glossary" data-glossary-index="{{index .UI "glossary_index"}}" data-glossary-back="{{index .UI "glossary_back"}}" data-glossary-close="{{index .UI "glossary_close"}}">
+  <h2>{{index .UI "glossary"}}</h2>
+  {{range .Terms}}
+  <article class="glossary-entry" id="glossary-{{.Key}}" data-glossary="{{.Key}}">
+    <h3 class="glossary-title">{{.Title.HTML}}</h3>
+    {{if .Alias.HTML}}<p class="glossary-alias">{{.Alias.HTML}}</p>{{end}}
+    {{if .Summary.HTML}}<div class="glossary-field glossary-summary"><div class="glossary-field-label">{{index $.UI "glossary_summary"}}</div><div class="glossary-field-body">{{.Summary.HTML}}</div></div>{{end}}
+    {{if .Page.HTML}}<div class="glossary-field glossary-page"><div class="glossary-field-label">{{index $.UI "glossary_page"}}</div><div class="glossary-field-body">{{.Page.HTML}}</div></div>{{end}}
+    {{if .Warning.HTML}}<div class="glossary-field glossary-warning"><div class="glossary-field-label">{{index $.UI "glossary_warning"}}</div><div class="glossary-field-body">{{.Warning.HTML}}</div></div>{{end}}
+    {{if .Source}}<p class="glossary-source"><span class="glossary-field-label">{{index $.UI "glossary_source"}}</span> <a href="{{.Source.URL}}" rel="noreferrer">{{if .Source.Label.HTML}}{{.Source.Label.HTML}}{{else}}{{.Source.URL}}{{end}}</a></p>{{end}}
+  </article>
+  {{end}}
+</section>
+{{end}}
+{{end}}

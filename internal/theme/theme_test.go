@@ -635,6 +635,146 @@ func TestWriteAssets(t *testing.T) {
 	}
 }
 
+func TestGlossaryAppendixAndDrawer(t *testing.T) {
+	t.Parallel()
+
+	renderer, err := New("", "", nil)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	terms := []render.GlossaryTerm{
+		{
+			Key:     "mediation",
+			Title:   render.ParseGlossaryText("Mediation"),
+			Alias:   render.ParseGlossaryText("聚合"),
+			Summary: render.ParseGlossaryText("A layer."),
+			Page:    render.ParseGlossaryText("本文指主聚合。"),
+			Source:  &render.GlossarySource{Label: render.ParseGlossaryText("Docs"), URL: "https://example.com/docs"},
+		},
+		{
+			Key:   "organic",
+			Title: render.ParseGlossaryText("Organic"),
+		},
+	}
+
+	var zh bytes.Buffer
+	err = renderer.Page(&zh, PageData{
+		Title:     "Doc",
+		SiteTitle: "test",
+		Kind:      "markdown",
+		Lang:      "zh-CN",
+		Body:      html(`<p><a class="term" href="#glossary-mediation" data-glossary="mediation">广告聚合</a></p>`),
+		Terms:     terms,
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	got := zh.String()
+	mediationAt := strings.Index(got, `id="glossary-mediation"`)
+	organicAt := strings.Index(got, `id="glossary-organic"`)
+	for _, want := range []string{
+		`<section class="glossary-appendix" id="glossary"`,
+		`<h2>术语</h2>`,
+		`id="glossary-mediation"`,
+		`id="glossary-organic"`,
+		`data-glossary="mediation"`,
+		`<h3 class="glossary-title">Mediation</h3>`,
+		`<p class="glossary-alias">聚合</p>`,
+		`通用含义`,
+		`本文语境`,
+		`href="https://example.com/docs" rel="noreferrer"`,
+		`id="glossary-ui"`,
+		`id="btn-glossary"`,
+		`id="glossary-drawer" hidden role="dialog" aria-modal="true"`,
+		`id="glossary-scrim"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("zh glossary page missing %q\n%s", want, got)
+		}
+	}
+	if mediationAt < 0 || organicAt < 0 || mediationAt > organicAt {
+		t.Fatalf("term order wrong: mediation=%d organic=%d", mediationAt, organicAt)
+	}
+	organicBlockStart := organicAt
+	organicBlock := got[organicBlockStart:]
+	if end := strings.Index(organicBlock, `id="glossary-ui"`); end > 0 {
+		organicBlock = organicBlock[:end]
+	}
+	if strings.Contains(organicBlock, "通用含义") || strings.Contains(organicBlock, "glossary-warning") || strings.Contains(organicBlock, "glossary-source") {
+		t.Fatalf("organic entry should omit empty fields\n%s", organicBlock)
+	}
+
+	var en bytes.Buffer
+	err = renderer.Page(&en, PageData{
+		Title:     "Doc",
+		SiteTitle: "test",
+		Kind:      "markdown",
+		Lang:      "en",
+		Body:      html("<p>Hi</p>"),
+		Terms:     terms[:1],
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	if !strings.Contains(en.String(), `<h2>Glossary</h2>`) {
+		t.Fatalf("en glossary heading missing\n%s", en.String())
+	}
+
+	var empty bytes.Buffer
+	err = renderer.Page(&empty, PageData{
+		Title:     "Doc",
+		SiteTitle: "test",
+		Kind:      "markdown",
+		Lang:      "zh-CN",
+		Body:      html("<p>plain</p>"),
+	})
+	if err != nil {
+		t.Fatalf("Page() error = %v", err)
+	}
+	blank := empty.String()
+	for _, not := range []string{`class="glossary-appendix"`, `id="glossary-ui"`, `id="btn-glossary"`, `id="glossary-drawer"`} {
+		if strings.Contains(blank, not) {
+			t.Fatalf("page without terms unexpectedly contains %q\n%s", not, blank)
+		}
+	}
+}
+
+func TestGlossaryAssets(t *testing.T) {
+	t.Parallel()
+
+	css, err := os.ReadFile(filepath.Join("assets", "site.css"))
+	if err != nil {
+		t.Fatalf("read site.css: %v", err)
+	}
+	js, err := os.ReadFile(filepath.Join("assets", "site.js"))
+	if err != nil {
+		t.Fatalf("read site.js: %v", err)
+	}
+	for _, want := range []string{"@media print", ".glossary-fab", ".glossary-drawer", ".glossary-scrim"} {
+		if !strings.Contains(string(css), want) {
+			t.Fatalf("site.css missing %q", want)
+		}
+	}
+	for _, want := range []string{"closeGlossary", "openGlossaryTerm", `replaceOptional("#glossary-ui"`} {
+		if !strings.Contains(string(js), want) {
+			t.Fatalf("site.js missing %q", want)
+		}
+	}
+	if got := UIStrings("zh-CN")["glossary"]; got != "术语" {
+		t.Fatalf("zh glossary = %q", got)
+	}
+	if got := UIStrings("en")["glossary"]; got != "Glossary" {
+		t.Fatalf("en glossary = %q", got)
+	}
+	if got := UIStrings("zh-CN")["glossary_term_label"]; got != "%s（术语，查看解释）" {
+		t.Fatalf("zh glossary_term_label = %q", got)
+	}
+	if got := UIStrings("en")["glossary_term_label"]; got != "%s (term, view definition)" {
+		t.Fatalf("en glossary_term_label = %q", got)
+	}
+}
+
 func newRendererWithLayout(t *testing.T, layout string) *Renderer {
 	t.Helper()
 	dir := t.TempDir()
