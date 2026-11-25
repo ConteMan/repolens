@@ -1,3 +1,5 @@
+//go:build darwin || windows
+
 package desktop
 
 import (
@@ -8,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ConteMan/repolens/internal/config"
+	"github.com/ConteMan/repolens/internal/site"
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 )
@@ -69,6 +72,9 @@ type desktopWindow struct {
 func Run(path, language string) error {
 	d := &desktopWindow{sidebar: defaultSidebarWidth, siteTab: tabBasics}
 	mygo.App.WhenReady(func() {
+		if version := mygo.App.Version(); version != "" {
+			site.GeneratorVersion = version
+		}
 		d.preferences, d.appError = loadDesktopPreferences()
 		if d.preferences.Sidebar != 0 {
 			d.sidebar = d.preferences.Sidebar

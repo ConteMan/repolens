@@ -96,3 +96,31 @@ jobs:
           name: native-directory-picker
           path: ${{ runner.temp }}/native-picker-artifacts/
           if-no-files-found: ignore
+
+  native-windows:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go vet ./internal/desktop ./cmd/repolens-desktop
+      - run: go test ./internal/desktop
+      - run: go test ./internal/cli -run TestCLIAndNativeBuildParity
+      - name: Build candidate installer
+        run: go tool mygo build -platform windows/amd64 -o "${{ runner.temp }}/desktop-build" ./cmd/repolens-desktop
+      - name: Verify installation and window
+        shell: pwsh
+        run: .github/scripts/desktop-windows-smoke.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repolens-windows-x64-candidate
+          path: ${{ runner.temp }}/desktop-build/windows-amd64/*-setup-*.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-windows-evidence
+          path: ${{ runner.temp }}/native-windows-evidence/
+          if-no-files-found: ignore
