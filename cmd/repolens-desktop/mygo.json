@@ -2,10 +2,17 @@
   "name": "Repolens",
   "identifier": "com.conteman.repolens.desktop",
   "version": "0.1.0",
-  "icon": "icon-placeholder.png",
+  "icon": "../../brand/assets/moss/desktop-1024.png",
   "updates": {
     "github": "ConteMan/repolens",
     "tagPrefix": "desktop-v",
     "publicKey": "AYAoOvhSTQIemkl1LwrAdBzusuULkIGZro1CAMT3m44="
+  },
+  "macos": {
+    "minimumSystemVersion": "13.0",
+    "signingIdentity": "Developer ID Application",
+    "notarize": {
+      "keychainProfile": "cubbix-notary"
+    }
   }
 }
