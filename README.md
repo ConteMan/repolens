@@ -58,7 +58,9 @@ repolens ui                                       # 图形化配置并构建当�
 
 构建产物是纯静态目录，直接交给任何静态托管即可，见[部署指南](docs/deploy.md)。`repolens ui` 默认构建到本机缓存，也可为当前页面会话选择安全的自定义绝对输出目录；该选择不会写入仓库配置。渲染行为可通过仓库根的 `.repolens.yml` 定制（可选，零配置即有合理默认），见[配置模型](docs/design/config.md)。
 
-## macOS 原生工作区
+## macOS 与 Windows 原生工作区
+
+自 v1.10.0 起，CLI、macOS 和 Windows x64 桌面应用共用同一版本。Windows 桌面用户可在对应 Release 下载 Setup 安装程序。macOS 桌面 0.1.0 用户可通过 Homebrew 或新版 DMG 迁移。
 
 在本仓根目录运行 `go run ./cmd/repolens-desktop`。选择 Git 工作树后，可在六个标签中编辑站点设置，点击「保存设置」核对差异并确认写入。构建者配置需要单独选择外部 YAML 文件。「构建与预览」使用已保存的配置生成站点，可打开最近一次成功构建的预览或输出目录。应用设置支持切换中英文和检查更新。
 

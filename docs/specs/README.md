@@ -27,6 +27,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [019](019-skill-install.md) | Skill 安装与更新 | skills, internal/skill, cli | M12 | 已实现 |
 | [020](020-browser-reading.md) | 浏览站阅读体验 | internal/config, theme, site, ui | M13 | 已实现 |
 | [022](022-native-workspace.md) | 完整原生桌面工作区 | internal/desktop | M14 | 已实现 |
+| [023](023-unified-windows.md) | Windows 桌面端与统一发布 | internal/desktop、发布流程 | M15 | 实施中 |
 | [021](021-native-desktop-rules.md) | 原生桌面端打开仓库与保存规则 | internal/config、internal/desktop | M14 | 已实现 |
 
 ## 依赖与实现顺序

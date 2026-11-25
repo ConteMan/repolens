@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0]
+
+- Windows x64 新增原生桌面工作区，可选择 Git 仓库、核对并保存设置、构建和预览站点。
+- CLI、macOS Universal 和 Windows 桌面端共用版本与发布说明。桌面 0.1.0 可通过 Homebrew 或安装包迁移。
+
 ## [Desktop 0.1.0] - 2026-11-25
 
 - macOS 新增 MyGo 原生工作区，可编辑六组站点设置、核对跨文件差异、构建并预览站点，支持桌面界面语言和更新偏好。CLI 与桌面端共用 Go 1.27.4。

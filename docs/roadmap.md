@@ -68,5 +68,6 @@ M 编号是 Spec 的分组与验收单元——把一批相关 Spec 聚成一个
 | M12 Skill 分发 | skill 内嵌二进制，安装/列出/更新子命令与多 Agent 目录适配 | [019](specs/README.md) | 干净仓库一条命令装好、重复执行幂等、本地修改不被覆盖、离线更新生效、质量门禁全绿 |
 | M13 浏览站阅读体验 | 界面语言、目录文件折叠和正文布局 | [020](specs/020-browser-reading.md) | 首屏兼容、读者偏好按站点隔离、无脚本目录与布局通过验收 |
 | M14 原生规则编辑 | macOS 工作树选择与有序规则编辑 | [021](specs/021-native-desktop-rules.md) | 原生窗口中确认保存，重开后验证顺序与级联结果；完整工作区按 [022](specs/022-native-workspace.md) 与设计基线验收 |
+| M15 统一分发 | Windows x64 桌面端、跨入口构建回归、单一版本发布 | [023](specs/023-unified-windows.md) | 同一提交生成 CLI 与两平台桌面包，Windows 交互与安装验收通过 |
 
 > v1.x 首轮推进顺序为 M7 → M5 → M6 → M8；后续增强由独立里程碑与 Spec 承接，不改变 `output` 信任域或部署边界。

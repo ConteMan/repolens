@@ -73,7 +73,7 @@ func Open(path string) (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%q: %w: %w", dir, errNotGitWorktree, err)
 	}
-	gitRoot := strings.TrimSuffix(string(output), "\n")
+	gitRoot := strings.TrimRight(string(output), "\r\n")
 	rootInfo, err := os.Stat(gitRoot)
 	if err != nil {
 		return nil, fmt.Errorf("inspect Git worktree root: %w", err)
