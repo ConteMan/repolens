@@ -1,5 +1,10 @@
 # repolens
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/assets/moss/dark.svg">
+  <img src="brand/assets/moss/mark.svg" width="64" height="64" alt="Repolens">
+</picture>
+
 [中文](README.md) | **English**
 
 > Turn any Git repository into a browsable static site — zero configuration required.
@@ -29,6 +34,9 @@ Documentation often already lives in a Git repository, but reading it comfortabl
 # macOS
 brew install conteman/tap/repolens
 
+# macOS desktop app
+brew install --cask conteman/tap/repolens-desktop
+
 # Windows (Scoop; or grab the zip from the Releases page)
 scoop bucket add conteman https://github.com/ConteMan/homebrew-tap
 scoop install repolens
@@ -53,6 +61,8 @@ The build output is a plain static directory — hand it to any static host; see
 ## Native macOS workspace
 
 Run `go run ./cmd/repolens-desktop` from this checkout and select a Git worktree. Edit site settings across six tabs, then choose **Save Settings** to review and confirm the changes. Select an external YAML file to edit builder settings. **Build and Preview** builds from the saved configuration and opens the latest successful build in your browser or Finder. App settings include interface language and update preferences.
+
+Opening a preview starts a server inside the desktop app on an ephemeral port on `127.0.0.1` and opens the last successful build in your default browser. Rebuild to see source changes. Switching repositories or quitting the app stops the preview server.
 
 ## Glossary annotations
 

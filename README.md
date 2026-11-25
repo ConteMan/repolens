@@ -1,5 +1,10 @@
 # repolens
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/assets/moss/dark.svg">
+  <img src="brand/assets/moss/mark.svg" width="64" height="64" alt="Repolens">
+</picture>
+
 **中文** | [English](README.en.md)
 
 > 把任意 Git 仓库渲染成可浏览的静态站点——零配置。
@@ -29,6 +34,9 @@ repolens 以 Git 仓库原样为内容源构建静态网站：Markdown 渲染（
 # macOS
 brew install conteman/tap/repolens
 
+# macOS 桌面应用
+brew install --cask conteman/tap/repolens-desktop
+
 # Windows（Scoop；或从 Releases 页直接下载 zip）
 scoop bucket add conteman https://github.com/ConteMan/homebrew-tap
 scoop install repolens
@@ -53,6 +61,8 @@ repolens ui                                       # 图形化配置并构建当�
 ## macOS 原生工作区
 
 在本仓根目录运行 `go run ./cmd/repolens-desktop`。选择 Git 工作树后，可在六个标签中编辑站点设置，点击「保存设置」核对差异并确认写入。构建者配置需要单独选择外部 YAML 文件。「构建与预览」使用已保存的配置生成站点，可打开最近一次成功构建的预览或输出目录。应用设置支持切换中英文和检查更新。
+
+点击「打开预览」时，桌面应用会在本机 `127.0.0.1` 的临时端口提供最近一次成功构建的文件，并用默认浏览器打开。源文件修改后需重新构建；切换仓库或退出应用会结束预览服务。
 
 ## 术语标注与解释
 

@@ -261,7 +261,12 @@ func (d *desktopWindow) navigation(c *ui.Context) {
 	ui.Column(c).Fill().Background(t.Surface).Children(func() {
 		ui.Row(c).FillWidth().Height(48).DragWindow()
 		ui.Column(c).FillWidth().Gap(4).PaddingX(10).Children(func() {
-			ui.Row(c).Height(36).FillWidth().PaddingX(8).AlignItems(ui.Center).DragWindow().Children(func() {
+			ui.Row(c).Height(36).FillWidth().PaddingX(8).Gap(8).AlignItems(ui.Center).DragWindow().Children(func() {
+				mark := brandMark
+				if t.Dark {
+					mark = brandMarkDark
+				}
+				ui.Image(c, mark).Size(24, 24)
 				ui.Text(c, "Repolens").FontSize(21).Bold()
 			})
 			d.repositorySelector(c)

@@ -369,6 +369,7 @@ type siteModel struct {
 	root             string
 	commitHash       string
 	snapshotID       string
+	faviconPath      string
 	files            []fileEntry
 	fileByPath       map[string]fileEntry
 	dirs             map[string]bool
@@ -403,6 +404,12 @@ func newSiteModel(root, commitHash, snapshotID string, files []fileEntry, dirs [
 		m.fileByPath[file.Path] = file
 		if file.Render && isIndexHTMLFile(file.Path) {
 			m.mergedIndexByDir[parentDir(file.Path)] = file
+		}
+	}
+	for _, name := range []string{"favicon.svg", "favicon.ico", "favicon.png"} {
+		if _, ok := m.fileByPath[name]; ok {
+			m.faviconPath = name
+			break
 		}
 	}
 	seenDirs := make(map[string]map[string]bool)
@@ -486,7 +493,7 @@ func (b *Builder) writeFilePage(outDir string, model siteModel, file fileEntry) 
 		HeadExtra:     alternateHead(currentURL, file.Path),
 		Terms:         content.Terms,
 	}
-	b.fillCommonPageData(currentURL, &data)
+	b.fillCommonPageData(model, currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
 }
 
@@ -522,7 +529,7 @@ func (b *Builder) writeSourcePage(outDir string, model siteModel, file fileEntry
 		SnapshotID:  model.snapshotID,
 		HeadExtra:   alternateHead(currentURL, file.Path),
 	}
-	b.fillCommonPageData(currentURL, &page)
+	b.fillCommonPageData(model, currentURL, &page)
 	return b.writePage(outDir, currentURL, page)
 }
 
@@ -641,11 +648,12 @@ func (b *Builder) writeDirPage(outDir string, model siteModel, dir string) error
 		DirEntries:    dirEntries(model, currentURL, dir),
 		Terms:         content.Terms,
 	}
-	b.fillCommonPageData(currentURL, &data)
+	b.fillCommonPageData(model, currentURL, &data)
 	return b.writePage(outDir, currentURL, data)
 }
 
-func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
+func (b *Builder) fillCommonPageData(model siteModel, currentURL string, data *theme.PageData) {
+	data.FaviconPath = model.faviconPath
 	data.SiteTitle = b.siteTitle()
 	data.RelRoot = relRoot(currentURL)
 	data.NoIndex = b.cfg.Access.NoIndex

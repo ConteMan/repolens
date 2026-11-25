@@ -3,6 +3,7 @@ package desktop
 import (
 	"embed"
 
+	"github.com/ConteMan/repolens/brand"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -10,6 +11,8 @@ import (
 var lucideIcons embed.FS
 
 var (
+	brandMark         = ui.MustParseSVG(brand.MarkSVG)
+	brandMarkDark     = ui.MustParseSVG(brand.DarkMarkSVG)
 	siteIcon          = loadLucideIcon("sliders-horizontal")
 	buildIcon         = loadLucideIcon("play")
 	preferencesIcon   = loadLucideIcon("settings")
