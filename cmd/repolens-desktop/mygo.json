@@ -1,11 +1,11 @@
 {
   "name": "Repolens",
   "identifier": "com.conteman.repolens.desktop",
-  "version": "0.1.0",
+  "version": "1.10.0",
   "icon": "../../brand/assets/moss/desktop-1024.png",
   "updates": {
     "github": "ConteMan/repolens",
-    "tagPrefix": "desktop-v",
+    "tagPrefix": "v",
     "publicKey": "AYAoOvhSTQIemkl1LwrAdBzusuULkIGZro1CAMT3m44="
   },
   "macos": {
