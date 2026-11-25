@@ -23,13 +23,14 @@ var ErrRevisionConflict = errors.New("repository configuration revision conflict
 // the UI. A nil leaf is absent from a patch and leaves the existing YAML value
 // unchanged. A non-nil leaf replaces the corresponding YAML value.
 type RepositorySettings struct {
-	Site   RepositorySiteSettings        `yaml:"site" json:"site"`
-	Ignore *[]string                     `yaml:"ignore" json:"ignore"`
-	Render RepositoryFileOptionsSettings `yaml:"render" json:"render"`
-	Rules  *[]RepositoryRuleSettings     `yaml:"rules" json:"rules"`
-	Theme  RepositoryThemeSettings       `yaml:"theme" json:"theme"`
-	View   RepositoryViewSettings        `yaml:"view" json:"view"`
-	Agent  RepositoryAgentSettings       `yaml:"agent" json:"agent"`
+	Site     RepositorySiteSettings        `yaml:"site" json:"site"`
+	Ignore   *[]string                     `yaml:"ignore" json:"ignore"`
+	Render   RepositoryFileOptionsSettings `yaml:"render" json:"render"`
+	Glossary RepositoryGlossarySettings    `yaml:"glossary" json:"glossary"`
+	Rules    *[]RepositoryRuleSettings     `yaml:"rules" json:"rules"`
+	Theme    RepositoryThemeSettings       `yaml:"theme" json:"theme"`
+	View     RepositoryViewSettings        `yaml:"view" json:"view"`
+	Agent    RepositoryAgentSettings       `yaml:"agent" json:"agent"`
 }
 
 // RepositorySiteSettings contains the editable site metadata fields.
@@ -83,6 +84,12 @@ type RepositoryRuleSettings struct {
 	HTML        RepositoryHTMLOptionsSettings     `yaml:"html" json:"html"`
 	Code        RepositoryCodeOptionsSettings     `yaml:"code" json:"code"`
 	MaxFileSize *RepositoryByteSize               `yaml:"max_file_size" json:"max_file_size"`
+}
+
+// RepositoryGlossarySettings contains the glossary library location and strictness.
+type RepositoryGlossarySettings struct {
+	Dir    *string `yaml:"dir" json:"dir"`
+	Strict *string `yaml:"strict" json:"strict"`
 }
 
 // RepositoryThemeSettings contains editable repository theme inputs.
@@ -182,6 +189,13 @@ func ValidateRepositorySettings(settings RepositorySettings) []RepositoryValidat
 				validatePattern(&issues, path+".match", *rule.Match)
 			}
 			validateRuleSettings(&issues, path, rule)
+		}
+	}
+	if strict := settings.Glossary.Strict; strict != nil {
+		switch strings.TrimSpace(*strict) {
+		case "", "off", "refs", "complete":
+		default:
+			appendValidationIssue(&issues, "glossary.strict", "invalid_value", "must be off, refs, or complete")
 		}
 	}
 	for _, field := range []struct {
@@ -421,7 +435,7 @@ func (d *RepositoryDocument) Replace(settings RepositorySettings) error {
 	if err := validateRepositorySettings(settings); err != nil {
 		return err
 	}
-	if err := d.clearUnsetSettings(settings); err != nil {
+	if err := d.clearUnsetSettings(settings, true); err != nil {
 		return err
 	}
 	if settings.Rules != nil {
@@ -433,7 +447,35 @@ func (d *RepositoryDocument) Replace(settings RepositorySettings) error {
 	return d.Apply(settings)
 }
 
-func (d *RepositoryDocument) clearUnsetSettings(settings RepositorySettings) error {
+// ReplaceSiteSettings applies the repository form. A nil Rules pointer
+// retains the original sequence, including its declaration and comments.
+func (d *RepositoryDocument) ReplaceSiteSettings(settings RepositorySettings) error {
+	if d == nil || d.root == nil {
+		return errors.New("repository document is not initialized")
+	}
+	if err := validateRepositorySettings(settings); err != nil {
+		return err
+	}
+	if err := d.clearUnsetSettings(settings, false); err != nil {
+		return err
+	}
+	fields := []settingValue{
+		{key: "dir", value: settings.Glossary.Dir}, {key: "strict", value: settings.Glossary.Strict},
+	}
+	if err := clearUnsetSettingsSection(d.root, "glossary", fields); err != nil {
+		return err
+	}
+	if err := applySettingsSection(d.root, "glossary", fields); err != nil {
+		return err
+	}
+	if err := replaceRules(d.root, settings.Rules); err != nil {
+		return err
+	}
+	settings.Rules = nil
+	return d.Apply(settings)
+}
+
+func (d *RepositoryDocument) clearUnsetSettings(settings RepositorySettings, clearRules bool) error {
 	if err := clearUnsetSettingsSection(d.root, "site", []settingValue{
 		{key: "title", value: settings.Site.Title}, {key: "language", value: settings.Site.Language}, {key: "home", value: settings.Site.Home},
 	}); err != nil {
@@ -445,7 +487,7 @@ func (d *RepositoryDocument) clearUnsetSettings(settings RepositorySettings) err
 	if err := clearUnsetFileOptionsSettings(d.root, "render", settings.Render); err != nil {
 		return err
 	}
-	if settings.Rules == nil {
+	if clearRules && settings.Rules == nil {
 		removeMappingValue(d.root, "rules")
 	}
 	if err := clearUnsetSettingsSection(d.root, "theme", []settingValue{

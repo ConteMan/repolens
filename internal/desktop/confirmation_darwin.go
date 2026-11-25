@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strconv"
@@ -18,15 +19,6 @@ type ruleChange struct {
 type ruleConfirmation struct {
 	target        string
 	before, after []config.RepositoryRuleSettings
-}
-
-func (s *Session) confirmation() ruleConfirmation {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.candidate == nil {
-		return ruleConfirmation{}
-	}
-	return ruleConfirmation{s.candidate.Path, documentRules(s.baseline), documentRules(s.candidate)}
 }
 
 func ruleChanges(before, after []config.RepositoryRuleSettings) []ruleChange {
@@ -128,8 +120,22 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 			case change.after == nil:
 				title = t("删除规则", "Removed rule")
 			}
-			ui.Text(c, title).Bold()
 			before, after := d.confirmationFields(change.before), d.confirmationFields(change.after)
+			if change.before == nil {
+				d.confirmationRow(c, title, func() {
+					summary := valueText(after[0].value)
+					if change.after.Render != nil {
+						if *change.after.Render {
+							summary += "  ·  " + t("生成浏览页", "Generate browser pages")
+						} else {
+							summary += "  ·  " + t("跳过浏览页", "Skip browser pages")
+						}
+					}
+					ui.Text(c, summary).FillWidth().Selectable().TextColor(c.Theme().TextMuted)
+				})
+			} else {
+				ui.Text(c, title).Bold()
+			}
 			if change.before != nil && change.after != nil {
 				ui.Text(c, valueText(after[0].value)).FillWidth().Selectable()
 			}
@@ -138,6 +144,9 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 				ui.Text(c, valueText(value)).FillWidth().Selectable()
 			}
 			for i := range before {
+				if change.before == nil && i < 2 {
+					continue
+				}
 				if reflect.DeepEqual(before[i].value, after[i].value) {
 					continue
 				}
@@ -157,8 +166,7 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 		})
 	}
 	ordered := func(label string, rules []config.RepositoryRuleSettings) {
-		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			ui.Text(c, label).Bold()
+		d.confirmationRow(c, label, func() {
 			if len(rules) == 0 {
 				ui.Text(c, t("无规则", "No rules")).TextColor(c.Theme().TextMuted)
 			}
@@ -189,8 +197,101 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 		ordered(t("原有顺序", "Previous order"), data.before)
 	}
 	ordered(t("最终顺序", "Final order"), data.after)
-	raw := ui.Local(ui.Box(c).Size(0, 0), "raw", func() bool { return false })
-	ui.Collapsible(c, t("查看 YAML 差异", "View YAML diff"), raw, func() {
-		ui.Text(c, strings.TrimSuffix(d.diff, "\n")).Font("monospace").FillWidth().Selectable()
+}
+
+func (d *desktopWindow) confirmationRow(c *ui.Context, label string, content func()) {
+	ui.Row(c).FillWidth().Gap(12).Children(func() {
+		ui.Text(c, label).Bold().WidthPercent(21)
+		ui.Column(c).Grow(1).MinWidth(0).Gap(4).Children(content)
+	})
+}
+
+func (d *desktopWindow) configurationChangeView(c *ui.Context, change ConfigChange) {
+	t := d.text
+	ui.Column(c).Key(change.Path).FillWidth().Gap(14).Children(func() {
+		isBuilder := change.Path == d.session.BuilderPath
+		targetLabel := t("仓库 / .repolens.yml", "Repository / .repolens.yml")
+		if isBuilder {
+			targetLabel = t("外部配置 / ", "External configuration / ") + filepath.Base(change.Path)
+		}
+		ui.Text(c, targetLabel).FillWidth().TextColor(c.Theme().TextMuted).Tooltip(change.Path)
+		if isBuilder {
+			ui.Text(c, change.Path).FillWidth().TextColor(c.Theme().TextMuted).Selectable()
+		}
+		renderFields := func(before, after []siteField) {
+			for i := range before {
+				old, next := siteFieldValue(before[i].value), siteFieldValue(after[i].value)
+				if reflect.DeepEqual(old, next) {
+					continue
+				}
+				value := func(value *string) string {
+					if value == nil {
+						return t("继承", "Inherit")
+					}
+					if *value == "" {
+						return t("空字符串", "Empty string")
+					}
+					for _, item := range after[i].options {
+						if item.value == *value {
+							return t(item.zh, item.en)
+						}
+					}
+					if _, ok := after[i].value.(**bool); ok {
+						if *value == "true" {
+							return t("开启", "On")
+						}
+						return t("关闭", "Off")
+					}
+					return *value
+				}
+				ui.Column(c).FillWidth().Gap(4).Children(func() {
+					ui.Text(c, t(after[i].zh, after[i].en)).Bold()
+					ui.Text(c, t("修改前", "Before")).TextColor(c.Theme().TextMuted)
+					ui.Text(c, value(old)).FillWidth().Selectable()
+					ui.Text(c, t("修改后", "After")).TextColor(c.Theme().TextMuted)
+					ui.Text(c, value(next)).FillWidth().Selectable()
+				})
+			}
+		}
+		if isBuilder {
+			renderFields(builderFields(&change.BeforeBuilder), builderFields(&change.AfterBuilder))
+		}
+		{
+			for _, tab := range []desktopSiteTab{tabBasics, tabBrowse, tabRender, tabAgent} {
+				renderFields(siteFields(&change.BeforeSettings, tab), siteFields(&change.AfterSettings, tab))
+			}
+			before, after := change.BeforeSettings.Rules, change.AfterSettings.Rules
+			if !reflect.DeepEqual(before, after) {
+				data := ruleConfirmation{}
+				if before != nil {
+					data.before = *before
+				}
+				if after != nil {
+					data.after = *after
+				}
+				d.confirmationDetails(c, data, ruleChanges(data.before, data.after))
+			}
+			if before, after := change.BeforeSettings.Ignore, change.AfterSettings.Ignore; !reflect.DeepEqual(before, after) {
+				ui.Text(c, t("忽略路径", "Ignored Paths")).Bold()
+				for _, side := range []struct {
+					label  string
+					values *[]string
+				}{{t("修改前", "Before"), before}, {t("修改后", "After"), after}} {
+					ui.Text(c, side.label).TextColor(c.Theme().TextMuted)
+					display := t("继承", "Inherit")
+					if side.values != nil {
+						display = strings.Join(*side.values, "\n")
+						if len(*side.values) == 0 {
+							display = t("空列表", "Empty list")
+						}
+					}
+					ui.Text(c, display).FillWidth().Selectable()
+				}
+			}
+		}
+		raw := ui.Local(ui.Box(c).Size(0, 0), "raw", func() bool { return false })
+		ui.Collapsible(c, t("查看 YAML 差异", "View YAML diff"), raw, func() {
+			ui.Text(c, strings.TrimSuffix(change.Diff, "\n")).Font("monospace").FillWidth().Selectable()
+		})
 	})
 }

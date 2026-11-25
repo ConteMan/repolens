@@ -50,9 +50,9 @@ repolens ui                                       # configure and build the curr
 
 The build output is a plain static directory — hand it to any static host; see the [deployment guide](docs/deploy.md). `repolens ui` builds to a local cache by default and can use a safe custom absolute output directory for the current page session; this choice is never written to repository configuration. Rendering is customizable through an optional `.repolens.yml` at the repository root (sensible defaults need no config); see the [configuration model](docs/design/config.md).
 
-## Native macOS rule editor
+## Native macOS workspace
 
-Run `go run ./cmd/repolens-desktop` from this source checkout. Choose a Git worktree root to add, edit, reorder or delete path rules. Save Settings opens a change review. Confirm Save writes the rules to the repository’s `.repolens.yml`.
+Run `go run ./cmd/repolens-desktop` from this checkout and select a Git worktree. Edit site settings across six tabs, then choose **Save Settings** to review and confirm the changes. Select an external YAML file to edit builder settings. **Build and Preview** builds from the saved configuration and opens the latest successful build in your browser or Finder. App settings include interface language and update preferences.
 
 ## Glossary annotations
 

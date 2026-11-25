@@ -128,14 +128,14 @@ func (e *ruleEditor) view(c *ui.Context, english bool, save func(config.Reposito
 		ui.Row(c).Key(path).FillWidth().Gap(12).Children(func() {
 			labelElement := ui.Text(c, label).Bold().WidthPercent(36).Margin(8, 0, 0)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(4).Children(func() {
-				input := control().LabelledBy(labelElement).FillWidth().Height(36)
+				input := control().LabelledBy(labelElement).FillWidth().Height(36).Background(c.Theme().Background)
 				if e.locate == path {
 					input.Focus().ScrollIntoView()
 					e.locate = ""
 				}
 				if e.issue != nil && editorFieldPath(e.issue.Path) == path {
-					input.BorderColor(ui.Hex("#B74337"))
-					ui.Text(c, editorIssueMessage(e.issue, english)).TextColor(ui.Hex("#B74337"))
+					input.BorderColor(c.Theme().Danger)
+					ui.Text(c, editorIssueMessage(e.issue, english)).TextColor(c.Theme().Danger)
 				}
 			})
 		})
@@ -221,10 +221,10 @@ func (e *ruleEditor) view(c *ui.Context, english bool, save func(config.Reposito
 		title = t("新增规则", "Add rule")
 		action = t("加入草稿", "Add to draft")
 	}
-	return ui.Column(c).Key(e).FillWidth().Grow(1).MinHeight(0).Gap(16).Children(func() {
-		ui.Text(c, title).FontSize(20).Bold()
-		ui.Scroll(c).FillWidth().Grow(1).MinHeight(0).Children(func() {
-			ui.Column(c).FillWidth().Gap(12).Padding(0, 12, 8, 0).Children(func() {
+	return ui.Column(c).Key(e).FillWidth().Grow(1).MinHeight(0).Gap(20).Children(func() {
+		ui.Text(c, title).FontSize(16).Bold()
+		ui.Scroll(c).FillWidth().Height(292).Shrink(1).MinHeight(0).Children(func() {
+			ui.Column(c).FillWidth().Gap(12).Padding(0, 0, 8).Children(func() {
 				input("match", t("匹配路径", "Match path"), "docs/private/**", &e.match)
 				boolean("render", t("生成浏览页", "Generate browser pages"), &e.rule.Render)
 				group("markdown", t("Markdown 配置", "Markdown"), &e.markdownExplicit, func() {
@@ -271,8 +271,8 @@ func (e *ruleEditor) view(c *ui.Context, english bool, save func(config.Reposito
 			})
 		})
 		ui.Row(c).FillWidth().Gap(8).Children(func() {
-			ui.Box(c).WidthPercent(36)
-			if ui.PrimaryButton(c, action).Clicked() {
+			ui.Box(c).WidthPercent(36).Margin(0, 4, 0, 0)
+			if ui.PrimaryButton(c, action).Height(36).PaddingX(14).Clicked() {
 				rule, issue := e.candidate()
 				if issue == nil {
 					save(rule)
@@ -281,7 +281,7 @@ func (e *ruleEditor) view(c *ui.Context, english bool, save func(config.Reposito
 					c.Invalidate()
 				}
 			}
-			if ui.Button(c, t("取消", "Cancel")).Clicked() {
+			if ui.Button(c, t("取消", "Cancel")).Height(36).PaddingX(14).Clicked() {
 				cancel()
 			}
 		})

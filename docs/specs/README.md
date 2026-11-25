@@ -26,6 +26,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 已实现 |
 | [019](019-skill-install.md) | Skill 安装与更新 | skills, internal/skill, cli | M12 | 已实现 |
 | [020](020-browser-reading.md) | 浏览站阅读体验 | internal/config, theme, site, ui | M13 | 已实现 |
+| [022](022-native-workspace.md) | 完整原生桌面工作区 | internal/desktop | M14 | 实现中 |
 | [021](021-native-desktop-rules.md) | 原生桌面端打开仓库与保存规则 | internal/config、internal/desktop | M14 | 已实现 |
 
 ## 依赖与实现顺序

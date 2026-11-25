@@ -222,3 +222,125 @@ func readConfig(t *testing.T, path string) string {
 	}
 	return string(data)
 }
+
+func TestSiteAndBuilderChangesShareConfirmation(t *testing.T) {
+	root := t.TempDir()
+	initGit(t, root)
+	local := filepath.Join(root, ".repolens.yml")
+	external := filepath.Join(t.TempDir(), "builder.yml")
+	const localSource = "source:\n  repo: untrusted-source\n"
+	const externalSource = "access:\n  encrypt:\n    password_env: PRIVATE_PASSWORD\n"
+	writeConfig(t, local, localSource)
+	writeConfig(t, external, externalSource)
+
+	session, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if session.LoadBuilder(local) == nil {
+		t.Fatal("selected repository configuration as trusted")
+	}
+	if err := session.LoadBuilder(external); err != nil {
+		t.Fatal(err)
+	}
+	session.Settings.Site.Title = new("New title")
+	session.Settings.Glossary.Strict = new("complete")
+	session.Settings.Ignore = new([]string{"drafts/**"})
+	session.Builder.Access.NoIndex = new(false)
+	session.Builder.Output.Dir = new("build")
+	changes, err := session.PrepareChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 2 || changes[0].Path != session.baseline.Path ||
+		changes[1].Path != session.BuilderPath ||
+		!strings.Contains(changes[0].Diff, "New title") ||
+		!strings.Contains(changes[1].Diff, "noindex: false") ||
+		strings.Contains(changes[0].Diff, "untrusted-source") ||
+		strings.Contains(changes[1].Diff, "PRIVATE_PASSWORD") {
+		t.Fatalf("unexpected changes: %+v", changes)
+	}
+	writeConfig(t, external, externalSource+"vendor: separate edit\n")
+	if err := session.Save(); !errors.Is(err, config.ErrRevisionConflict) {
+		t.Fatalf("Save() error = %v, want external revision conflict", err)
+	}
+	if readConfig(t, local) != localSource || !session.Dirty() || !session.BuilderDirty() {
+		t.Fatal("existing file or drafts changed after conflict")
+	}
+	writeConfig(t, external, externalSource)
+	if _, err := session.PrepareChanges(); err != nil {
+		t.Fatal(err)
+	}
+	if err := session.Save(); err != nil {
+		t.Fatal(err)
+	}
+	if session.Dirty() || !strings.Contains(readConfig(t, local), localSource) ||
+		!strings.Contains(readConfig(t, external), externalSource) {
+		t.Fatal("save dropped configuration or left unapplied drafts")
+	}
+	loaded, _, err := config.Load(root, external, config.Flags{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Site.Title != "New title" || loaded.Glossary.Strict != "complete" ||
+		!loaded.Ignored("drafts/example.md") || loaded.Access.NoIndex || loaded.Output.Dir != "build" ||
+		loaded.Source.Repo != "" {
+		t.Fatalf("saved values did not reach both configuration domains: %+v", loaded)
+	}
+}
+
+func TestSharedExternalDraftAppliesBuildPrecedence(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "repo")
+	initGit(t, root)
+	repository := filepath.Join(root, ".repolens.yml")
+	external := filepath.Join(t.TempDir(), "external.yml")
+	const repoYAML = "site:\n  title: Repository\nrender:\n  markdown:\n    toc: true\n"
+	const externalYAML = "site:\n  title: External\naccess:\n  noindex: false\ncustom: keep\n"
+	writeConfig(t, repository, repoYAML)
+	writeConfig(t, external, externalYAML)
+	session, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := session.LoadBuilder(external); err != nil {
+		t.Fatal(err)
+	}
+
+	session.Settings.Site.Title = new("Repository Draft")
+	session.ExternalSettings.Site.Title = new("External Draft")
+	session.ExternalSettings.Render.Markdown.TOC = new(false)
+	session.ExternalRules = append(session.ExternalRules, config.RepositoryRuleSettings{Match: new("docs/**")})
+
+	resolved, err := config.ResolveSharedSettings(session.Settings, session.ExternalSettings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved.Site.Title == nil || *resolved.Site.Title != "External Draft" ||
+		resolved.Render.Markdown.TOC == nil || *resolved.Render.Markdown.TOC {
+		t.Fatal("shared draft precedence is incorrect")
+	}
+
+	changes, err := session.PrepareChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(changes) != 2 || !strings.Contains(changes[0].Diff, "Repository Draft") ||
+		!strings.Contains(changes[1].Diff, "External Draft") || !strings.Contains(changes[1].Diff, "docs/**") {
+		t.Fatalf("unexpected shared differences %#v", changes)
+	}
+	if readConfig(t, external) != externalYAML || readConfig(t, repository) != repoYAML {
+		t.Fatal("preparing changed a file")
+	}
+	if err := session.Save(); err != nil {
+		t.Fatal(err)
+	}
+	effective, _, err := config.Load(root, external, config.Flags{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if effective.Site.Title != "External Draft" || effective.Render.Markdown.TOC ||
+		effective.Access.NoIndex || len(effective.Rules) != 1 || !strings.Contains(readConfig(t, external), "custom: keep") ||
+		session.Dirty() {
+		t.Fatalf("persisted configuration does not match the prepared draft: %#v", effective)
+	}
+}

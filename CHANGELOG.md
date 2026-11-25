@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- macOS 新增 MyGo 原生规则编辑器，可打开本地 Git 工作树并在核对差异后保存路径规则。CLI 与桌面端共用 Go 1.27.4。
+- macOS 新增 MyGo 原生工作区，可编辑六组站点设置、核对跨文件差异、构建并预览站点，支持桌面界面语言和更新偏好。CLI 与桌面端共用 Go 1.27.4。
 
 ## [1.9.0] - 2026-11-25
 

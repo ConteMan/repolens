@@ -95,15 +95,19 @@ func (s *buildService) run(id, repository string, target buildTarget) {
 }
 
 func (s *buildService) build(id, repository string, target buildTarget) error {
+	return s.buildSource(id, source.Spec{Repo: repository, Worktree: true}, "", target)
+}
+
+func (s *buildService) buildSource(id string, input source.Spec, external string, target buildTarget) error {
 	s.setStage(id, "opening")
-	tree, err := source.Open(s.ctx, source.Spec{Repo: repository, Worktree: true})
+	tree, err := source.Open(s.ctx, input)
 	if err != nil {
 		return fmt.Errorf("open working tree: %w", err)
 	}
 	defer tree.Cleanup()
 
 	s.setStage(id, "loading_config")
-	cfg, warnings, err := config.Load(tree.Root, "", config.Flags{})
+	cfg, warnings, err := config.Load(tree.Root, external, config.Flags{})
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
