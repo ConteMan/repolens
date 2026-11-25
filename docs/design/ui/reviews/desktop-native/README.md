@@ -22,7 +22,7 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 
 ## 窗口与导航
 
-22 个业务画板均引用「布局 / 桌面窗口」（S4y4j），页面内容填入主内容插槽。变量 windowTop 同时控制两栏的 48 px 顶部留白，titleRepoGap 控制标题行和仓库选择行之间的 4 px 间距。标题和仓库文字共用 18 px 左边距。
+22 个业务画板均引用「布局 / 桌面窗口」（S4y4j），页面内容填入主内容插槽。变量 windowTop 同时控制两栏的 48 px 顶部留白，titleRepoGap 控制标题行和仓库选择行之间的 4 px 间距。标题图标与仓库选择器共用 18 px 左边距。窗口标题在 24 px 折页标志右侧留 8 px，深色模式使用对应浅色标志。
 
 主窗口使用系统窗口按钮和连续背景。空白区可拖动窗口，导航、按钮、文本输入、分隔条分别处理点击、编辑和拖动。侧栏默认 236 px，建议范围 192–340 px；用指针拖动或键盘方向键调整，双击恢复默认。宽度作为应用偏好保存。仓库名称按实际可用宽度中间省略，保留开头与末尾。悬停或键盘聚焦可查看全名，打开仓库菜单可看到完整路径并切换项目。窄窗口优先保留内容区；标签超宽时可横向滚动。
 
@@ -54,7 +54,7 @@ SITE-16 使用 1280 × 800 的窗口展示 YAML 差异模式。保存确认默�
 |---|---|
 | [基础信息](hiWvL.png) | site.title、language、home |
 | [浏览与主题](SOzgK.png) | view.directory-files、content-width、content-align、tree_position、tree_expand_depth、toc_panel、search；theme.vars 任意键值、css、templates |
-| [渲染与术语](l2DeMY.png) | render.markdown.toc、toc_min_headings、anchors、mermaid、frontmatter_title、glossary；render.html.view；render.code.line_numbers、theme；render.max_file_size；glossary.dir、strict |
+| [渲染与术语](l2DeMY.png) | render.markdown.toc、toc_min_headings、anchors、mermaid、math、frontmatter_title、glossary；render.html.view；render.code.line_numbers、theme；render.max_file_size；glossary.dir、strict |
 | [路径与规则](IUxOV.png) | ignore 列表；rules 的新增、删除和排序；每条规则的 match、render、markdown、html、code、max_file_size。子字段使用与全局渲染相同的编辑器，支持继承及显式关闭 |
 | [Agent 输出](zfMXE.png) | agent.llms_txt、llms_full.enabled、llms_full.max_size、index_json |
 | [构建者配置](Z0IhMH.png) | source.repo、ref；output.dir、base_path；access.noindex。仅写入构建者选择的外部配置 |
@@ -84,3 +84,9 @@ Spec 022 使用临时 Git 工作树，在 macOS 原生窗口编辑站点设置�
 | 构建与应用设置 | [最近一次成功构建](runtime/workspace/BUILD-01.png)、[英文应用设置](runtime/workspace/APP-02.png) |
 
 Grok CLI 交叉检查了首轮运行截图与设计稿。根据对照调整了侧栏导航、表单密度、规则页层级、构建结果和更新控件，并在真实窗口重新检查。更新安装使用本地签名测试包验证，正式发布渠道在首个桌面版本发布时验收。
+
+## 桌面版 0.1.0 回归
+
+首发前重新打开桌面设计源文件并渲染 22 个业务画板；运行 macOS 原生窗口逐一选择六个站点设置标签，在带 README 的 Git 工作树上构建并打开应用设置。对照图每行左侧为设计画板，右侧为 1024 × 632 pt 窗口的 MyGo 内容截图。依次为 SITE-01 至 SITE-06、BUILD-01、APP-01。系统窗口按钮由 AppKit 单独绘制。APP-01 左列演示已下载更新，右列为实际启动时的手动检查入口。仓库配置、构建路径、时间和草稿状态取当前数据。[首发设计与实机对照](runtime/desktop-0.1.0.png)
+
+CMP-01 标题栏复用 DS-02 的苔墨折页。SITE-02 的文件树位置使用单选项。SITE-03 按实际编辑顺序展示独立设置和继承状态，滚动区域包含数学公式、术语校验、代码主题及大小上限。BUILD-01 的来源和输出路径共用值列起点。宽屏共用 1000 pt 正文宽度约束。
