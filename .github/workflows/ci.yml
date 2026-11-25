@@ -75,3 +75,24 @@ jobs:
           test -f /tmp/dogfood-dist/view/index.html
           test -f /tmp/dogfood-dist/llms.txt
           test -f /tmp/dogfood-dist/index.json
+
+  native-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go vet ./internal/desktop ./cmd/repolens-desktop
+      - run: go test -race ./internal/desktop
+      - run: go build -o "$RUNNER_TEMP/repolens-desktop" ./cmd/repolens-desktop
+      - name: system directory picker smoke
+        timeout-minutes: 8
+        run: bash .github/scripts/desktop-picker-smoke.sh
+      - name: upload directory picker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-directory-picker
+          path: ${{ runner.temp }}/native-picker-artifacts/
+          if-no-files-found: ignore

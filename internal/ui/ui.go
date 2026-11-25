@@ -21,7 +21,6 @@ import (
 
 	"github.com/ConteMan/repolens/internal/config"
 	"github.com/ConteMan/repolens/internal/site"
-	"github.com/goccy/go-yaml"
 )
 
 const (
@@ -515,12 +514,12 @@ func prepareWrite(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "prepare_write_failed", "unable to serialize repository configuration")
 		return
 	}
-	previewBefore, err := redactTrustedSettings(before)
+	previewBefore, err := config.RepositorySettingsPreview(before)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "prepare_write_failed", "unable to prepare repository configuration preview")
 		return
 	}
-	previewAfter, err := redactTrustedSettings(after)
+	previewAfter, err := config.RepositorySettingsPreview(after)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "prepare_write_failed", "unable to prepare repository configuration preview")
 		return
@@ -529,26 +528,8 @@ func prepareWrite(w http.ResponseWriter, r *http.Request) {
 		configResponse: configResponse{Settings: repositorySettingsFromConfig(document.Settings), Revision: document.Revision},
 		Before:         previewBefore,
 		After:          previewAfter,
-		Diff:           unifiedDiff(previewBefore, previewAfter, document.Path),
+		Diff:           config.RepositorySettingsDiff(previewBefore, previewAfter, document.Path),
 	})
-}
-
-func redactTrustedSettings(data []byte) (string, error) {
-	if len(strings.TrimSpace(string(data))) == 0 {
-		return "", nil
-	}
-	var document map[string]any
-	if err := yaml.Unmarshal(data, &document); err != nil {
-		return "", err
-	}
-	delete(document, "source")
-	delete(document, "output")
-	delete(document, "access")
-	preview, err := yaml.Marshal(document)
-	if err != nil {
-		return "", err
-	}
-	return string(preview), nil
 }
 
 func commitConfig(w http.ResponseWriter, r *http.Request) {
@@ -668,37 +649,6 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
-}
-
-func unifiedDiff(before, after, filePath string) string {
-	if before == after {
-		return ""
-	}
-	beforeLines := strings.Split(strings.TrimSuffix(before, "\n"), "\n")
-	afterLines := strings.Split(strings.TrimSuffix(after, "\n"), "\n")
-	if before == "" {
-		beforeLines = nil
-	}
-	if after == "" {
-		afterLines = nil
-	}
-	var diff strings.Builder
-	fmt.Fprintf(&diff, "--- %s\n+++ %s\n", filePath, filePath)
-	fmt.Fprintf(&diff, "@@ -%d,%d +%d,%d @@\n", hunkStart(len(beforeLines)), len(beforeLines), hunkStart(len(afterLines)), len(afterLines))
-	for _, line := range beforeLines {
-		fmt.Fprintf(&diff, "-%s\n", line)
-	}
-	for _, line := range afterLines {
-		fmt.Fprintf(&diff, "+%s\n", line)
-	}
-	return diff.String()
-}
-
-func hunkStart(lineCount int) int {
-	if lineCount == 0 {
-		return 0
-	}
-	return 1
 }
 
 func requireToken(token string, next http.Handler) http.Handler {

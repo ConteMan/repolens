@@ -50,6 +50,10 @@ repolens ui                                       # configure and build the curr
 
 The build output is a plain static directory — hand it to any static host; see the [deployment guide](docs/deploy.md). `repolens ui` builds to a local cache by default and can use a safe custom absolute output directory for the current page session; this choice is never written to repository configuration. Rendering is customizable through an optional `.repolens.yml` at the repository root (sensible defaults need no config); see the [configuration model](docs/design/config.md).
 
+## Native macOS rule editor
+
+Run `go run ./cmd/repolens-desktop` from this source checkout. Choose a Git worktree root to add, edit, reorder or delete path rules. Save Settings opens a change review. Confirm Save writes the rules to the repository’s `.repolens.yml`.
+
 ## Glossary annotations
 
 In technical documentation, comprehension cost tends to concentrate on two kinds of words: domain concepts the reader does not know, and **words that mean different things in different places** — the same term refers to something else on another platform or in another context. Explaining inline breaks the main thread; a central glossary page forces readers to interrupt and jump; external links take them off-site and explain the general meaning rather than what the word means *in this document*.
