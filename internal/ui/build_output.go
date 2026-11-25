@@ -40,7 +40,7 @@ const (
 
 func (s *buildService) buildTarget(repository, requestedPath string, confirmOverwrite bool) (buildTarget, error) {
 	if strings.TrimSpace(requestedPath) == "" {
-		path, err := s.outputPath(repository)
+		path, err := cachedBuildOutput(repository, s.cacheRoot)
 		if err != nil {
 			return buildTarget{}, err
 		}

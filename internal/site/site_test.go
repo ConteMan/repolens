@@ -51,6 +51,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertExists(t, outDir, ".repolens-build")
 	assertExists(t, outDir, "index.html")
 	assertExists(t, outDir, "robots.txt")
+	assertExists(t, outDir, "_assets/favicon.svg")
 	assertExists(t, outDir, "_assets/site.css")
 	assertExists(t, outDir, "_assets/site.js")
 	assertExists(t, outDir, snapshotMetadataPath)
@@ -114,6 +115,7 @@ func TestBuildEndToEnd(t *testing.T) {
 		t.Fatalf("snapshot id is not lowercase: %q", snapshot.Snapshot)
 	}
 	assertContains(t, rootPage, `data-snapshot-id="`+snapshot.Snapshot+`"`)
+	assertContains(t, rootPage, `<link rel="icon" href="../_assets/favicon.svg">`)
 	assertContains(t, rootPage, `data-snapshot-src="../_assets/snapshot.json"`)
 	assertContains(t, rootPage, `id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden`)
 	assertContains(t, rootPage, `<meta name="robots" content="noindex">`)
@@ -874,6 +876,7 @@ func TestBuildRootIndexHTMLKeepsMirror(t *testing.T) {
 	runGit(t, repo, "config", "user.email", "test@example.com")
 	runGit(t, repo, "config", "user.name", "Test User")
 	writeFile(t, repo, "index.html", "<!doctype html><p>root index</p>\n")
+	writeFile(t, repo, "favicon.svg", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"/>`)
 	writeFile(t, repo, "docs/guide.md", "# Guide\n")
 	runGit(t, repo, "add", ".")
 	runGit(t, repo, "commit", "-m", "initial")
@@ -890,6 +893,9 @@ func TestBuildRootIndexHTMLKeepsMirror(t *testing.T) {
 
 	// 根目录页合并其浏览形态（默认 embed → iframe），且无独立文件页。
 	rootView := readOutput(t, outDir, "view/index.html")
+	assertMirrorEqual(t, repo, outDir, "favicon.svg")
+	assertContains(t, rootView, `<link rel="icon" href="../favicon.svg">`)
+	assertContains(t, readOutput(t, outDir, "view/docs/guide.md/index.html"), `<link rel="icon" href="../../../favicon.svg">`)
 	assertContains(t, rootView, `<iframe class="html-preview" src="../index.html"`)
 	assertUnavailable(t, outDir, "view/index.html/index.html")
 }

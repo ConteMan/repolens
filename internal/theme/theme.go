@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ConteMan/repolens/brand"
 	"github.com/ConteMan/repolens/internal/render"
 	"github.com/ConteMan/repolens/internal/source"
 )
@@ -72,6 +73,7 @@ type PageData struct {
 	ContentWidth     string
 	ContentAlign     string
 	Title, SiteTitle string
+	FaviconPath      string
 	RelRoot          string
 	TreePosition     string
 	Breadcrumbs      []Crumb
@@ -159,6 +161,9 @@ func (r *Renderer) Page(w io.Writer, d PageData) error {
 }
 
 func fillPageDefaults(d PageData) PageData {
+	if d.FaviconPath == "" {
+		d.FaviconPath = "_assets/favicon.svg"
+	}
 	if d.DirectoryFiles == "" {
 		d.DirectoryFiles = "auto"
 	}
@@ -203,6 +208,10 @@ func (r *Renderer) WriteAssets(outDir string) error {
 		if err := os.WriteFile(filepath.Join(assetsDir, name), data, 0o644); err != nil {
 			return err
 		}
+	}
+
+	if err := os.WriteFile(filepath.Join(assetsDir, "favicon.svg"), brand.FaviconSVG, 0o644); err != nil {
+		return err
 	}
 
 	chromaCSS, err := chromaCSS()

@@ -19,7 +19,7 @@ button:focus-visible, .control:focus-visible, .nav-item:focus-visible { outline:
 code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
 .app-shell { min-height: 100vh; isolation: isolate; }
 .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); min-height: 58px; padding: 0 var(--space-8); color: #f7fbf8; background: #14281d; border-bottom: 1px solid #294335; }
-.brand { display: flex; align-items: baseline; gap: var(--space-3); } .brand strong { font-size: 15px; letter-spacing: .02em; } .brand span { color: #b9c8bf; font-size: 12px; }
+.brand { display: flex; align-items: center; gap: var(--space-3); } .brand strong { font-size: 15px; letter-spacing: .02em; } .brand span { color: #b9c8bf; font-size: 12px; }
 .topbar code { max-width: 52vw; overflow: hidden; color: #cce2d5; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .page { width: min(1440px, calc(100% - 48px)); margin: 0 auto; padding: var(--space-8) 0 116px; }
 .open-panel { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(420px, 1.2fr); gap: 48px; align-items: end; padding: 30px 32px; color: #eef9f2; background: linear-gradient(120deg, #193d2a, #235e40); border: 1px solid #2e6a4c; border-radius: var(--radius-lg); box-shadow: var(--shadow); }

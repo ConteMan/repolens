@@ -908,14 +908,22 @@
           "alignItems": "center",
           "children": [
             {
-              "type": "icon",
+              "type": "path",
               "id": "LwGHY",
-              "name": "settings",
-              "width": 18,
-              "height": 18,
-              "icon": "settings",
-              "library": "lucide",
-              "fill": "$ink"
+              "name": "Lucide 0.468.0 / settings",
+              "geometry": "M12.22 2h-0.44a2 2 0 0 0-2 2v0.18a2 2 0 0 1-1 1.73l-0.43 0.25a2 2 0 0 1-2 0l-0.15-0.08a2 2 0 0 0-2.73 0.73l-0.22 0.38a2 2 0 0 0 0.73 2.73l0.15 0.1a2 2 0 0 1 1 1.72v0.51a2 2 0 0 1-1 1.74l-0.15 0.09a2 2 0 0 0-0.73 2.73l0.22 0.38a2 2 0 0 0 2.73 0.73l0.15-0.08a2 2 0 0 1 2 0l0.43 0.25a2 2 0 0 1 1 1.73v0.18a2 2 0 0 0 2 2h0.44a2 2 0 0 0 2-2v-0.18a2 2 0 0 1 1-1.73l0.43-0.25a2 2 0 0 1 2 0l0.15 0.08a2 2 0 0 0 2.73-0.73l0.22-0.39a2 2 0 0 0-0.73-2.73l-0.15-0.08a2 2 0 0 1-1-1.74v-0.5a2 2 0 0 1 1-1.74l0.15-0.09a2 2 0 0 0 0.73-2.73l-0.22-0.38a2 2 0 0 0-2.73-0.73l-0.15 0.08a2 2 0 0 1-2 0l-0.43-0.25a2 2 0 0 1-1-1.73v-0.18a2 2 0 0 0-2-2z m-3.22 10a3 3 0 1 0 6 0 3 3 0 1 0-6 0z",
+              "viewBox": [
+                0,
+                0,
+                24,
+                24
+              ],
+              "width": 16,
+              "height": 16,
+              "stroke": "$ink",
+              "strokeWidth": 1.3333333333333333,
+              "strokeLinejoin": "round",
+              "strokeLinecap": "round"
             }
           ]
         },
@@ -1459,14 +1467,22 @@
           "alignItems": "center",
           "children": [
             {
-              "type": "icon",
+              "type": "path",
               "id": "IlUZL",
-              "name": "sliders-horizontal",
+              "name": "Lucide 0.468.0 / sliders-horizontal",
+              "geometry": "M21 4l-7 0m-4 0l-7 0m18 8l-9 0m-4 0l-5 0m18 8l-5 0m-4 0l-9 0m11-18l0 4m-6 4l0 4m8 4l0 4",
+              "viewBox": [
+                0,
+                0,
+                24,
+                24
+              ],
               "width": 16,
               "height": 16,
-              "icon": "sliders-horizontal",
-              "library": "lucide",
-              "fill": "$ink"
+              "stroke": "$ink",
+              "strokeWidth": 1.3333333333333333,
+              "strokeLinejoin": "round",
+              "strokeLinecap": "round"
             },
             {
               "type": "text",
@@ -1682,7 +1698,7 @@
             {
               "type": "text",
               "id": "i3lRST",
-              "x": 18,
+              "x": 50,
               "y": 64,
               "name": "应用名",
               "fill": "$ink",
@@ -1690,6 +1706,24 @@
               "fontFamily": "Inter",
               "fontSize": 21,
               "fontWeight": "bold"
+            },
+            {
+              "type": "path",
+              "id": "NMpfX",
+              "x": 18,
+              "y": 65,
+              "name": "品牌 / 苔墨折页",
+              "reusable": true,
+              "geometry": "M12 24l31 14v50l-31-14z m38 12q16-25 36-28l-1 49q-17 4-35 25z m8 49q15-18 34-21v10z",
+              "viewBox": [
+                0,
+                0,
+                100,
+                100
+              ],
+              "fill": "#385442",
+              "width": 24,
+              "height": 24
             }
           ]
         },
@@ -1742,6 +1776,98 @@
                   "fontFamily": "Inter",
                   "fontSize": 14,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "numMB0",
+          "x": 176,
+          "y": 194,
+          "name": "字段 / 数值与单位",
+          "reusable": true,
+          "width": 240,
+          "height": 36,
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "numBox",
+              "name": "数字输入",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "cornerRadius": 6,
+              "stroke": "$edge",
+              "strokeWidth": 1,
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "numTxt",
+                  "name": "数值",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "2",
+                  "textAlign": "right",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "unitSel",
+              "name": "单位选择",
+              "width": 90,
+              "height": 36,
+              "fill": "$paper",
+              "cornerRadius": 6,
+              "stroke": "$edge",
+              "strokeWidth": 1,
+              "padding": [
+                0,
+                12
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "unitTxt",
+                  "name": "单位",
+                  "fill": "$ink",
+                  "content": "MB",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "path",
+                  "id": "unitArr",
+                  "name": "Lucide 0.468.0 / chevron-down",
+                  "geometry": "M6 9l6 6 6-6",
+                  "viewBox": [
+                    0,
+                    0,
+                    24,
+                    24
+                  ],
+                  "width": 14,
+                  "height": 14,
+                  "stroke": "$muted",
+                  "strokeWidth": 1.1666666666666667,
+                  "strokeLinejoin": "round",
+                  "strokeLinecap": "round"
                 }
               ]
             }
@@ -1830,7 +1956,7 @@
               "gap": "$titleRepoGap",
               "padding": [
                 0,
-                18
+                10
               ],
               "children": [
                 {
@@ -1839,8 +1965,19 @@
                   "name": "首行",
                   "width": "fill_container",
                   "height": 36,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    8
+                  ],
                   "alignItems": "center",
                   "children": [
+                    {
+                      "id": "OmOnd",
+                      "type": "ref",
+                      "ref": "NMpfX",
+                      "name": "折页标志"
+                    },
                     {
                       "type": "text",
                       "id": "s7o6Cc",
@@ -1859,7 +1996,12 @@
                   "name": "仓库选择",
                   "width": "fill_container",
                   "height": 28,
+                  "cornerRadius": 6,
                   "gap": 4,
+                  "padding": [
+                    0,
+                    8
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -1875,13 +2017,22 @@
                       "fontWeight": "600"
                     },
                     {
-                      "type": "icon",
+                      "type": "path",
                       "id": "g25xXb",
+                      "name": "Lucide 0.468.0 / chevron-down",
+                      "geometry": "M6 9l6 6 6-6",
+                      "viewBox": [
+                        0,
+                        0,
+                        24,
+                        24
+                      ],
                       "width": 14,
                       "height": 14,
-                      "icon": "chevron-down",
-                      "library": "lucide",
-                      "fill": "$muted"
+                      "stroke": "$muted",
+                      "strokeWidth": 1.1666666666666667,
+                      "strokeLinejoin": "round",
+                      "strokeLinecap": "round"
                     }
                   ]
                 }
@@ -1937,7 +2088,8 @@
                   "fill": "$surface",
                   "descendants": {
                     "IlUZL": {
-                      "icon": "play"
+                      "geometry": "M6 3 20 12 6 21 6 3Z",
+                      "name": "Lucide 0.468.0 / play"
                     },
                     "bbk1n": {
                       "content": "构建与预览",
@@ -2048,7 +2200,7 @@
                 {
                   "type": "text",
                   "id": "u5liDA",
-                  "x": 43,
+                  "x": 0,
                   "y": 152,
                   "name": "打开 Git 仓库",
                   "fill": "#202124",
@@ -2060,11 +2212,11 @@
                 {
                   "type": "text",
                   "id": "R69we",
-                  "x": 43,
+                  "x": 0,
                   "y": 212,
                   "name": "选择文档所在的文件夹。",
                   "fill": "#65676b",
-                  "content": "选择文档所在的文件夹。",
+                  "content": "选择文档所在的 Git 工作树根目录。",
                   "fontFamily": "Inter",
                   "fontSize": 16,
                   "fontWeight": "normal"
@@ -2074,7 +2226,7 @@
                   "type": "ref",
                   "ref": "FqyhL",
                   "name": "选择文件夹…",
-                  "x": 43,
+                  "x": 0,
                   "y": 276,
                   "descendants": {
                     "sBShM": {
@@ -2950,17 +3102,50 @@
                       "fontWeight": "600"
                     },
                     {
-                      "id": "duyyJ",
-                      "type": "ref",
-                      "ref": "RLM9s",
+                      "type": "frame",
+                      "id": "d7TKbC",
                       "x": 264,
                       "y": 144,
+                      "name": "文件树位置",
                       "width": 447,
-                      "descendants": {
-                        "Zixyv": {
-                          "content": "左侧"
+                      "height": 36,
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "P1DLi",
+                          "type": "ref",
+                          "ref": "GhUUk",
+                          "name": "继承",
+                          "descendants": {
+                            "zn3l1": {
+                              "content": "继承"
+                            }
+                          }
+                        },
+                        {
+                          "id": "BhtDs",
+                          "type": "ref",
+                          "ref": "hMqv1",
+                          "name": "左侧",
+                          "descendants": {
+                            "Bed2F": {
+                              "content": "左侧"
+                            }
+                          }
+                        },
+                        {
+                          "id": "KrJ0a",
+                          "type": "ref",
+                          "ref": "hMqv1",
+                          "name": "右侧",
+                          "descendants": {
+                            "Bed2F": {
+                              "content": "右侧"
+                            }
+                          }
                         }
-                      }
+                      ]
                     },
                     {
                       "type": "text",
@@ -3229,7 +3414,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "tmiH4",
+                  "id": "C8r1X",
                   "x": 0,
                   "y": 60,
                   "name": "表单滚动视口",
@@ -3240,222 +3425,380 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "qtBzP",
+                      "id": "iDwYR",
                       "x": 0,
-                      "y": 20,
-                      "name": "Markdown",
-                      "fill": "#202124",
-                      "content": "Markdown",
+                      "y": 15,
+                      "name": "生成浏览页",
+                      "fill": "$ink",
+                      "content": "生成浏览页",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
+                    },
+                    {
+                      "id": "qfMxI",
+                      "type": "ref",
+                      "ref": "RLM9s",
+                      "name": "生成浏览页菜单",
+                      "x": 264,
+                      "y": 8,
+                      "width": 447,
+                      "descendants": {
+                        "Zixyv": {
+                          "content": "开启 · 继承"
+                        }
+                      }
                     },
                     {
                       "type": "text",
-                      "id": "kyECT",
+                      "id": "s3NHgt",
                       "x": 0,
-                      "y": 75,
-                      "name": "目录标题数 / 标题来源",
-                      "fill": "#202124",
-                      "content": "目录标题数 / 标题来源",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "id": "DcrOk",
-                      "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "3  ·  Front matter",
-                      "x": 263.06999999999994,
                       "y": 63,
-                      "width": 447.93,
-                      "descendants": {
-                        "HuoLu": {
-                          "content": "3  ·  Front matter"
-                        }
-                      }
-                    },
-                    {
-                      "type": "text",
-                      "id": "U3SkqM",
-                      "x": 0,
-                      "y": 130,
-                      "name": "术语标注 / 术语库",
-                      "fill": "#202124",
-                      "content": "术语标注 / 术语库",
+                      "name": "Markdown 目录",
+                      "fill": "$ink",
+                      "content": "Markdown 目录",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
                     },
                     {
-                      "id": "TnArz",
+                      "id": "iBfGt",
                       "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "开启  ·  .repolens/glossary",
-                      "x": 263.06999999999994,
-                      "y": 118,
-                      "width": 447.93,
+                      "ref": "KL6ss",
+                      "name": "Markdown 目录选项",
+                      "x": 264,
+                      "y": 56,
+                      "width": 146,
                       "descendants": {
-                        "HuoLu": {
-                          "content": "开启  ·  .repolens/glossary"
+                        "a0JFh": {
+                          "icon": "square-minus"
+                        },
+                        "A9N3f": {
+                          "content": "开启 · 继承"
                         }
                       }
                     },
                     {
                       "type": "text",
-                      "id": "PpOCy",
+                      "id": "VfBOT",
                       "x": 0,
-                      "y": 185,
+                      "y": 111,
+                      "name": "标题锚点",
+                      "fill": "$ink",
+                      "content": "标题锚点",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "l6sXMn",
+                      "type": "ref",
+                      "ref": "KL6ss",
+                      "name": "标题锚点选项",
+                      "x": 264,
+                      "y": 104,
+                      "width": 146,
+                      "descendants": {
+                        "a0JFh": {
+                          "icon": "square-minus"
+                        },
+                        "A9N3f": {
+                          "content": "开启 · 继承"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "rWRuB",
+                      "x": 0,
+                      "y": 159,
+                      "name": "Mermaid",
+                      "fill": "$ink",
+                      "content": "Mermaid",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "f8Mnu4",
+                      "type": "ref",
+                      "ref": "KL6ss",
+                      "name": "Mermaid选项",
+                      "x": 264,
+                      "y": 152,
+                      "width": 146,
+                      "descendants": {
+                        "a0JFh": {
+                          "icon": "square-minus"
+                        },
+                        "A9N3f": {
+                          "content": "开启 · 继承"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "NjbVd",
+                      "x": 0,
+                      "y": 207,
+                      "name": "数学公式",
+                      "fill": "$ink",
+                      "content": "数学公式",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "BuYpb",
+                      "type": "ref",
+                      "ref": "KL6ss",
+                      "name": "数学公式选项",
+                      "x": 264,
+                      "y": 200,
+                      "width": 146,
+                      "descendants": {
+                        "a0JFh": {
+                          "icon": "square-minus"
+                        },
+                        "A9N3f": {
+                          "content": "关闭 · 继承"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "eiYKy",
+                      "x": 0,
+                      "y": 255,
+                      "name": "目录最少标题数",
+                      "fill": "$ink",
+                      "content": "目录最少标题数",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "F5VoF",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "目录最少标题数输入",
+                      "x": 264,
+                      "y": 248,
+                      "width": 447,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": "3",
+                          "textAlign": "right",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "TlHcd",
+                      "x": 0,
+                      "y": 303,
+                      "name": "使用 Frontmatter 标题",
+                      "fill": "$ink",
+                      "content": "使用 Frontmatter 标题",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "wZghk",
+                      "type": "ref",
+                      "ref": "RLM9s",
+                      "name": "使用 Frontmatter 标题菜单",
+                      "x": 264,
+                      "y": 296,
+                      "width": 447,
+                      "descendants": {
+                        "Zixyv": {
+                          "content": "开启 · 继承"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "IrFwp",
+                      "x": 0,
+                      "y": 351,
+                      "name": "术语标注",
+                      "fill": "$ink",
+                      "content": "术语标注",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "HbWa5",
+                      "type": "ref",
+                      "ref": "KL6ss",
+                      "name": "术语标注选项",
+                      "x": 264,
+                      "y": 344,
+                      "width": 146,
+                      "descendants": {
+                        "a0JFh": {
+                          "icon": "square-minus"
+                        },
+                        "A9N3f": {
+                          "content": "关闭 · 继承"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "aLs9g",
+                      "x": 0,
+                      "y": 399,
+                      "name": "术语库目录",
+                      "fill": "$ink",
+                      "content": "术语库目录",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "lpCVB",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "术语库目录输入",
+                      "x": 264,
+                      "y": 392,
+                      "width": 447,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": ".repolens/glossary"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "B2NVP",
+                      "x": 0,
+                      "y": 447,
                       "name": "术语校验",
-                      "fill": "#202124",
+                      "fill": "$ink",
                       "content": "术语校验",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
                     },
                     {
-                      "id": "xHuf8",
+                      "id": "fEm7p",
                       "type": "ref",
                       "ref": "RLM9s",
-                      "name": "引用检查  ▾",
-                      "x": 263.06999999999994,
-                      "y": 173,
-                      "width": 447.93,
+                      "name": "术语校验菜单",
+                      "x": 264,
+                      "y": 440,
+                      "width": 447,
                       "descendants": {
                         "Zixyv": {
-                          "content": "引用检查"
+                          "content": "引用检查 · 继承"
                         }
                       }
                     },
                     {
                       "type": "text",
-                      "id": "reZ3J",
+                      "id": "T6BFH",
                       "x": 0,
-                      "y": 240,
+                      "y": 495,
                       "name": "HTML 预览",
-                      "fill": "#202124",
+                      "fill": "$ink",
                       "content": "HTML 预览",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
                     },
                     {
-                      "id": "tGvXB",
+                      "id": "z4RZUG",
                       "type": "ref",
                       "ref": "RLM9s",
-                      "name": "内嵌  ▾",
-                      "x": 263.06999999999994,
-                      "y": 228,
-                      "width": 447.93,
+                      "name": "HTML 预览菜单",
+                      "x": 264,
+                      "y": 488,
+                      "width": 447,
                       "descendants": {
                         "Zixyv": {
-                          "content": "内嵌"
+                          "content": "内嵌 · 继承"
                         }
                       }
                     },
                     {
                       "type": "text",
-                      "id": "EEhNL",
+                      "id": "iNQyr",
                       "x": 0,
-                      "y": 295,
-                      "name": "代码行号 / 配色",
-                      "fill": "#202124",
-                      "content": "代码行号 / 配色",
+                      "y": 543,
+                      "name": "代码行号",
+                      "fill": "$ink",
+                      "content": "代码行号",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
                     },
                     {
-                      "id": "gwLBC",
+                      "id": "p7oNi",
                       "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "开启  ·  github",
-                      "x": 263.06999999999994,
-                      "y": 283,
-                      "width": 447.93,
+                      "ref": "RLM9s",
+                      "name": "代码行号菜单",
+                      "x": 264,
+                      "y": 536,
+                      "width": 447,
                       "descendants": {
-                        "HuoLu": {
-                          "content": "开启  ·  github"
+                        "Zixyv": {
+                          "content": "开启 · 继承"
                         }
                       }
                     },
                     {
                       "type": "text",
-                      "id": "w58RE7",
+                      "id": "RqOlU",
                       "x": 0,
-                      "y": 350,
+                      "y": 591,
+                      "name": "代码配色",
+                      "fill": "$ink",
+                      "content": "代码配色",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "TeuXa",
+                      "type": "ref",
+                      "ref": "RLM9s",
+                      "name": "代码配色菜单",
+                      "x": 264,
+                      "y": 584,
+                      "width": 447,
+                      "descendants": {
+                        "Zixyv": {
+                          "content": "github"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "t4d1g",
+                      "x": 0,
+                      "y": 639,
                       "name": "最大文件大小",
-                      "fill": "#202124",
+                      "fill": "$ink",
                       "content": "最大文件大小",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
                     },
                     {
-                      "id": "n55tab",
+                      "id": "VAH8Y",
                       "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "5 MB",
-                      "x": 263.06999999999994,
-                      "y": 338,
-                      "width": 447.93,
-                      "descendants": {
-                        "HuoLu": {
-                          "content": "5 MB"
-                        }
-                      }
-                    },
-                    {
-                      "id": "zIt8s",
-                      "type": "ref",
-                      "ref": "KL6ss",
-                      "name": "目录",
-                      "x": 263,
-                      "y": 11,
-                      "descendants": {
-                        "A9N3f": {
-                          "content": "目录"
-                        }
-                      }
-                    },
-                    {
-                      "id": "eVm6o",
-                      "type": "ref",
-                      "ref": "KL6ss",
-                      "name": "标题锚点",
-                      "x": 367,
-                      "y": 11,
-                      "descendants": {
-                        "A9N3f": {
-                          "content": "标题锚点"
-                        }
-                      }
-                    },
-                    {
-                      "id": "q28S8x",
-                      "type": "ref",
-                      "ref": "KL6ss",
-                      "name": "Mermaid",
-                      "x": 471,
-                      "y": 11,
-                      "descendants": {
-                        "A9N3f": {
-                          "content": "Mermaid"
-                        }
-                      }
-                    },
-                    {
-                      "type": "icon",
-                      "id": "J5Zb5O",
-                      "x": 71,
-                      "y": 186,
-                      "name": "术语校验说明",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "info",
-                      "library": "lucide",
-                      "fill": "$muted"
+                      "ref": "numMB0",
+                      "name": "最大文件大小输入",
+                      "x": 264,
+                      "y": 632,
+                      "width": 447
                     }
                   ]
                 },
@@ -4038,14 +4381,14 @@
                     {
                       "id": "gO9Wg",
                       "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "2 MB",
+                      "ref": "numMB0",
+                      "name": "数字输入 / 2 MB",
                       "x": 263.06999999999994,
                       "y": 118,
                       "width": 447.93,
                       "descendants": {
-                        "HuoLu": {
-                          "content": "2 MB"
+                        "numTxt": {
+                          "content": "2"
                         }
                       }
                     },
@@ -4247,7 +4590,7 @@
                     {
                       "type": "text",
                       "id": "h2Uhwp",
-                      "x": 264,
+                      "x": 0,
                       "y": 58,
                       "name": "选择构建者配置文件后即可编辑。",
                       "fill": "$muted",
@@ -4604,7 +4947,7 @@
                   "type": "ref",
                   "ref": "fZ6he",
                   "name": "返回编辑",
-                  "x": 262,
+                  "x": 306,
                   "y": 0,
                   "descendants": {
                     "JhTm5": {
@@ -4617,7 +4960,7 @@
                   "type": "ref",
                   "ref": "FqyhL",
                   "name": "确认保存",
-                  "x": 354,
+                  "x": 376,
                   "y": 0,
                   "descendants": {
                     "sBShM": {
@@ -4688,11 +5031,11 @@
                 {
                   "type": "text",
                   "id": "j8dPX",
-                  "x": 264,
+                  "x": 116,
                   "y": 12,
-                  "name": "当前工作目录（含未提交修改）",
+                  "name": "工作树绝对路径",
                   "fill": "$muted",
-                  "content": "当前工作目录（含未提交修改）",
+                  "content": "/Users/demo/Projects/favus-docs",
                   "fontFamily": "Inter",
                   "fontSize": 14,
                   "fontWeight": "normal"
@@ -4701,7 +5044,7 @@
                   "type": "text",
                   "id": "yAO52",
                   "x": 0,
-                  "y": 80,
+                  "y": 76,
                   "name": "输出位置",
                   "fill": "#202124",
                   "content": "输出位置",
@@ -4712,11 +5055,11 @@
                 {
                   "type": "text",
                   "id": "o720Ai",
-                  "x": 264,
-                  "y": 80,
-                  "name": "应用缓存",
+                  "x": 116,
+                  "y": 76,
+                  "name": "产物绝对路径",
                   "fill": "$muted",
-                  "content": "应用缓存",
+                  "content": "/Users/demo/Sites/favus-docs",
                   "fontFamily": "Inter",
                   "fontSize": 14,
                   "fontWeight": "normal"
@@ -5504,15 +5847,17 @@
                     {
                       "id": "AD1Pn",
                       "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "5 MB",
+                      "ref": "numMB0",
+                      "name": "数字输入 / -1 MB",
                       "x": 263.06999999999994,
                       "y": 338,
                       "width": 447.93,
-                      "stroke": "#A24A32",
                       "descendants": {
-                        "HuoLu": {
-                          "content": "-1 MB"
+                        "numBox": {
+                          "stroke": "#b42318"
+                        },
+                        "numTxt": {
+                          "content": "-1"
                         }
                       }
                     },
@@ -8914,6 +9259,464 @@
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "C7moT",
+      "x": 3408,
+      "y": 4560,
+      "name": "SITE-16 · 确认写入 · YAML 差异",
+      "clip": true,
+      "width": 1280,
+      "height": 800,
+      "fill": "$paper",
+      "layout": "none",
+      "children": [
+        {
+          "id": "Ou5bt",
+          "type": "ref",
+          "ref": "S4y4j",
+          "width": 1280,
+          "height": 800,
+          "name": "桌面窗口",
+          "x": 0,
+          "y": 0,
+          "descendants": {
+            "O49SC6": {
+              "fill": "$paper"
+            },
+            "uhLtR": {
+              "type": "frame",
+              "id": "Nh2ya",
+              "name": "页面内容",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sF8mt",
+                  "x": 0,
+                  "y": 10,
+                  "name": "基础信息",
+                  "fill": "#3b59c7",
+                  "content": "基础信息",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "frame",
+                  "id": "xl5FI",
+                  "x": 0,
+                  "y": 33,
+                  "name": "当前分组",
+                  "width": 62,
+                  "height": 2,
+                  "fill": "#3b59c7",
+                  "layout": "none"
+                },
+                {
+                  "type": "text",
+                  "id": "SIqO5",
+                  "x": 83,
+                  "y": 10,
+                  "name": "浏览与主题",
+                  "fill": "#65676b",
+                  "content": "浏览与主题",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "CePq9",
+                  "x": 182,
+                  "y": 10,
+                  "name": "渲染与术语",
+                  "fill": "#65676b",
+                  "content": "渲染与术语",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "J4TBAU",
+                  "x": 281,
+                  "y": 10,
+                  "name": "路径与规则",
+                  "fill": "#65676b",
+                  "content": "路径与规则",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "qopZI",
+                  "x": 380,
+                  "y": 10,
+                  "name": "Agent 输出",
+                  "fill": "#65676b",
+                  "content": "Agent 输出",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "wbUDU",
+                  "x": 470,
+                  "y": 10,
+                  "name": "构建者配置",
+                  "fill": "#65676b",
+                  "content": "构建者配置",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "fbk1Y",
+                  "x": 0,
+                  "y": 60,
+                  "name": "表单滚动视口",
+                  "clip": true,
+                  "width": 711,
+                  "height": 440,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HH6tI",
+                      "x": 0,
+                      "y": 20,
+                      "name": "站点名称",
+                      "fill": "#202124",
+                      "content": "站点名称",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "o3Xm6N",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "Favus 文档",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 8,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": "Favus 文档"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "F0DrBH",
+                      "x": 0,
+                      "y": 75,
+                      "name": "站点语言",
+                      "fill": "#202124",
+                      "content": "站点语言",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "xqtmJ",
+                      "type": "ref",
+                      "ref": "RLM9s",
+                      "name": "简体中文  ▾",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 63,
+                      "descendants": {
+                        "Zixyv": {
+                          "content": "简体中文"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "P04Hw",
+                      "x": 0,
+                      "y": 130,
+                      "name": "首页文件",
+                      "fill": "#202124",
+                      "content": "首页文件",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "y3ZQL",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "README.md",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 118,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": "README.md"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "M4RwC",
+                  "type": "ref",
+                  "ref": "T1baO",
+                  "name": "全局保存操作栏",
+                  "width": 711,
+                  "x": 0,
+                  "y": 500,
+                  "descendants": {
+                    "yRLq9": {
+                      "content": "保存到    仓库 / .repolens.yml"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "RNyKa",
+          "x": 0,
+          "y": 0,
+          "name": "对话框背景",
+          "width": 1280,
+          "height": 800,
+          "fill": "#20212466",
+          "layout": "none"
+        },
+        {
+          "type": "frame",
+          "id": "JRZ5M",
+          "x": 136,
+          "y": 38,
+          "name": "保存确认",
+          "width": 1008,
+          "height": 724,
+          "fill": "$paper",
+          "cornerRadius": 12,
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 24,
+          "children": [
+            {
+              "type": "text",
+              "id": "r9h0n",
+              "name": "标题",
+              "fill": "$ink",
+              "content": "保存站点设置？",
+              "fontFamily": "Noto Sans",
+              "fontSize": 22,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "text",
+              "id": "TLlxI",
+              "name": "更改统计",
+              "fill": "$muted",
+              "content": "2 项更改  ·  2 个配置文件",
+              "fontFamily": "Noto Sans",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Z06UrO",
+              "name": "预览模式",
+              "width": "fill_container",
+              "height": 36,
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "IEVXU",
+                  "name": "变更摘要",
+                  "fill": "$muted",
+                  "content": "变更摘要",
+                  "fontFamily": "Noto Sans",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "yl0V1",
+                  "name": "当前模式",
+                  "height": 34,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bGnyF",
+                      "name": "YAML 差异",
+                      "fill": "$accent",
+                      "content": "YAML 差异",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XmBQM",
+                      "width": 70,
+                      "height": 2,
+                      "fill": "$accent"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vkeI0",
+              "name": "YAML 差异滚动区",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "L4tT1",
+                  "name": "/Users/lin/Projects/favus-documentation-portal/.repolens.yml",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Y4LJ5H",
+                      "name": "文件路径",
+                      "fill": "$ink",
+                      "content": "/Users/lin/Projects/favus-documentation-portal/.repolens.yml",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zMyOu",
+                      "name": "YAML 文本",
+                      "width": "fill_container",
+                      "fill": "$surface",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G17yiz",
+                          "name": "统一差异",
+                          "fill": "$ink",
+                          "content": "@@ -1,5 +1,5 @@\n site:\n-  title: Favus Docs\n+  title: Favus Documentation Portal\n rules:\n   - match: docs/**\n     render: true",
+                          "fontFamily": "Roboto Mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "N4cvrW",
+                  "name": "/Users/lin/.config/repolens/build.yml",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FnvoF",
+                      "name": "文件路径",
+                      "fill": "$ink",
+                      "content": "/Users/lin/.config/repolens/build.yml",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HNx3A",
+                      "name": "YAML 文本",
+                      "width": "fill_container",
+                      "fill": "$surface",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n3vIU1",
+                          "name": "统一差异",
+                          "fill": "$ink",
+                          "content": "@@ -1,4 +1,4 @@\n output:\n-  base_path: /docs/\n+  base_path: /portal/\n access:\n   noindex: true",
+                          "fontFamily": "Roboto Mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "c5wwBY",
+              "name": "操作栏分隔线",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "$edge"
+            },
+            {
+              "type": "frame",
+              "id": "xbgur",
+              "name": "固定操作组",
+              "width": "fill_container",
+              "gap": 8,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "ulzT3",
+                  "type": "ref",
+                  "ref": "fZ6he",
+                  "descendants": {
+                    "JhTm5": {
+                      "content": "返回编辑"
+                    }
+                  }
+                },
+                {
+                  "id": "pLJCa",
+                  "type": "ref",
+                  "ref": "FqyhL",
+                  "descendants": {
+                    "sBShM": {
+                      "content": "确认保存"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }

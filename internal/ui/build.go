@@ -95,15 +95,19 @@ func (s *buildService) run(id, repository string, target buildTarget) {
 }
 
 func (s *buildService) build(id, repository string, target buildTarget) error {
+	return s.buildSource(id, source.Spec{Repo: repository, Worktree: true}, "", target)
+}
+
+func (s *buildService) buildSource(id string, input source.Spec, external string, target buildTarget) error {
 	s.setStage(id, "opening")
-	tree, err := source.Open(s.ctx, source.Spec{Repo: repository, Worktree: true})
+	tree, err := source.Open(s.ctx, input)
 	if err != nil {
 		return fmt.Errorf("open working tree: %w", err)
 	}
 	defer tree.Cleanup()
 
 	s.setStage(id, "loading_config")
-	cfg, warnings, err := config.Load(tree.Root, "", config.Flags{})
+	cfg, warnings, err := config.Load(tree.Root, external, config.Flags{})
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
@@ -157,13 +161,10 @@ func resolveBuildSourcePath(root, value string) string {
 	return filepath.Join(root, filepath.FromSlash(value))
 }
 
-func (s *buildService) outputPath(repository string) (string, error) {
-	root, err := s.cacheRoot()
+func cachedBuildOutput(repository string, cacheRoot func() (string, error)) (string, error) {
+	root, err := cacheRoot()
 	if err != nil {
 		return "", err
-	}
-	if err := os.MkdirAll(root, 0o755); err != nil {
-		return "", fmt.Errorf("create build cache directory: %w", err)
 	}
 	sum := sha256.Sum256([]byte(repository))
 	return filepath.Join(root, hex.EncodeToString(sum[:])), nil

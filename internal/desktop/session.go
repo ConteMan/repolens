@@ -14,15 +14,34 @@ import (
 	"github.com/ConteMan/repolens/internal/config"
 )
 
-// Session holds the rule draft and its configuration baseline for a worktree.
-// Callers own edits to Rules and must synchronize them with session methods.
-type Session struct {
-	Root  string
-	Rules []config.RepositoryRuleSettings
+var errNotGitWorktree = errors.New("select a local Git worktree root")
 
-	mu        sync.Mutex
-	baseline  *config.RepositoryDocument
-	candidate *config.RepositoryDocument
+// Session holds editable configuration and its saved baselines.
+// Callers own draft edits and must synchronize them with session methods.
+type Session struct {
+	Root             string
+	Rules            []config.RepositoryRuleSettings
+	Settings         config.RepositorySettings
+	BuilderPath      string
+	Builder          config.BuilderSettings
+	ExternalSettings config.RepositorySettings
+	ExternalRules    []config.RepositoryRuleSettings
+
+	mu               sync.Mutex
+	baseline         *config.RepositoryDocument
+	builderBaseline  *config.BuilderDocument
+	builderPath      string
+	candidate        *config.RepositoryDocument
+	builderCandidate *config.BuilderDocument
+	prepared         bool
+}
+
+// ConfigChange describes one file and the editable fields in its preview.
+type ConfigChange struct {
+	Path                          string
+	Before, After, Diff           string
+	BeforeSettings, AfterSettings config.RepositorySettings
+	BeforeBuilder, AfterBuilder   config.BuilderSettings
 }
 
 // Open starts a desktop session at the root of a local Git worktree.
@@ -52,7 +71,7 @@ func Open(path string) (*Session, error) {
 	})
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("%q must be the root of a local Git worktree: %w", dir, err)
+		return nil, fmt.Errorf("%q: %w: %w", dir, errNotGitWorktree, err)
 	}
 	gitRoot := strings.TrimSuffix(string(output), "\n")
 	rootInfo, err := os.Stat(gitRoot)
@@ -69,86 +88,285 @@ func Open(path string) (*Session, error) {
 	return session, nil
 }
 
-// Dirty reports whether the draft rules differ from the saved rules.
+// Dirty reports whether either draft differs from its saved settings.
 func (s *Session) Dirty() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.dirty()
+	return s.repositoryDirty() || s.builderDirty()
 }
 
-func (s *Session) dirty() bool {
-	return !slices.EqualFunc(s.Rules, documentRules(s.baseline), func(a, b config.RepositoryRuleSettings) bool {
+func (s *Session) repositoryDirty() bool {
+	return !sameRules(s.Rules, documentRules(s.baseline)) ||
+		!reflect.DeepEqual(siteSettings(s.Settings), siteSettings(s.baseline.Settings))
+}
+
+func (s *Session) builderDirty() bool {
+	return s.builderBaseline != nil && (!reflect.DeepEqual(s.Builder, s.builderBaseline.Settings) || !reflect.DeepEqual(siteSettings(s.ExternalSettings), siteSettings(s.builderBaseline.Shared)) || !sameRules(s.ExternalRules, settingsRules(s.builderBaseline.Shared)))
+}
+
+// BuilderDirty reports whether the selected external file has draft edits.
+func (s *Session) BuilderDirty() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.builderDirty()
+}
+
+func siteSettings(settings config.RepositorySettings) config.RepositorySettings {
+	settings.Rules = nil
+	return settings
+}
+
+func sameRules(a, b []config.RepositoryRuleSettings) bool {
+	return slices.EqualFunc(a, b, func(a, b config.RepositoryRuleSettings) bool {
 		return reflect.DeepEqual(a, b)
 	})
 }
 
-// Prepare validates the draft and captures a candidate tied to this revision.
+// Prepare validates both drafts and returns their textual differences.
 func (s *Session) Prepare() (string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.candidate = nil
-
-	before, err := rulesPreview(s.baseline)
+	changes, err := s.PrepareChanges()
 	if err != nil {
 		return "", err
+	}
+	var diff strings.Builder
+	for _, change := range changes {
+		diff.WriteString(change.Diff)
+	}
+	return diff.String(), nil
+}
+
+// PrepareChanges captures all changed files and binds them to a confirmation.
+func (s *Session) PrepareChanges() ([]ConfigChange, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.clearPrepared()
+
+	repository, changes, err := s.prepareRepository()
+	if err != nil {
+		return nil, err
+	}
+	var builder *config.BuilderDocument
+	if s.builderDirty() {
+		builder, err = s.builderBaseline.Clone()
+		if err != nil {
+			return nil, err
+		}
+		if err := builder.Replace(s.Builder); err != nil {
+			return nil, err
+		}
+		shared := siteSettings(s.ExternalSettings)
+		shared.Rules = s.builderBaseline.Shared.Rules
+		if !sameRules(s.ExternalRules, settingsRules(s.builderBaseline.Shared)) {
+			rules := append([]config.RepositoryRuleSettings{}, s.ExternalRules...)
+			shared.Rules = &rules
+		}
+		if !reflect.DeepEqual(shared, s.builderBaseline.Shared) {
+			if err := builder.ReplaceShared(shared); err != nil {
+				return nil, &ExternalValidationError{Err: err}
+			}
+		}
+		before, err := s.builderBaseline.Preview()
+		if err != nil {
+			return nil, err
+		}
+		after, err := builder.Preview()
+		if err != nil {
+			return nil, err
+		}
+		changes = append(changes, ConfigChange{
+			Path: s.builderPath, Before: before, After: after,
+			Diff:          config.RepositorySettingsDiff(before, after, s.builderPath),
+			BeforeBuilder: s.builderBaseline.Settings, AfterBuilder: builder.Settings,
+			BeforeSettings: s.builderBaseline.Shared, AfterSettings: builder.Shared,
+		})
+	}
+	s.candidate, s.builderCandidate, s.prepared = repository, builder, true
+	return changes, nil
+}
+
+func (s *Session) prepareRepository() (*config.RepositoryDocument, []ConfigChange, error) {
+	settings := siteSettings(s.Settings)
+	settings.Rules = s.baseline.Settings.Rules
+	rulesChanged := !sameRules(s.Rules, documentRules(s.baseline))
+	if rulesChanged {
+		// Deleting the last rule still means explicit [].
+		rules := append([]config.RepositoryRuleSettings{}, s.Rules...)
+		settings.Rules = &rules
+	}
+	if issues := config.ValidateRepositorySettings(settings); len(issues) > 0 {
+		return nil, nil, &config.RepositoryValidationError{Issues: issues}
+	}
+	siteChanged := !reflect.DeepEqual(siteSettings(settings), siteSettings(s.baseline.Settings))
+	if !rulesChanged && !siteChanged {
+		return nil, nil, nil
 	}
 	next, err := s.baseline.Clone()
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
-	if s.dirty() {
-		// A nil draft after deleting the last rule still means explicit [].
-		rules := append([]config.RepositoryRuleSettings{}, s.Rules...)
-		if err := next.ReplaceRules(&rules); err != nil {
-			return "", err
+	keys := []string{"rules"}
+	if siteChanged {
+		keys = append(keys, "site", "ignore", "render", "glossary", "theme", "view", "agent")
+		if !rulesChanged {
+			settings.Rules = nil
 		}
-	} else if issues := config.ValidateRepositorySettings(next.Settings); len(issues) > 0 {
-		return "", &config.RepositoryValidationError{Issues: issues}
+		err = next.ReplaceSiteSettings(settings)
+	} else {
+		err = next.ReplaceRules(settings.Rules)
 	}
-	after, err := rulesPreview(next)
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
-	s.candidate = next
-	return config.RepositorySettingsDiff(before, after, next.Path), nil
+	before, err := repositoryPreview(s.baseline, keys)
+	if err != nil {
+		return nil, nil, err
+	}
+	after, err := repositoryPreview(next, keys)
+	if err != nil {
+		return nil, nil, err
+	}
+	return next, []ConfigChange{{
+		Path: next.Path, Before: before, After: after,
+		Diff:           config.RepositorySettingsDiff(before, after, next.Path),
+		BeforeSettings: s.baseline.Settings, AfterSettings: next.Settings,
+	}}, nil
 }
 
-// CancelSave drops the prepared candidate while retaining the draft.
+// CancelSave drops the prepared candidates while retaining the drafts.
 func (s *Session) CancelSave() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.candidate = nil
+	s.clearPrepared()
 }
 
-// Save consumes one confirmation and commits its candidate if still current.
+func (s *Session) clearPrepared() {
+	s.candidate, s.builderCandidate, s.prepared = nil, nil, false
+}
+
+// Save consumes one confirmation. Both revisions are checked before any write.
+// If a later write fails, the successful file becomes the new baseline and the
+// other draft remains available for a subsequent confirmation.
 func (s *Session) Save() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	candidate := s.candidate
-	s.candidate = nil
-	if candidate == nil || filepath.Dir(candidate.Path) != s.Root ||
-		!slices.EqualFunc(s.Rules, documentRules(candidate), func(a, b config.RepositoryRuleSettings) bool {
-			return reflect.DeepEqual(a, b)
-		}) {
+	repository, builder, prepared := s.candidate, s.builderCandidate, s.prepared
+	s.clearPrepared()
+	if !prepared || s.Root != filepath.Dir(s.baseline.Path) || s.BuilderPath != s.builderPath ||
+		!s.matchesConfirmation(repository, builder) {
 		return errors.New("prepare the current draft before confirming save")
 	}
-	if err := candidate.CheckRevision(); err != nil {
-		return err
+	if repository != nil {
+		if err := repository.CheckRevision(); err != nil {
+			return err
+		}
 	}
-	if !s.dirty() {
-		return nil
+	if builder != nil {
+		path, err := externalConfigPath(s.baseline.Path, s.builderPath)
+		if err != nil {
+			return err
+		}
+		if path != s.builderPath {
+			return fmt.Errorf("external config %q: %w", s.builderPath, config.ErrRevisionConflict)
+		}
+		if err := builder.CheckRevision(); err != nil {
+			return err
+		}
 	}
-	if err := candidate.Write(); err != nil {
-		return err
+	if repository != nil {
+		if err := repository.Write(); err != nil {
+			return err
+		}
+		s.baseline = repository
 	}
-
-	// ReplaceRules decoded its own snapshot, independent of the draft pointers.
-	s.baseline = candidate
+	if builder != nil {
+		if err := builder.Write(); err != nil {
+			if repository != nil {
+				return fmt.Errorf("saved %q, but failed to save external configuration: %w", repository.Path, err)
+			}
+			return err
+		}
+		s.builderBaseline = builder
+	}
 	return nil
 }
 
-// Reload replaces the baseline and draft only after the file loads successfully.
+func (s *Session) matchesConfirmation(repository *config.RepositoryDocument, builder *config.BuilderDocument) bool {
+	if repository == nil {
+		if s.repositoryDirty() {
+			return false
+		}
+	} else if !sameRules(s.Rules, documentRules(repository)) ||
+		!reflect.DeepEqual(siteSettings(s.Settings), siteSettings(repository.Settings)) {
+		return false
+	}
+	if builder == nil {
+		return !s.builderDirty()
+	}
+	return reflect.DeepEqual(s.Builder, builder.Settings) && reflect.DeepEqual(siteSettings(s.ExternalSettings), siteSettings(builder.Shared)) && sameRules(s.ExternalRules, settingsRules(builder.Shared))
+}
+
+// LoadBuilder selects an existing trusted external configuration file.
+func (s *Session) LoadBuilder(path string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	resolved, err := externalConfigPath(s.baseline.Path, path)
+	if err != nil {
+		return err
+	}
+	baseline, draft, err := loadBuilderDraft(resolved)
+	if err != nil {
+		return err
+	}
+	s.builderBaseline = baseline
+	s.Builder = draft.Settings
+	s.ExternalSettings = siteSettings(draft.Shared)
+	s.ExternalRules = settingsRules(draft.Shared)
+	s.builderPath, s.BuilderPath = resolved, resolved
+	s.clearPrepared()
+	return nil
+}
+
+func externalConfigPath(repositoryPath, path string) (string, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	resolved, err := filepath.EvalSymlinks(absolute)
+	if err != nil {
+		return "", err
+	}
+	info, err := os.Stat(resolved)
+	if err != nil {
+		return "", err
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("%q is not a regular configuration file", path)
+	}
+	repository, err := os.Stat(repositoryPath)
+	if err == nil && os.SameFile(info, repository) {
+		return "", errors.New("the repository configuration cannot be selected as trusted external configuration")
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	return resolved, nil
+}
+
+func loadBuilderDraft(path string) (*config.BuilderDocument, *config.BuilderDocument, error) {
+	baseline, err := config.LoadBuilderDocument(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	draft, err := baseline.Clone()
+	if err != nil {
+		return nil, nil, err
+	}
+	return baseline, draft, nil
+}
+
+// Reload replaces drafts and baselines only after all selected files load.
 func (s *Session) Reload() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -161,23 +379,49 @@ func (s *Session) Reload() error {
 	if err != nil {
 		return err
 	}
+	if s.builderPath != "" {
+		path, err := externalConfigPath(baseline.Path, s.builderPath)
+		if err != nil {
+			return err
+		}
+		if path != s.builderPath {
+			return fmt.Errorf("external config %q: %w", s.builderPath, config.ErrRevisionConflict)
+		}
+		builder, builderDraft, err := loadBuilderDraft(path)
+		if err != nil {
+			return err
+		}
+		s.builderBaseline, s.Builder = builder, builderDraft.Settings
+		s.ExternalSettings = siteSettings(builderDraft.Shared)
+		s.ExternalRules = settingsRules(builderDraft.Shared)
+	}
 	s.baseline = baseline
+	s.Settings = siteSettings(draft.Settings)
 	s.Rules = documentRules(draft)
-	s.candidate = nil
+	s.clearPrepared()
 	return nil
 }
 
+type ExternalValidationError struct{ Err error }
+
+func (e *ExternalValidationError) Error() string { return e.Err.Error() }
+func (e *ExternalValidationError) Unwrap() error { return e.Err }
+
 func documentRules(document *config.RepositoryDocument) []config.RepositoryRuleSettings {
-	if document.Settings.Rules == nil {
-		return nil
-	}
-	return *document.Settings.Rules
+	return settingsRules(document.Settings)
 }
 
-func rulesPreview(document *config.RepositoryDocument) (string, error) {
+func settingsRules(settings config.RepositorySettings) []config.RepositoryRuleSettings {
+	if settings.Rules == nil {
+		return nil
+	}
+	return *settings.Rules
+}
+
+func repositoryPreview(document *config.RepositoryDocument, keys []string) (string, error) {
 	data, err := document.YAML()
 	if err != nil {
 		return "", err
 	}
-	return config.RepositorySettingsPreview(data, "rules")
+	return config.RepositorySettingsPreview(data, keys...)
 }

@@ -22,13 +22,13 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 
 ## 窗口与导航
 
-21 个业务画板均引用「布局 / 桌面窗口」（S4y4j），页面内容填入主内容插槽。变量 windowTop 同时控制两栏的 48 px 顶部留白，titleRepoGap 控制标题行和仓库选择行之间的 4 px 间距。标题和仓库文字共用 18 px 左边距。
+22 个业务画板均引用「布局 / 桌面窗口」（S4y4j），页面内容填入主内容插槽。变量 windowTop 同时控制两栏的 48 px 顶部留白，titleRepoGap 控制标题行和仓库选择行之间的 4 px 间距。标题图标与仓库选择器共用 18 px 左边距。窗口标题在 24 px 折页标志右侧留 8 px，深色模式使用对应浅色标志。
 
 主窗口使用系统窗口按钮和连续背景。空白区可拖动窗口，导航、按钮、文本输入、分隔条分别处理点击、编辑和拖动。侧栏默认 236 px，建议范围 192–340 px；用指针拖动或键盘方向键调整，双击恢复默认。宽度作为应用偏好保存。仓库名称按实际可用宽度中间省略，保留开头与末尾。悬停或键盘聚焦可查看全名，打开仓库菜单可看到完整路径并切换项目。窄窗口优先保留内容区；标签超宽时可横向滚动。
 
 ## 仓库选择与恢复
 
-仓库名称、分隔线和导航图标左边缘统一在侧栏内 18 px 处。仅在有工作区导航时显示分隔线。
+仓库名称、分隔线和导航图标左边缘统一在侧栏内 18 px 处。 CMP-01 的标题和仓库选择器外侧各留 10 px，两者内部左右各留 8 px，文字依旧对齐。仓库选择器高 28 px，悬停底色止于外侧留白，圆角为 6 px。仅在有工作区导航时显示分隔线。
 
 [首次打开失败](zNZfN.png) 时，在选择页显示刚选的文件夹名、具体原因和「重新选择文件夹」。[切换仓库失败](cNlxd.png) 时，提示固定在仓库选择器下方，保留当前仓库、草稿和导航位置。选择有效仓库后进入正常切换流程。取消或 Esc 收起浮层，将焦点还给仓库选择器。系统文件选择器中的取消属于正常返回。校验错误持续到重选或取消，出现时由辅助技术宣读，焦点移到重选按钮。
 
@@ -44,6 +44,8 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 
 [SITE-10 多项与长值](x9NlX.png) 展示跨文件保存确认。单项短值沿用 SITE-07 的行内对照；文件或更改较多、任一值换行时，按文件分组，逐字段上下显示修改前后值。长路径允许在分隔符处及连续字符间软换行，多行值保留原有换行，可复制完整原文。弹窗宽高受窗口可用空间约束；只有差异区滚动，顶部总数和底部操作固定。
 
+SITE-16 使用 1280 × 800 的窗口展示 YAML 差异模式。保存确认默认打开变更摘要，可切换至按文件分组的统一 YAML 差异。路径和等宽差异文本可选中复制，差异区域独立滚动，标题、模式标签和底部操作保持固定。对话框内容宽度最多 960 px。查看 [SITE-16 画板](C7moT.png)。
+
 编辑期间只更新草稿，已编辑字段失焦时校验。点击「保存设置」时校验全部标签，定位首个错误并保留输入。[字段错误](jrxuG.png) 在控件下说明可接受的值。确认写入成功后关闭弹窗，固定操作栏持续显示带勾的[已保存反馈](Hqzgl.png)和实际目标，直到下一次修改。写入失败或版本冲突时保留草稿并显示原因和恢复操作。应用设置中的版本使用可选中文本，项目主页使用可聚焦的外部链接。
 
 与 internal/config/config.go 及其 YAML patch 类型对应。站点设置显示当前生效值及来源。删除显式值时恢复继承。保存前列出目标文件与差异，写入前检查文件版本。
@@ -52,7 +54,7 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 |---|---|
 | [基础信息](hiWvL.png) | site.title、language、home |
 | [浏览与主题](SOzgK.png) | view.directory-files、content-width、content-align、tree_position、tree_expand_depth、toc_panel、search；theme.vars 任意键值、css、templates |
-| [渲染与术语](l2DeMY.png) | render.markdown.toc、toc_min_headings、anchors、mermaid、frontmatter_title、glossary；render.html.view；render.code.line_numbers、theme；render.max_file_size；glossary.dir、strict |
+| [渲染与术语](l2DeMY.png) | render.markdown.toc、toc_min_headings、anchors、mermaid、math、frontmatter_title、glossary；render.html.view；render.code.line_numbers、theme；render.max_file_size；glossary.dir、strict |
 | [路径与规则](IUxOV.png) | ignore 列表；rules 的新增、删除和排序；每条规则的 match、render、markdown、html、code、max_file_size。子字段使用与全局渲染相同的编辑器，支持继承及显式关闭 |
 | [Agent 输出](zfMXE.png) | agent.llms_txt、llms_full.enabled、llms_full.max_size、index_json |
 | [构建者配置](Z0IhMH.png) | source.repo、ref；output.dir、base_path；access.noindex。仅写入构建者选择的外部配置 |
@@ -70,3 +72,21 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 ## 首期实现验收
 
 在 1024 × 632 视口，使用 MyGo 的离屏控件驱动实际窗口视图，并对 Git 临时工作树执行新增、返回编辑、确认写入和重开。实现截图包括[规则列表](runtime/rule-list.png)、[新增规则](runtime/rule-editor.png)和[确认写入](runtime/confirmation.png)。系统目录选择器的测试单独在 GitHub 托管的 macOS runner 运行，具体结果见 CI 步骤摘要。
+
+## 完整工作区实机验收
+
+Spec 022 使用临时 Git 工作树，在 macOS 原生窗口编辑站点设置、核对跨文件差异、保存后重开，并构建了 6 个页面。以下截图来自运行中的应用。数据、构建时间、未修改时的按钮状态随当前仓库变化。
+
+| 工作区 | 运行截图 |
+|---|---|
+| 站点设置 | [基础信息](runtime/workspace/SITE-01.png)、[浏览与主题](runtime/workspace/SITE-02.png)、[路径与规则](runtime/workspace/SITE-04.png)、[Agent 输出](runtime/workspace/SITE-05.png) |
+| 保存设置 | [仓库与外部配置的修改确认](runtime/workspace/SITE-10.png) |
+| 构建与应用设置 | [最近一次成功构建](runtime/workspace/BUILD-01.png)、[英文应用设置](runtime/workspace/APP-02.png) |
+
+Grok CLI 交叉检查了首轮运行截图与设计稿。根据对照调整了侧栏导航、表单密度、规则页层级、构建结果和更新控件，并在真实窗口重新检查。更新安装使用本地签名测试包验证，正式发布渠道在首个桌面版本发布时验收。
+
+## 桌面版 0.1.0 回归
+
+首发前重新打开桌面设计源文件并渲染 22 个业务画板；运行 macOS 原生窗口逐一选择六个站点设置标签，在带 README 的 Git 工作树上构建并打开应用设置。对照图每行左侧为设计画板，右侧为 1024 × 632 pt 窗口的 MyGo 内容截图。依次为 SITE-01 至 SITE-06、BUILD-01、APP-01。系统窗口按钮由 AppKit 单独绘制。APP-01 左列演示已下载更新，右列为实际启动时的手动检查入口。仓库配置、构建路径、时间和草稿状态取当前数据。[首发设计与实机对照](runtime/desktop-0.1.0.png)
+
+CMP-01 标题栏复用 DS-02 的苔墨折页。SITE-02 的文件树位置使用单选项。SITE-03 按实际编辑顺序展示独立设置和继承状态，滚动区域包含数学公式、术语校验、代码主题及大小上限。BUILD-01 的来源和输出路径共用值列起点。宽屏共用 1000 pt 正文宽度约束。

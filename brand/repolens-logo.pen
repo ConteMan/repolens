@@ -1,0 +1,289 @@
+{
+  "version": "2.25",
+  "children": [
+    {
+      "type": "frame",
+      "id": "aB33u",
+      "x": 0,
+      "y": 0,
+      "name": "LG-01 折页母版",
+      "reusable": true,
+      "width": 100,
+      "height": 100,
+      "layout": "none",
+      "children": [
+        {
+          "type": "path",
+          "id": "INe8B",
+          "x": 0,
+          "y": 0,
+          "name": "书脊",
+          "geometry": "M12 24l31 14v50l-31-14z",
+          "viewBox": [
+            0,
+            0,
+            100,
+            100
+          ],
+          "fill": "$moss-mark",
+          "width": 100,
+          "height": 100
+        },
+        {
+          "type": "path",
+          "id": "F7cooe",
+          "x": 0,
+          "y": 0,
+          "name": "书页",
+          "geometry": "M50 36q16-25 36-28l-1 49q-17 4-35 25z",
+          "viewBox": [
+            0,
+            0,
+            100,
+            100
+          ],
+          "fill": "$moss-mark",
+          "width": 100,
+          "height": 100
+        },
+        {
+          "type": "path",
+          "id": "Q2zg75",
+          "x": 0,
+          "y": 0,
+          "name": "页角",
+          "geometry": "M58 85q15-18 34-21v10z",
+          "viewBox": [
+            0,
+            0,
+            100,
+            100
+          ],
+          "fill": "$moss-mark",
+          "width": 100,
+          "height": 100
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Gdyla",
+      "x": 170,
+      "y": 0,
+      "name": "CL-01 苔墨",
+      "width": 260,
+      "height": 236,
+      "fill": "$moss-paper",
+      "layout": "none",
+      "children": [
+        {
+          "id": "Fwbh1",
+          "type": "ref",
+          "ref": "aB33u",
+          "name": "折页",
+          "x": 80,
+          "y": 30,
+          "descendants": {
+            "INe8B": {
+              "fill": "$moss-mark"
+            },
+            "F7cooe": {
+              "fill": "$moss-mark"
+            },
+            "Q2zg75": {
+              "fill": "$moss-mark"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "WRpmd",
+          "x": 73,
+          "y": 138,
+          "name": "字标",
+          "fill": "#242522",
+          "content": "Repolens",
+          "fontFamily": "Inter",
+          "fontSize": 27,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "yirYf",
+          "x": 20,
+          "y": 196,
+          "name": "配色",
+          "fill": "$moss-mark",
+          "content": "01    苔墨",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "r1sLy",
+      "x": 454,
+      "y": 0,
+      "name": "CL-02 梅紫",
+      "width": 260,
+      "height": 236,
+      "fill": "$plum-paper",
+      "layout": "none",
+      "children": [
+        {
+          "id": "vMKVc",
+          "type": "ref",
+          "ref": "aB33u",
+          "name": "折页",
+          "x": 80,
+          "y": 30,
+          "descendants": {
+            "INe8B": {
+              "fill": "$plum-mark"
+            },
+            "F7cooe": {
+              "fill": "$plum-mark"
+            },
+            "Q2zg75": {
+              "fill": "$plum-mark"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "K3rxTh",
+          "x": 73,
+          "y": 138,
+          "name": "字标",
+          "fill": "#242522",
+          "content": "Repolens",
+          "fontFamily": "Inter",
+          "fontSize": 27,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "GmIBq",
+          "x": 20,
+          "y": 196,
+          "name": "配色",
+          "fill": "$plum-mark",
+          "content": "02    梅紫",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "V27mV",
+      "x": 738,
+      "y": 0,
+      "name": "CL-03 陶褐",
+      "width": 260,
+      "height": 236,
+      "fill": "$ochre-paper",
+      "layout": "none",
+      "children": [
+        {
+          "id": "W2jvYl",
+          "type": "ref",
+          "ref": "aB33u",
+          "name": "折页",
+          "x": 80,
+          "y": 30,
+          "descendants": {
+            "INe8B": {
+              "fill": "$ochre-mark"
+            },
+            "F7cooe": {
+              "fill": "$ochre-mark"
+            },
+            "Q2zg75": {
+              "fill": "$ochre-mark"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "eq2cq",
+          "x": 73,
+          "y": 138,
+          "name": "字标",
+          "fill": "#242522",
+          "content": "Repolens",
+          "fontFamily": "Inter",
+          "fontSize": 27,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "DAmkz",
+          "x": 20,
+          "y": 196,
+          "name": "配色",
+          "fill": "$ochre-mark",
+          "content": "03    陶褐",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "id": "l7V9Rg",
+      "type": "ref",
+      "ref": "aB33u",
+      "name": "LG-02 折页 · 小图标",
+      "x": 0,
+      "y": 160,
+      "descendants": {
+        "Q2zg75": {
+          "geometry": "M57 89Q73 75 94 70L94 78Q75 82 57 96Z"
+        }
+      }
+    }
+  ],
+  "variables": {
+    "moss-mark": {
+      "type": "color",
+      "value": "#385442"
+    },
+    "moss-paper": {
+      "type": "color",
+      "value": "#EDF0E4"
+    },
+    "moss-light": {
+      "type": "color",
+      "value": "#B7CEAE"
+    },
+    "plum-mark": {
+      "type": "color",
+      "value": "#703F58"
+    },
+    "plum-paper": {
+      "type": "color",
+      "value": "#F6EDEF"
+    },
+    "plum-light": {
+      "type": "color",
+      "value": "#E5BBD0"
+    },
+    "ochre-mark": {
+      "type": "color",
+      "value": "#895136"
+    },
+    "ochre-paper": {
+      "type": "color",
+      "value": "#F6EFE3"
+    },
+    "ochre-light": {
+      "type": "color",
+      "value": "#E7BF9D"
+    }
+  },
+  "fileToken": "9483cd10-c2fa-44e5-b57b-94dfac2750f9"
+}

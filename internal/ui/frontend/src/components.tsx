@@ -1,5 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
+import brandMark from "../../../../brand/assets/moss/dark.svg?no-inline";
+
 type ButtonVariant = "primary" | "secondary" | "success" | "ghost" | "danger";
 
 export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }>(
@@ -44,7 +46,7 @@ export function Alert({ kind, role, children }: { kind: "info" | "success" | "wa
 export const Status = Alert;
 
 export function WorkspaceHeader({ path }: { path: string }) {
-  return <header className="topbar"><div className="brand"><strong>repolens ui</strong><span>本地仓库配置与构建</span></div><code title={path}>{path || "未打开项目"}</code></header>;
+  return <header className="topbar"><div className="brand"><img src={brandMark} alt="" width="26" height="26" /><strong>repolens ui</strong><span>本地仓库配置与构建</span></div><code title={path}>{path || "未打开项目"}</code></header>;
 }
 
 export function WorkspaceSidebar({ active, onSelect }: { active: string; onSelect: (section: string) => void }) {

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
 <title>{{.Title}} - {{.SiteTitle}}</title>
+<link rel="icon" href="{{.RelRoot}}{{.FaviconPath}}">
 <script>document.documentElement.className=document.documentElement.className.replace(/\bno-js\b/,"js");</script>
 <link rel="stylesheet" href="{{.RelRoot}}_assets/site.css{{if .SnapshotID}}?v={{.AssetVersion}}{{end}}">
 <link rel="stylesheet" href="{{.RelRoot}}_assets/chroma.css">

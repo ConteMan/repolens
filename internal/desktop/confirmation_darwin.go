@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strconv"
@@ -18,15 +19,6 @@ type ruleChange struct {
 type ruleConfirmation struct {
 	target        string
 	before, after []config.RepositoryRuleSettings
-}
-
-func (s *Session) confirmation() ruleConfirmation {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.candidate == nil {
-		return ruleConfirmation{}
-	}
-	return ruleConfirmation{s.candidate.Path, documentRules(s.baseline), documentRules(s.candidate)}
 }
 
 func ruleChanges(before, after []config.RepositoryRuleSettings) []ruleChange {
@@ -128,8 +120,22 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 			case change.after == nil:
 				title = t("删除规则", "Removed rule")
 			}
-			ui.Text(c, title).Bold()
 			before, after := d.confirmationFields(change.before), d.confirmationFields(change.after)
+			if change.before == nil {
+				d.confirmationRow(c, title, func() {
+					summary := valueText(after[0].value)
+					if change.after.Render != nil {
+						if *change.after.Render {
+							summary += "  ·  " + t("生成浏览页", "Generate browser pages")
+						} else {
+							summary += "  ·  " + t("跳过浏览页", "Skip browser pages")
+						}
+					}
+					ui.Text(c, summary).FillWidth().Selectable().TextColor(c.Theme().TextMuted)
+				})
+			} else {
+				ui.Text(c, title).Bold()
+			}
 			if change.before != nil && change.after != nil {
 				ui.Text(c, valueText(after[0].value)).FillWidth().Selectable()
 			}
@@ -138,6 +144,9 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 				ui.Text(c, valueText(value)).FillWidth().Selectable()
 			}
 			for i := range before {
+				if change.before == nil && i < 2 {
+					continue
+				}
 				if reflect.DeepEqual(before[i].value, after[i].value) {
 					continue
 				}
@@ -157,8 +166,7 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 		})
 	}
 	ordered := func(label string, rules []config.RepositoryRuleSettings) {
-		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			ui.Text(c, label).Bold()
+		d.confirmationRow(c, label, func() {
 			if len(rules) == 0 {
 				ui.Text(c, t("无规则", "No rules")).TextColor(c.Theme().TextMuted)
 			}
@@ -189,8 +197,188 @@ func (d *desktopWindow) confirmationDetails(c *ui.Context, data ruleConfirmation
 		ordered(t("原有顺序", "Previous order"), data.before)
 	}
 	ordered(t("最终顺序", "Final order"), data.after)
-	raw := ui.Local(ui.Box(c).Size(0, 0), "raw", func() bool { return false })
-	ui.Collapsible(c, t("查看 YAML 差异", "View YAML diff"), raw, func() {
-		ui.Text(c, strings.TrimSuffix(d.diff, "\n")).Font("monospace").FillWidth().Selectable()
+}
+
+func (d *desktopWindow) confirmationRow(c *ui.Context, label string, content func()) {
+	ui.Row(c).FillWidth().Gap(12).Children(func() {
+		ui.Text(c, label).Bold().WidthPercent(21)
+		ui.Column(c).Grow(1).MinWidth(0).Gap(4).Children(content)
+	})
+}
+
+type fieldDifference struct {
+	label, before, after string
+}
+
+type confirmationGroup struct {
+	change       ConfigChange
+	fields       []fieldDifference
+	rulesChanged bool
+}
+
+func (d *desktopWindow) confirmationGroups() []confirmationGroup {
+	s := d.session
+	s.mu.Lock()
+	repository := s.baseline.Settings
+	var external config.RepositorySettings
+	if s.builderBaseline != nil {
+		external = s.builderBaseline.Shared
+	}
+	s.mu.Unlock()
+	before, _ := config.ResolveSharedSettings(repository, external)
+	for _, change := range d.changes {
+		if change.Path == s.BuilderPath {
+			external = change.AfterSettings
+		} else {
+			repository = change.AfterSettings
+		}
+	}
+	after, _ := config.ResolveSharedSettings(repository, external)
+	var groups []confirmationGroup
+	for _, change := range d.changes {
+		group := confirmationGroup{
+			change:       change,
+			rulesChanged: !reflect.DeepEqual(change.BeforeSettings.Rules, change.AfterSettings.Rules),
+		}
+		if change.Path == s.BuilderPath {
+			group.fields = d.fieldDifferences(builderFields(&change.BeforeBuilder), builderFields(&change.AfterBuilder), nil, nil)
+		}
+		for _, tab := range []desktopSiteTab{tabBasics, tabBrowse, tabRender, tabAgent} {
+			group.fields = append(group.fields, d.fieldDifferences(
+				siteFields(&change.BeforeSettings, tab), siteFields(&change.AfterSettings, tab),
+				siteFields(&before, tab), siteFields(&after, tab),
+			)...)
+		}
+		if old, next := change.BeforeSettings.Ignore, change.AfterSettings.Ignore; !reflect.DeepEqual(old, next) {
+			group.fields = append(group.fields, fieldDifference{
+				d.text("忽略路径", "Ignored Paths"), d.ignoreDifferenceValue(old), d.ignoreDifferenceValue(next),
+			})
+		}
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+func (d *desktopWindow) fieldDifferences(before, after, effectiveBefore, effectiveAfter []siteField) []fieldDifference {
+	var differences []fieldDifference
+	for i, field := range after {
+		old, next := siteFieldValue(before[i].value), siteFieldValue(field.value)
+		if reflect.DeepEqual(old, next) {
+			continue
+		}
+		var oldEffective, nextEffective *string
+		if effectiveBefore != nil {
+			oldEffective = siteFieldValue(effectiveBefore[i].value)
+			nextEffective = siteFieldValue(effectiveAfter[i].value)
+		}
+		differences = append(differences, fieldDifference{
+			d.text(field.zh, field.en),
+			d.differenceValue(field, old, oldEffective),
+			d.differenceValue(field, next, nextEffective),
+		})
+	}
+	return differences
+}
+
+func (d *desktopWindow) differenceValue(field siteField, explicit, effective *string) string {
+	t := d.text
+	value := explicit
+	if value == nil {
+		value = effective
+	}
+	if value == nil {
+		return t("继承", "Inherit")
+	}
+	display := *value
+	if display == "" {
+		display = t("空字符串", "Empty string")
+	}
+	for _, option := range field.options {
+		if option.value == display {
+			display = t(option.zh, option.en)
+			break
+		}
+	}
+	if _, ok := field.value.(**bool); ok {
+		if display == "true" {
+			display = t("开启", "On")
+		} else {
+			display = t("关闭", "Off")
+		}
+	}
+	if explicit == nil {
+		display += t("（继承）", " (inherited)")
+	}
+	return display
+}
+
+func (d *desktopWindow) ignoreDifferenceValue(value *[]string) string {
+	if value == nil {
+		return d.text("继承", "Inherit")
+	}
+	if len(*value) == 0 {
+		return d.text("空列表", "Empty list")
+	}
+	return strings.Join(*value, "\n")
+}
+
+func (g confirmationGroup) count() int {
+	count := len(g.fields)
+	if g.rulesChanged {
+		count++
+	}
+	return count
+}
+
+func (d *desktopWindow) configurationChangeView(c *ui.Context, group confirmationGroup, expanded bool) {
+	t := d.text
+	change := group.change
+	ui.Column(c).Key(change.Path).FillWidth().Gap(16).Children(func() {
+		target := t("仓库 / .repolens.yml", "Repository / .repolens.yml")
+		if change.Path == d.session.BuilderPath {
+			target = t("外部配置 / ", "External configuration / ") + filepath.Base(change.Path)
+		} else if !expanded && !group.rulesChanged {
+			target = filepath.Base(d.session.Root) + " / .repolens.yml"
+		}
+		if expanded {
+			count := fmt.Sprintf(t("%d 项更改", "%d changes"), group.count())
+			if group.count() == 1 {
+				count = t("1 项更改", "1 change")
+			}
+			ui.Text(c, target+"  ·  "+count).FillWidth().Bold().Tooltip(change.Path)
+		} else {
+			ui.Text(c, target).FillWidth().TextColor(c.Theme().TextMuted).Tooltip(change.Path)
+		}
+		for _, difference := range group.fields {
+			if !expanded {
+				d.confirmationRow(c, difference.label, func() {
+					ui.Text(c, difference.before+"   →   "+difference.after).FillWidth().Selectable()
+				})
+				continue
+			}
+			ui.Column(c).FillWidth().Gap(6).Children(func() {
+				ui.Text(c, difference.label).Bold()
+				d.confirmationValueRow(c, t("修改前", "Before"), difference.before, c.Theme().Surface)
+				d.confirmationValueRow(c, t("修改后", "After"), difference.after, ui.RGBA(c.Theme().Accent.R, c.Theme().Accent.G, c.Theme().Accent.B, 0.08))
+			})
+		}
+		if group.rulesChanged {
+			data := ruleConfirmation{}
+			if change.BeforeSettings.Rules != nil {
+				data.before = *change.BeforeSettings.Rules
+			}
+			if change.AfterSettings.Rules != nil {
+				data.after = *change.AfterSettings.Rules
+			}
+			d.confirmationDetails(c, data, ruleChanges(data.before, data.after))
+		}
+
+	})
+}
+
+func (d *desktopWindow) confirmationValueRow(c *ui.Context, label, value string, background ui.Color) {
+	ui.Row(c).FillWidth().Gap(12).Padding(8, 10).Radius(4).Background(background).Children(func() {
+		ui.Text(c, label).Width(58).TextColor(c.Theme().TextMuted)
+		ui.Text(c, value).Grow(1).MinWidth(0).Selectable()
 	})
 }
