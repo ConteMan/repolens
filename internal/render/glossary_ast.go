@@ -18,6 +18,7 @@ type glossaryLink struct {
 	ast.BaseInline
 	key       string
 	ariaLabel string
+	labelText string
 }
 
 func (n *glossaryLink) Dump(source []byte, level int) {
@@ -44,7 +45,9 @@ func renderGlossaryLink(w util.BufWriter, _ []byte, node ast.Node, entering bool
 		_, _ = w.Write(util.EscapeHTML([]byte(n.key)))
 		_, _ = w.WriteString(`"`)
 		if n.ariaLabel != "" {
-			_, _ = w.WriteString(` aria-label="`)
+			_, _ = w.WriteString(` data-i18n-aria-label="glossary_term_label" data-i18n-param="`)
+			_, _ = w.Write(util.EscapeHTML([]byte(n.labelText)))
+			_, _ = w.WriteString(`" aria-label="`)
 			_, _ = w.Write(util.EscapeHTML([]byte(n.ariaLabel)))
 			_, _ = w.WriteString(`"`)
 		}
@@ -133,8 +136,9 @@ func applyGlossaryWithWalk(doc *ast.Document, src []byte, ref PageRef, opts Mark
 			unwrapInline(item.hit.link)
 			continue
 		}
-		label := formatTermAriaLabel(opts.GlossaryTermLabel, nodeText(src, item.hit.link))
-		replaceLinkWithTerm(item.hit.link, item.term.Key, label)
+		labelText := nodeText(src, item.hit.link)
+		label := formatTermAriaLabel(opts.GlossaryTermLabel, labelText)
+		replaceLinkWithTerm(item.hit.link, item.term.Key, label, labelText)
 		if _, dup := seen[item.term.Key]; dup {
 			continue
 		}
@@ -270,12 +274,12 @@ func unwrapInline(n ast.Node) {
 	parent.RemoveChild(parent, n)
 }
 
-func replaceLinkWithTerm(link *ast.Link, key, ariaLabel string) {
+func replaceLinkWithTerm(link *ast.Link, key, ariaLabel, labelText string) {
 	parent := link.Parent()
 	if parent == nil {
 		return
 	}
-	n := &glossaryLink{key: key, ariaLabel: ariaLabel}
+	n := &glossaryLink{key: key, ariaLabel: ariaLabel, labelText: labelText}
 	for c := link.FirstChild(); c != nil; {
 		next := c.NextSibling()
 		link.RemoveChild(link, c)

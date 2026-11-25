@@ -43,6 +43,42 @@ test("opens a repository and prepares a configuration diff", async ({ page }) =>
   }
 });
 
+test("saves and clears reading defaults through the browsing section", async ({ page }) => {
+  const repository = createRepository("view:\n  directory-files: expanded\n  content-width: narrow\n  content-align: center\n");
+  try {
+    await page.goto("/");
+    await openProject(page, repository);
+    await page.getByRole("navigation", { name: "配置分区" }).getByRole("button", { name: "浏览" }).click();
+
+    const files = page.locator('select[name="view.directory-files"]');
+    const width = page.locator('select[name="view.content-width"]');
+    const align = page.locator('select[name="view.content-align"]');
+    await expect(files).toHaveValue("expanded");
+    await expect(width).toHaveValue("narrow");
+    await expect(align).toHaveValue("center");
+
+    await files.selectOption("collapsed");
+    await width.selectOption("full");
+    await align.selectOption("");
+    await page.getByRole("button", { name: "预览写入 diff" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "确认原子写入" }).click();
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    const saved = readConfig(repository);
+    expect(saved).toContain("directory-files: collapsed");
+    expect(saved).toContain("content-width: full");
+    expect(saved).not.toContain("content-align:");
+
+    await page.reload();
+    await openProject(page, repository);
+    await page.getByRole("navigation", { name: "配置分区" }).getByRole("button", { name: "浏览" }).click();
+    await expect(files).toHaveValue("collapsed");
+    await expect(width).toHaveValue("full");
+    await expect(align).toHaveValue("");
+  } finally {
+    removeRepository(repository);
+  }
+});
+
 test("shows three validation errors, maps them to fields, and restores focus across sections", async ({ page }) => {
   const repository = createRepository("site:\n  title: Validation fixture\n");
   try {

@@ -2,14 +2,23 @@
   "use strict";
 
   var body = document.body;
+  var siteScriptURL = new URL(document.currentScript.src);
+  var siteBasePath = siteScriptURL.pathname.replace(/_assets\/site\.js$/, "");
+  var uiStrings = /* REPOLENS_UI_STRINGS */ {};
+  var languagePreference = localGet(sitePreferenceKey("language"));
   var statePrefix = "repolens:tree:";
   var scrollKey = "repolens:tree:scroll";
   var treePreferenceKey = "repolens:tree:preference";
   var tocKey = "repolens:toc";
   var zoomKey = "repolens:zoom";
-  var widthKey = "repolens:width";
   var zooms = [0.9, 1, 1.1, 1.25];
-  var widths = ["narrow", "default", "full"];
+  var layoutWidths = ["narrow", "standard", "full"];
+  var layoutAlignments = ["left", "center", "right"];
+  var layoutDefaults = {
+    width: body.getAttribute("data-width") || "standard",
+    align: body.getAttribute("data-align") || "left"
+  };
+  var layoutPreference;
   var sidebarMinWidth = 220;
   var sidebarMaxWidth = 520;
   var sidebarStoragePrefix = "repolens:sidebar-width:v1:";
@@ -30,7 +39,7 @@
 
   function storageGet(store, key) {
     try {
-      return store.getItem(key);
+      return window[store].getItem(key);
     } catch (_) {
       return null;
     }
@@ -38,7 +47,7 @@
 
   function storageSet(store, key, value) {
     try {
-      store.setItem(key, value);
+      window[store].setItem(key, value);
     } catch (_) {
       return;
     }
@@ -46,30 +55,88 @@
 
   function storageRemove(store, key) {
     try {
-      store.removeItem(key);
+      window[store].removeItem(key);
     } catch (_) {
       return;
     }
   }
 
   function sessionGet(key) {
-    return storageGet(window.sessionStorage, key);
+    return storageGet("sessionStorage", key);
   }
 
   function sessionSet(key, value) {
-    storageSet(window.sessionStorage, key, value);
+    storageSet("sessionStorage", key, value);
   }
 
   function localGet(key) {
-    return storageGet(window.localStorage, key);
+    return storageGet("localStorage", key);
   }
 
   function localSet(key, value) {
-    storageSet(window.localStorage, key, value);
+    storageSet("localStorage", key, value);
   }
 
   function localRemove(key) {
-    storageRemove(window.localStorage, key);
+    storageRemove("localStorage", key);
+  }
+
+  function sitePreferenceKey(name) {
+    return "repolens:" + name + ":v1:" + siteBasePath;
+  }
+
+  function uiText(key) {
+    var language = /^zh/i.test(document.documentElement.lang) ? "zh-CN" : "en";
+    return uiStrings[language][key] || "";
+  }
+
+  function applyLanguage() {
+    if (languagePreference !== "zh-CN" && languagePreference !== "en") {
+      return;
+    }
+    document.documentElement.lang = languagePreference;
+    var attributes = ["", "title", "aria-label", "placeholder", "data-glossary-index",
+      "data-glossary-back", "data-glossary-close", "data-search-label", "data-search-placeholder",
+      "data-search-intro", "data-search-empty", "data-search-unavailable", "data-search-files",
+      "data-search-headings", "data-search-select", "data-search-open", "data-search-escape"];
+    attributes.forEach(function (attribute) {
+      var marker = attribute ? "data-i18n-" + attribute : "data-i18n";
+      document.querySelectorAll("[" + marker + "]").forEach(function (element) {
+        var text = uiText(element.getAttribute(marker));
+        var param = element.getAttribute("data-i18n-param");
+        if (!text) {
+          return;
+        }
+        if (param !== null) {
+          text = text.replace("%s", function () { return param; });
+        }
+        if (attribute) {
+          element.setAttribute(attribute, text);
+        } else {
+          element.textContent = text;
+        }
+      });
+    });
+    document.querySelectorAll('#language-menu input').forEach(function (option) {
+      option.checked = option.value === languagePreference;
+    });
+    if (body.getAttribute("data-search") === "open") {
+      renderSearchResults($("search-input").value);
+    }
+  }
+
+  function setLanguageMenu(open, focus) {
+    var menu = $("language-menu");
+    var button = $("btn-language");
+    if (!menu || menu.hidden === !open) {
+      return false;
+    }
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+    if (focus) {
+      (open ? menu.querySelector("input:checked") : button).focus();
+    }
+    return true;
   }
 
   function showSnapshotNotice() {
@@ -136,25 +203,7 @@
   }
 
   function sidebarStorageKey() {
-    var script = document.querySelector('script[src*="_assets/site.js"]');
-    var pathname = "/";
-    if (script) {
-      try {
-        pathname = new URL(script.src, window.location.href).pathname;
-      } catch (_) {
-        pathname = "/";
-      }
-    }
-    var marker = "/_assets/site.js";
-    var markerIndex = pathname.lastIndexOf(marker);
-    var basePath = markerIndex >= 0 ? pathname.slice(0, markerIndex + 1) : "/";
-    if (basePath.charAt(0) !== "/") {
-      basePath = "/" + basePath;
-    }
-    if (basePath.charAt(basePath.length - 1) !== "/") {
-      basePath += "/";
-    }
-    return sidebarStoragePrefix + basePath;
+    return sidebarStoragePrefix + siteBasePath;
   }
 
   function parseSidebarWidth(value) {
@@ -282,6 +331,9 @@
     }
     resizer.setAttribute("data-bound", "true");
     document.addEventListener("focusin", function (event) {
+    if (!event.target.closest("#language-wrap")) {
+      setLanguageMenu(false, false);
+    }
       sidebarResizerFocused = event.target === resizer;
     });
     resizer.addEventListener("pointerdown", function (event) {
@@ -537,9 +589,74 @@
       bindDetails(document);
     }
     Array.prototype.forEach.call(document.querySelectorAll("[data-tree-scroll]"), bindScroll);
-    initTreeSearchEntrypoints(document);
     applyTreeMode(savedTreePreference());
     setupSidebarResizer();
+  }
+
+  function appendTreeMatches(source, result, query) {
+    Array.prototype.forEach.call(source.children, function (item) {
+      var link = item.firstElementChild;
+      if (item.classList.contains("file")) {
+        if (link.querySelector("span").textContent.toLowerCase().includes(query)) {
+          result.appendChild(item.cloneNode(true));
+        }
+        return;
+      }
+
+      var details = link.nextElementSibling;
+      var children = details.lastElementChild;
+      var matches = children.cloneNode(false);
+      appendTreeMatches(children, matches, query);
+      if (!matches.childElementCount) {
+        return;
+      }
+
+      var branch = item.cloneNode(false);
+      var open = document.createElement("details");
+      var summary = details.firstElementChild.cloneNode(true);
+      summary.setAttribute("inert", "");
+      open.open = true;
+      open.append(summary, matches);
+      branch.append(link.cloneNode(true), open);
+      result.appendChild(branch);
+    });
+  }
+
+  function updateTreeFilter(value) {
+    var query = value.trim().toLowerCase();
+    document.querySelectorAll("[data-tree-filter-input]").forEach(function (input) {
+      if (input.value !== value) {
+        input.value = value;
+      }
+      var nav = input.closest("nav");
+      var original = nav.querySelector("[data-tree-scroll]");
+      var previous = nav.querySelector("[data-tree-matches]");
+      var empty = nav.querySelector("[data-tree-filter-empty]");
+      if (previous) {
+        previous.remove();
+      }
+      nav.querySelector("[data-tree-filter-clear]").hidden = !value;
+      original.hidden = !!query;
+      empty.hidden = true;
+      nav.querySelectorAll("[data-tree-action]").forEach(function (button) {
+        button.disabled = !!query;
+      });
+      if (!query) {
+        return;
+      }
+
+      // Keep the original tree and its persisted expansion state untouched.
+      var result = original.cloneNode(false);
+      result.hidden = false;
+      result.removeAttribute("data-tree-scroll");
+      result.setAttribute("data-tree-matches", "");
+      appendTreeMatches(original, result, query);
+      if (result.childElementCount) {
+        original.after(result);
+      } else {
+        empty.hidden = false;
+      }
+    });
   }
 
   function getZoomIndex() {
@@ -567,26 +684,79 @@
     }
   }
 
-  function widthLabels() {
-    var zh = (document.documentElement.lang || "").toLowerCase().indexOf("zh") === 0;
-    return zh ? ["窄栏", "默认", "全宽"] : ["Narrow", "Default", "Full"];
-  }
-
-  function applyWidth() {
-    var saved = localGet(widthKey);
-    var mode = widths.indexOf(saved) >= 0 ? saved : "default";
-    var label = $("width-label");
-    body.setAttribute("data-width", mode);
-    if (label) {
-      label.textContent = widthLabels()[widths.indexOf(mode)];
+  function loadLayoutPreference() {
+    var key = sitePreferenceKey("layout");
+    try {
+      var saved = localGet(key);
+      if (saved !== null) {
+        var stored = JSON.parse(saved) || {};
+        return {
+          width: layoutWidths.indexOf(stored.width) >= 0 ? stored.width : undefined,
+          align: layoutAlignments.indexOf(stored.align) >= 0 ? stored.align : undefined
+        };
+      }
+      // The old origin-wide key has no path. Claim it once for the first site
+      // that reads it rather than applying the same override to every site.
+      var legacyKey = "repolens:width";
+      var legacy = localGet(legacyKey);
+      var width = legacy === "default" ? "standard" : legacy;
+      if (layoutWidths.indexOf(width) >= 0) {
+        var preference = { width: width };
+        var migrated = JSON.stringify(preference);
+        localSet(key, migrated);
+        if (localGet(key) === migrated) {
+          localRemove(legacyKey);
+        }
+        return preference;
+      }
+    } catch (_) {
+      // A malformed value or unavailable storage still allows in-page changes.
     }
+    return {};
   }
 
-  function cycleWidth() {
-    var current = body.getAttribute("data-width") || "default";
-    var next = widths[(widths.indexOf(current) + 1) % widths.length] || "default";
-    localSet(widthKey, next);
-    applyWidth();
+  function applyLayout() {
+    if (!layoutPreference) {
+      layoutPreference = loadLayoutPreference();
+    }
+    var width = layoutPreference.width || layoutDefaults.width;
+    var align = layoutPreference.align || layoutDefaults.align;
+    body.setAttribute("data-width", width);
+    body.setAttribute("data-align", align);
+    var menu = $("layout-menu");
+    if (!menu) {
+      return;
+    }
+    menu.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+      radio.checked = radio.value === (radio.name === "layout-width" ? width : align);
+    });
+    $("layout-align-options").disabled = width === "full";
+  }
+
+  function changeLayout(event) {
+    var radio = event.target;
+    var dimension = radio.name === "layout-width" ? "width" : "align";
+    layoutPreference[dimension] = radio.value;
+    localSet(sitePreferenceKey("layout"), JSON.stringify(layoutPreference));
+    applyLayout();
+  }
+
+  function setLayoutMenu(open, restoreFocus) {
+    var trigger = $("btn-layout");
+    var menu = $("layout-menu");
+    if (!trigger || !menu || menu.hidden === !open) {
+      return false;
+    }
+    menu.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    if (open) {
+      closeInfo();
+      closeDownload();
+      menu.querySelector('input[name="layout-width"]:checked').focus();
+    } else if (restoreFocus) {
+      trigger.focus();
+    }
+    return true;
   }
 
   function applyTOC() {
@@ -812,20 +982,9 @@
     }
     fetchPage(url, true).catch(function () { window.location.href = url.href; });
   }
-  function initTreeSearchEntrypoints(root) {
-    Array.prototype.forEach.call(root.querySelectorAll("[data-tree-search-placeholder]"), function (entry) {
-      var label = document.createElement("span"), key = document.createElement("kbd");
-      entry.hidden = false; entry.setAttribute("role", "button"); entry.setAttribute("tabindex", "0");
-      entry.setAttribute("aria-label", searchText("label"));
-      entry.textContent = "";
-      label.textContent = searchText("placeholder"); key.textContent = "/";
-      entry.appendChild(icon("icon-search")); entry.appendChild(label); entry.appendChild(key);
-    });
-  }
-
   function applyToolbarState() {
     applyZoom();
-    applyWidth();
+    applyLayout();
     applyTOC();
     closeInfo();
     closeDownload();
@@ -845,7 +1004,7 @@
       return false;
     }
     var url = sameOriginURL(raw);
-    return !!url && url.origin === window.location.origin && url.pathname.indexOf("/view/") >= 0;
+    return !!url && url.origin === window.location.origin && url.pathname.indexOf(siteBasePath + "view/") === 0;
   }
 
   function glossaryAppendix() {
@@ -1005,7 +1164,20 @@
       if (!nextTopbar || !nextContent || !nextTree) {
         throw new Error("missing pjax targets");
       }
+      var nextSiteScript = doc.querySelector('script[data-site-script], script[src$="_assets/site.js"]');
+      if (!nextSiteScript || new URL(nextSiteScript.getAttribute("src"), url).href !== siteScriptURL.href) {
+        throw new Error("different pjax deployment");
+      }
+      if (push) {
+        window.history.pushState({ pjax: true }, "", url.href);
+      }
       document.title = doc.title;
+      document.documentElement.lang = doc.documentElement.lang;
+      var nextIcons = doc.querySelector(".icon-sprite");
+      var currentIcons = document.querySelector(".icon-sprite");
+      if (nextIcons && currentIcons) {
+        currentIcons.replaceWith(nextIcons);
+      }
       var nextKind = doc.body && doc.body.getAttribute("data-page-kind");
       if (nextKind) {
         body.setAttribute("data-page-kind", nextKind);
@@ -1022,11 +1194,9 @@
       replaceOptional("#glossary-ui", doc);
       loadMermaidIfNeeded(doc);
       setupTreeDOM();
+      applyLanguage();
       applyToolbarState();
       initMermaid();
-      if (push) {
-        window.history.pushState({ pjax: true }, "", url.href);
-      }
       scrollAfterPjax(url);
     });
   }
@@ -1058,13 +1228,9 @@
     if (window.mermaid || !doc.querySelector('script[src$="mermaid.min.js"]')) {
       return;
     }
-    var selfScript = document.querySelector('script[src$="site.js"]');
-    if (!selfScript) {
-      return;
-    }
     var script = document.createElement("script");
     script.defer = true;
-    script.src = selfScript.src.replace(/site\.js$/, "mermaid.min.js");
+    script.src = new URL("mermaid.min.js", siteScriptURL).href;
     script.onload = initMermaid;
     document.body.appendChild(script);
   }
@@ -1087,6 +1253,12 @@
 
   document.addEventListener("click", function (event) {
     var target = event.target;
+    if (!target.closest("#language-wrap")) {
+      setLanguageMenu(false, false);
+    }
+    if (!target.closest("#layout-wrap")) {
+      setLayoutMenu(false, false);
+    }
     var link = target.closest && target.closest("a");
     if (link && link.classList.contains("term") && !link.closest(".glossary-appendix") && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       event.preventDefault();
@@ -1125,8 +1297,15 @@
       setZoomIndex(Math.max(0, getZoomIndex() - 1));
     } else if (button && button.id === "btn-zoom-in") {
       setZoomIndex(Math.min(zooms.length - 1, getZoomIndex() + 1));
-    } else if (button && button.id === "btn-width") {
-      cycleWidth();
+    } else if (button && button.id === "btn-layout") {
+      setLayoutMenu($("layout-menu").hidden, true);
+    } else if (button && button.id === "layout-reset") {
+      layoutPreference = {};
+      localRemove(sitePreferenceKey("layout"));
+      applyLayout();
+      setLayoutMenu(false, true);
+    } else if (button && button.id === "btn-language") {
+      setLanguageMenu($("language-menu").hidden, true);
     } else if (button && button.id === "btn-info") {
       if (body.getAttribute("data-info") === "open") {
         closeInfo();
@@ -1169,8 +1348,9 @@
     } else if (button && button.id === "btn-search") {
       openSearch(button);
       return;
-    } else if (target.closest && target.closest("[data-tree-search-placeholder]")) {
-      openSearch(target.closest("[data-tree-search-placeholder]"));
+    } else if (button && button.hasAttribute("data-tree-filter-clear")) {
+      button.closest("nav").querySelector("[data-tree-filter-input]").focus();
+      updateTreeFilter("");
       return;
     } else if (target.closest && target.closest(".search-item")) {
       goSearchResult(searchResults[Number(target.closest(".search-item").getAttribute("data-search-index"))]);
@@ -1194,13 +1374,39 @@
     }
   });
 
+  document.addEventListener("change", function (event) {
+    if (event.target.matches("#layout-menu input[type=radio]") && event.target.checked) {
+      changeLayout(event);
+    } else if (event.target.matches("#language-menu input[type=radio]") && event.target.checked) {
+      languagePreference = event.target.value;
+      localSet(sitePreferenceKey("language"), languagePreference);
+      applyLanguage();
+      setLanguageMenu(false, true);
+    }
+  });
+
+  document.addEventListener("focusin", function (event) {
+    if (!event.target.closest("#layout-wrap")) {
+      setLayoutMenu(false, false);
+    }
+  });
+
   document.addEventListener("input", function (event) {
     if (event.target && event.target.id === "search-input") {
       renderSearchResults(event.target.value);
+    } else if (event.target.hasAttribute("data-tree-filter-input")) {
+      updateTreeFilter(event.target.value);
     }
   });
 
   document.addEventListener("keydown", function (event) {
+    if (event.defaultPrevented) {
+      return;
+    }
+    if (event.key === "Escape" && (setLanguageMenu(false, true) || setLayoutMenu(false, true))) {
+      event.preventDefault();
+      return;
+    }
     var tag = event.target && event.target.tagName;
     var editable = /^(INPUT|TEXTAREA|SELECT)$/.test(tag) || event.target.isContentEditable;
     if (event.key === "Escape" && cancelSidebarDrag()) {
@@ -1227,13 +1433,26 @@
       closeGlossary(true);
       return;
     }
-    if (event.key === "/" && body.getAttribute("data-search") !== "open" && !editable) {
+    var filterInput = event.target.hasAttribute("data-tree-filter-input");
+    if (filterInput && event.isComposing) {
+      return;
+    }
+    if (filterInput && event.key === "Escape" && event.target.value) {
+      event.preventDefault();
+      updateTreeFilter("");
+      return;
+    }
+    if (filterInput && event.key === "Enter" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      var firstMatch = event.target.closest("nav").querySelector("[data-tree-matches] .tree-file");
+      if (firstMatch) {
+        event.preventDefault();
+        firstMatch.click();
+      }
+      return;
+    }
+    if (event.key === "/" && searchModal() && body.getAttribute("data-search") !== "open" && !editable) {
       event.preventDefault();
       openSearch(document.activeElement);
-    } else if ((event.key === "Enter" || event.key === " ") && event.target.closest && event.target.closest("[data-tree-search-placeholder]")) {
-      // 树顶搜索入口是 role="button" 的 div，键盘激活需自行处理。
-      event.preventDefault();
-      openSearch(event.target.closest("[data-tree-search-placeholder]"));
     } else if (body.getAttribute("data-search") === "open" && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
       selectSearch(event.key === "ArrowDown" ? 1 : -1);
@@ -1277,6 +1496,7 @@
   }
 
   setupTreeDOM();
+  applyLanguage();
   applyToolbarState();
   initSnapshotFreshness();
   if (!window.history.state) {

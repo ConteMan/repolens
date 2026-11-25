@@ -28,6 +28,9 @@ export interface RepositorySettings {
   rules: Rule[] | null;
   theme: { vars: Optional<Record<string, string>>; css: Optional<string>; templates: Optional<string> };
   view: {
+    "directory-files": Optional<string>;
+    "content-width": Optional<string>;
+    "content-align": Optional<string>;
     tree_position: Optional<string>;
     tree_expand_depth: Optional<number>;
     toc_panel: Optional<string>;
@@ -116,6 +119,9 @@ export function normalizeSettings(value: Partial<RepositorySettings> | undefined
       : null,
     theme: { vars: null, css: null, templates: null, ...value?.theme },
     view: {
+      "directory-files": null,
+      "content-width": null,
+      "content-align": null,
       tree_position: null,
       tree_expand_depth: null,
       toc_panel: null,

@@ -15,7 +15,7 @@
    - `dirlist` —— 目录页（README 正文来自 `PageData.Body`，子项表格来自 `PageData.DirEntries`）；
    - `tree` —— 文件树侧栏（递归 partial：目录折叠控件与目录页链接为同级交互元素，不在 `<summary>` 内嵌链接；类型图标、当前项高亮、祖先默认展开、其余按 `tree_expand_depth`）。
    - 内容区顶部的派生标题仅用于没有自身文章标题的页面：Markdown 文件页，以及由 Markdown README / `site.home` 提供正文的目录页隐藏该标题，直接按正文实际内容展示；代码、HTML、图片、二进制文件页、合并 `index.html` 的目录页和无正文目录页继续显示。`PageData.Title` 仍用于浏览器 `<title>`、搜索与 Agent 元数据，不改变 spec 003 的标题提取规则。
-2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。固定侧栏与浮动覆盖层使用定高 flex 导航，树级操作和搜索入口保留在顶部，仅根文件树列表占用剩余高度并滚动。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
+2. **CSS**：手写单文件 `_assets/site.css`，顶部集中定义 CSS 变量（颜色、字号、`--sidebar-width` 等）；`theme.vars` 在页面 `<head>` 内联 `:root { … }` 覆盖；支持 `prefers-color-scheme` 深色模式（同样走变量）。固定侧栏与浮动覆盖层使用定高 flex 导航，树级操作和搜索入口保留在顶部，仅根文件树列表占用剩余高度并滚动。chroma 样式表由 spec 004 的 `StylesCSS` 生成为 `_assets/chroma.css`（亮/暗两份，media query 切换）。Markdown 正文与目录 README 中，同级列表项留出适度间距，嵌套分组之间加大留白。正文的段落、引用、代码和表格使用一致的块间距。GFM 表格在自身容器内横向滚动；长 JSON、URL、token 可在单元格内断行，代码块限制最大宽度并保留内部滚动，且不得引起页面级横向溢出或压扁无关列。原始 HTML 表格与目录表格继续使用窄屏全局滚动兜底。
 3. **增强 JS**：手写单文件 `_assets/site.js`（无框架、无打包器，目标 ~200 行）：
    - 文件树折叠状态持久化（sessionStorage，key 为目录路径）；
    - 文件树提供全部展开、全部折叠与定位当前文件操作；固定树与浮动树同步，批量更新按唯一路径持久化一次；

@@ -137,7 +137,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	readmePage := readOutput(t, outDir, "view/README.md/index.html")
 	assertContains(t, readmePage, `<link rel="alternate" type="text/markdown" href="../../README.md">`)
 	assertContains(t, readmePage, `id="btn-source" href="source/"`)
-	assertContains(t, readmePage, `<span>大小</span><b>91 B</b>`)
+	assertContains(t, readmePage, `<span data-i18n="size">大小</span><b>91 B</b>`)
 	assertContains(t, readmePage, `<code data-page-path>README.md</code>`)
 	assertContains(t, readmePage, `<small>initial</small>`)
 	assertNotContains(t, readmePage, `footer class="meta"`)
@@ -166,7 +166,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, notesPage, "Lowercase readme.")
 
 	codeDirPage := readOutput(t, outDir, "view/code/index.html")
-	assertContains(t, codeDirPage, `<section class="dir-list"`)
+	assertContains(t, codeDirPage, `<details class="dir-list"`)
 	assertContains(t, codeDirPage, `<h1>code</h1>`)
 	if strings.Contains(codeDirPage, `<section class="readme">`) {
 		t.Fatalf("code directory unexpectedly rendered a README section")
@@ -176,7 +176,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertContains(t, embedPage, `<iframe class="html-preview" src="../../page.html"`)
 
 	directPage := readOutput(t, outDir, "view/direct.html/index.html")
-	assertContains(t, directPage, "Open HTML file")
+	assertContains(t, directPage, "打开 HTML 文件")
 	assertContains(t, directPage, `id="btn-source" href="source/"`)
 	assertNotContains(t, directPage, "<iframe")
 
@@ -197,7 +197,7 @@ func TestBuildEndToEnd(t *testing.T) {
 	assertNotContains(t, imagePage, `id="btn-source"`)
 
 	binaryPage := readOutput(t, outDir, "view/blob.bin/index.html")
-	assertContains(t, binaryPage, "Download")
+	assertContains(t, binaryPage, "下载")
 	assertContains(t, binaryPage, "blob.bin")
 	assertNotContains(t, binaryPage, `id="btn-source"`)
 
@@ -510,7 +510,7 @@ func TestSearchSwitchAndAgentIndexIndependence(t *testing.T) {
 	assertMissing(t, outDir, "search.json")
 	page := readOutput(t, outDir, "view/README.md/index.html")
 	assertNotContains(t, page, `id="btn-search"`)
-	assertNotContains(t, page, `data-tree-search-placeholder`)
+	assertNotContains(t, page, `data-tree-filter-input`)
 	assertNotContains(t, page, `id="search-modal"`)
 }
 
@@ -571,7 +571,7 @@ func TestTOCPanelModeAffectsMarkdownPages(t *testing.T) {
 		t.Fatalf("Build() error = %v", err)
 	}
 	inline := readOutput(t, outDir, "view/README.md/index.html")
-	assertContains(t, inline, `<nav class="toc" aria-label="Table of contents">`)
+	assertContains(t, inline, `<nav class="toc" data-i18n-aria-label="toc_title" aria-label="目录面板">`)
 	assertNotContains(t, inline, `<aside class="toc-panel"`)
 	assertNotContains(t, inline, `id="btn-toc"`)
 }
@@ -589,9 +589,9 @@ func TestUILanguageUsesEnglishForNonChinese(t *testing.T) {
 		`lang="en"`,
 		`title="Repository tree"`,
 		`title="Page information"`,
-		`<span>Last updated</span>`,
+		`<span data-i18n="last_updated">Last updated</span>`,
 		`View raw file`,
-		`Raw file README.md`,
+		`Raw file</span> README.md`,
 		`Search (/)`,
 	} {
 		assertContains(t, page, want)
@@ -641,7 +641,7 @@ func TestBuildMergesIndexHTMLIntoDirectoryPages(t *testing.T) {
 	assertUnavailable(t, outDir, "view/wireframes/index.html/index.html")
 
 	directPage := readOutput(t, outDir, "view/direct/index.html")
-	assertContains(t, directPage, "Open HTML file")
+	assertContains(t, directPage, "打开 HTML 文件")
 	assertContains(t, directPage, `href="../../direct/index.html"`)
 	assertNotContains(t, directPage, "<iframe")
 	assertUnavailable(t, outDir, "view/direct/index.html/index.html")

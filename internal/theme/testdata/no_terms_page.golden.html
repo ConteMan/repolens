@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,7 +12,7 @@
 
 
 </head>
-<body data-page-kind="markdown" data-tree-position="left">
+<body data-page-kind="markdown" data-tree-position="left" data-width="standard" data-align="left">
 <svg class="icon-sprite" aria-hidden="true" focusable="false">
   <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
   <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>
@@ -39,26 +39,47 @@
 </svg>
 <header class="topbar">
   <div class="tb-group js-only">
-    <button class="tb-btn" id="btn-tree" type="button" title="Repository tree" aria-label="Repository tree" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
-    <button class="tb-btn" id="btn-back" type="button" title="Back" aria-label="Back"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
-    <button class="tb-btn" id="btn-fwd" type="button" title="Forward" aria-label="Forward"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
+    <button class="tb-btn" id="btn-tree" type="button" data-i18n-title="tree_title" title="文件树（收起/浮出）" data-i18n-aria-label="tree" aria-label="文件树" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
+    <button class="tb-btn" id="btn-back" type="button" data-i18n-title="back" title="后退" data-i18n-aria-label="back" aria-label="后退"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+    <button class="tb-btn" id="btn-fwd" type="button" data-i18n-title="forward" title="前进" data-i18n-aria-label="forward" aria-label="前进"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
   </div>
-  <nav class="tb-crumbs" aria-label="Breadcrumbs">
+  <nav class="tb-crumbs" data-i18n-aria-label="breadcrumbs" aria-label="面包屑导航">
     
   </nav>
   <div class="tb-group">
     
     
-    <button class="tb-btn js-only" id="btn-zoom-out" type="button" title="Zoom out" aria-label="Zoom out"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
+    <button class="tb-btn js-only" id="btn-zoom-out" type="button" data-i18n-title="zoom_out" title="缩小" data-i18n-aria-label="zoom_out" aria-label="缩小"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
     <span class="zoom-readout js-only" id="zoom-readout">100%</span>
-    <button class="tb-btn js-only" id="btn-zoom-in" type="button" title="Zoom in" aria-label="Zoom in"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
-    <button class="tb-btn js-only" id="btn-width" type="button" title="Layout width" aria-label="Layout width"><svg class="icon" aria-hidden="true"><use href="#icon-width"></use></svg><span id="width-label">Default</span></button>
+    <button class="tb-btn js-only" id="btn-zoom-in" type="button" data-i18n-title="zoom_in" title="放大" data-i18n-aria-label="zoom_in" aria-label="放大"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+    <div class="layout-wrap js-only" id="layout-wrap">
+      <button class="tb-btn preference-toggle" id="btn-layout" type="button" aria-expanded="false" aria-controls="layout-menu"><span data-i18n="layout">布局</span></button>
+      <div class="layout-menu" id="layout-menu" role="group" data-i18n-aria-label="layout" aria-label="布局" hidden>
+        <fieldset>
+          <legend data-i18n="layout_width">正文宽度</legend>
+          <div class="layout-options">
+            <label><input type="radio" name="layout-width" value="narrow"><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_narrow">窄栏</span></span></label>
+            <label><input type="radio" name="layout-width" value="standard" checked><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_standard">标准</span></span></label>
+            <label><input type="radio" name="layout-width" value="full"><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_full">全宽</span></span></label>
+          </div>
+        </fieldset>
+        <fieldset id="layout-align-options">
+          <legend data-i18n="layout_align">正文对齐</legend>
+          <div class="layout-options">
+            <label><input type="radio" name="layout-align" value="left" checked><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_left">靠左</span></span></label>
+            <label><input type="radio" name="layout-align" value="center"><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_center">居中</span></span></label>
+            <label><input type="radio" name="layout-align" value="right"><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_right">靠右</span></span></label>
+          </div>
+        </fieldset>
+        <button class="tb-btn layout-reset" id="layout-reset" type="button" data-i18n="layout_reset">恢复站点默认值</button>
+      </div>
+    </div>
     <span class="tb-sep js-only"></span>
     <span class="info-wrap js-only" id="info-wrap">
-      <button class="tb-btn" id="btn-info" type="button" title="Page information" aria-label="Page information" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
-      <div class="info-panel" role="dialog" aria-label="Page information">
-        <div class="info-row"><span>Path</span><code data-page-path></code></div>
-        <div class="info-row"><span>Type</span><b>Markdown</b></div>
+      <button class="tb-btn" id="btn-info" type="button" data-i18n-title="info" title="页面信息" data-i18n-aria-label="info" aria-label="页面信息" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
+      <div class="info-panel" role="dialog" data-i18n-aria-label="info" aria-label="页面信息">
+        <div class="info-row"><span data-i18n="path">路径</span><code data-page-path></code></div>
+        <div class="info-row"><span data-i18n="type">类型</span><b data-i18n="kind_markdown">Markdown</b></div>
         
         
         <div class="info-actions"></div>
@@ -66,21 +87,28 @@
     </span>
     
     
+    <div class="lang-wrap js-only" id="language-wrap">
+      <button class="tb-btn preference-toggle" id="btn-language" type="button" aria-expanded="false" aria-controls="language-menu" data-i18n-aria-label="language" aria-label="界面语言"><span data-i18n="language_current">简体中文</span></button>
+      <div class="lang-menu" id="language-menu" role="group" data-i18n-aria-label="language" aria-label="界面语言" hidden>
+        <label lang="zh-CN"><input type="radio" name="ui-language" value="zh-CN" checked>简体中文</label>
+        <label lang="en"><input type="radio" name="ui-language" value="en">English</label>
+      </div>
+    </div>
     
   </div>
 </header>
 <div class="shell">
   <aside class="sidebar">
-    <nav class="tree-nav" id="tree-src" aria-label="Repository tree">
-      <div class="tree-actions js-only" role="group" aria-label="Repository tree actions">
-  <button class="tree-action" type="button" data-tree-action="expand" title="Expand all" aria-label="Expand all"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
-  <button class="tree-action" type="button" data-tree-action="collapse" title="Collapse all" aria-label="Collapse all"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
-  <button class="tree-action" type="button" data-tree-action="locate" title="Locate current file" aria-label="Locate current file"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
+    <nav class="tree-nav" id="tree-src" data-i18n-aria-label="tree" aria-label="文件树">
+      <div class="tree-actions js-only" role="group" data-i18n-aria-label="tree_actions" aria-label="文件树操作">
+  <button class="tree-action" type="button" data-tree-action="expand" data-i18n-title="tree_expand_all" title="全部展开" data-i18n-aria-label="tree_expand_all" aria-label="全部展开"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="collapse" data-i18n-title="tree_collapse_all" title="全部折叠" data-i18n-aria-label="tree_collapse_all" aria-label="全部折叠"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="locate" data-i18n-title="tree_locate_current" title="定位当前文件" data-i18n-aria-label="tree_locate_current" aria-label="定位当前文件"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
 </div>
       
     </nav>
   </aside>
-  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="Resize repository tree" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
+  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" data-i18n-aria-label="tree_resize" aria-label="调整文件树宽度" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
   <main class="content" id="content">
     <h1>Doc</h1>
     
@@ -93,12 +121,12 @@
 </div>
 <div class="scrim" id="scrim" aria-hidden="true"></div>
 
-<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">
+<div class="overlay" id="tree-overlay" role="dialog" data-i18n-aria-label="tree" aria-label="文件树">
   <div class="overlay-head">
-    <span>test · Repository tree</span>
-    <button class="tb-btn" id="btn-pin-tree" type="button" title="Pin as sidebar"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>Pin</button>
+    <span>test · <span data-i18n="tree">文件树</span></span>
+    <button class="tb-btn" id="btn-pin-tree" type="button" data-i18n-title="pin_tree_title" title="固定为侧栏"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg><span data-i18n="pin_tree">固定</span></button>
   </div>
-  <nav class="overlay-tree" id="overlay-tree" aria-label="Repository tree"></nav>
+  <nav class="overlay-tree" id="overlay-tree" data-i18n-aria-label="tree" aria-label="文件树"></nav>
 </div>
 
 

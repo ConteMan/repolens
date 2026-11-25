@@ -33,7 +33,10 @@ test.beforeAll(async () => {
   execFileSync("git", ["-C", repository, "add", "."]);
   execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: add tree fixture"]);
   execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", leftOutput]);
-  writeFileSync(join(repository, ".repolens.yml"), "site:\n  language: en\nview:\n  tree_position: right\n");
+  writeFileSync(join(repository, ".repolens.yml"), [
+    "site:", "  language: en", "view:", "  tree_position: right",
+    "  content-width: narrow", "  content-align: center", "",
+  ].join("\n"));
   execFileSync("git", ["-C", repository, "add", ".repolens.yml"]);
   execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: move tree to the right"]);
   execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", rightOutput]);
@@ -71,6 +74,80 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   rmSync(fixtureRoot, { recursive: true, force: true });
+});
+
+test("migrates the old width to a single deployment and restores that site's defaults", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("seeded-layout-test")) {
+      localStorage.setItem("repolens:width", "default");
+      sessionStorage.setItem("seeded-layout-test", "true");
+    }
+  });
+  await page.goto(`${siteURL}/right/view/`);
+  const body = page.locator("body");
+  const layout = page.getByRole("button", { name: "Layout" });
+  const menu = page.locator("#layout-menu");
+  await expect(body).toHaveAttribute("data-width", "standard");
+  await expect(body).toHaveAttribute("data-align", "center");
+  expect(await page.evaluate(() => localStorage.getItem("repolens:width"))).toBeNull();
+
+  await layout.click();
+  await expect(menu.getByRole("radio", { name: "Standard" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(layout).toBeFocused();
+
+  await layout.click();
+  await menu.getByRole("button", { name: "Restore site defaults" }).click();
+  await expect(layout).toBeFocused();
+  await expect(body).toHaveAttribute("data-width", "narrow");
+  await expect(body).toHaveAttribute("data-align", "center");
+  await page.reload();
+  await expect(body).toHaveAttribute("data-width", "narrow");
+});
+
+test("remembers alignment through full width, PJAX, and reload within one deployment", async ({ page }) => {
+  await page.goto(`${siteURL}/docs/view/`);
+  const body = page.locator("body");
+  const layout = page.getByRole("button", { name: "Layout" });
+  const menu = page.locator("#layout-menu");
+  await layout.click();
+  await menu.getByText("Right", { exact: true }).click();
+  await menu.getByText("Full", { exact: true }).click();
+  await expect(body).toHaveAttribute("data-width", "full");
+  await expect(body).toHaveAttribute("data-align", "right");
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeChecked();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeDisabled();
+  await menu.getByText("Narrow", { exact: true }).click();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeEnabled();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeChecked();
+  await page.keyboard.press("Escape");
+
+  await page.locator("#tree-src").getByRole("link", { name: "docs", exact: true }).click();
+  await expect(page).toHaveURL(`${siteURL}/docs/view/docs/`);
+  await expect(body).toHaveAttribute("data-width", "narrow");
+  await expect(body).toHaveAttribute("data-align", "right");
+  await page.goBack();
+  await expect(body).toHaveAttribute("data-align", "right");
+  await page.reload();
+  await expect(body).toHaveAttribute("data-align", "right");
+
+  await page.goto(`${siteURL}/view/`);
+  await expect(body).toHaveAttribute("data-width", "standard");
+  await expect(body).toHaveAttribute("data-align", "left");
+});
+
+test("uses the authored reading layout with JavaScript disabled", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto(`${siteURL}/right/view/`);
+    await expect(page.locator("body")).toHaveAttribute("data-width", "narrow");
+    await expect(page.locator("#content")).toHaveCSS("justify-self", "center");
+    await expect(page.locator("#btn-layout")).toBeHidden();
+  } finally {
+    await context.close();
+  }
 });
 
 test("highlights and locates the default home file", async ({ page }) => {
@@ -217,7 +294,7 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
 
   const fixedScroll = fixedTree.locator(":scope > .tree");
   const fixedActions = fixedTree.getByRole("group", { name: "Repository tree actions" });
-  const fixedSearch = fixedTree.locator(".tree-search");
+  const fixedSearch = fixedTree.locator(".tree-filter");
   const fixedActionsTop = (await fixedActions.boundingBox())?.y;
   const fixedSearchTop = (await fixedSearch.boundingBox())?.y;
   await fixedScroll.evaluate((tree) => {
@@ -256,7 +333,7 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
 
   const overlayScroll = overlayTree.locator(":scope > .tree");
   const overlayActions = overlayTree.getByRole("group", { name: "Repository tree actions" });
-  const overlaySearch = overlayTree.locator(".tree-search");
+  const overlaySearch = overlayTree.locator(".tree-filter");
   const overlayActionsTop = (await overlayActions.boundingBox())?.y;
   const overlaySearchTop = (await overlaySearch.boundingBox())?.y;
   await overlayScroll.evaluate((tree) => {
@@ -296,6 +373,60 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
   await page.locator("#btn-tree").click();
   await expect(page.locator("body")).toHaveAttribute("data-overlay", "open");
   await expect(page.locator("#overlay-tree").getByRole("button", { name: "Locate current file" })).toBeVisible();
+});
+
+test("filters both tree layouts by filename without changing directory state", async ({ page }) => {
+  await page.goto(`${siteURL}/view/README.md/`);
+  const fixed = page.locator("#tree-src");
+  const overlay = page.locator("#overlay-tree");
+  const fixedFilter = fixed.getByRole("textbox", { name: "Filter by filename" });
+  const overlayFilter = overlay.getByRole("textbox", { name: "Filter by filename" });
+  let searchRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().endsWith("/search.json")) searchRequests += 1;
+  });
+
+  const scroll = fixed.locator("[data-tree-scroll]");
+  await fixed.getByRole("button", { name: "Expand all" }).click();
+  await scroll.evaluate((tree) => { tree.scrollTop = 300; });
+  const scrollTop = await scroll.evaluate((tree) => tree.scrollTop);
+  expect(scrollTop).toBeGreaterThan(0);
+  await fixedFilter.fill("OTHER.MD");
+  await expect(fixed.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await expect(fixed.getByRole("link", { name: currentPath })).toBeHidden();
+  await expect(fixed.getByRole("button", { name: "Clear file filter" })).toBeVisible();
+  await fixed.getByRole("button", { name: "Clear file filter" }).click();
+  await expect(fixedFilter).toBeFocused();
+  await expect.poll(() => scroll.evaluate((tree) => tree.scrollTop)).toBe(scrollTop);
+  await fixed.getByRole("button", { name: "Collapse all" }).click();
+
+  await fixedFilter.fill("deeply");
+  await expect(fixed.getByRole("status")).toHaveText("No matching files");
+  await fixedFilter.fill("OTHER.MD");
+  await expect(fixed.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await expect(page.locator("details[data-tree-path][open]")).toHaveCount(0);
+  expect(searchRequests).toBe(0);
+
+  await page.locator("#btn-tree").click();
+  await page.locator("#btn-tree").click();
+  await expect(overlayFilter).toHaveValue("OTHER.MD");
+  await expect(overlay.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await overlayFilter.press("Escape");
+  await expect(overlayFilter).toHaveValue("");
+  await expect(overlay.getByRole("link", { name: "docs/other.md" })).toBeHidden();
+  await expect(page.locator("details[data-tree-path][open]")).toHaveCount(0);
+  await overlayFilter.fill("OTHER.MD");
+  await overlayFilter.press("Enter");
+  await expect(page).toHaveURL(`${siteURL}/view/docs/other.md/`);
+  await page.locator("#btn-tree").click();
+  await expect(overlayFilter).toHaveValue("");
+  await overlayFilter.fill("README");
+  await expect(overlay.getByRole("link", { name: "README.md", exact: true })).toBeVisible();
+  expect(searchRequests).toBe(0);
+
+  await overlay.getByRole("link", { name: "README.md", exact: true }).press("/");
+  await expect(page.getByRole("dialog", { name: "Site search" })).toBeVisible();
+  await expect.poll(() => searchRequests).toBe(1);
 });
 
 test("keeps the generated tree navigable without JavaScript", async ({ browser }) => {
@@ -630,4 +761,18 @@ test("falls back when localStorage is unavailable", async ({ browser }) => {
   await page.keyboard.press("ArrowRight");
   await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(308);
   await context.close();
+});
+
+test("filters filenames when the preview denies browser storage access", async ({ page }) => {
+  await page.addInitScript(() => {
+    for (const name of ["localStorage", "sessionStorage"]) {
+      Object.defineProperty(window, name, { get() { throw new DOMException("Unavailable", "SecurityError"); } });
+    }
+  });
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  const script = new URL(await page.locator("script[data-site-script]").evaluate(node => (node as HTMLScriptElement).src));
+  expect(script.searchParams.get("v")).toMatch(/^[0-9a-f]{16}$/);
+  await page.locator("#tree-src input").fill("other.md");
+  await expect(page.locator("#tree-src [data-tree-matches] li.file")).toHaveCount(1);
+  await expect(page.locator("#tree-src [data-tree-scroll]")).toBeHidden();
 });

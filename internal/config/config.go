@@ -128,6 +128,9 @@ type Theme struct {
 
 // View configures browser UI layout.
 type View struct {
+	DirectoryFiles  string `yaml:"directory-files"`
+	ContentWidth    string `yaml:"content-width"`
+	ContentAlign    string `yaml:"content-align"`
 	TreePosition    string `yaml:"tree_position"`
 	TreeExpandDepth int    `yaml:"tree_expand_depth"`
 	// TOCPanel controls Markdown TOC placement: "floating" or "inline".
@@ -193,6 +196,7 @@ func Load(repoRoot, externalPath string, flags Flags) (*Config, []Warning, error
 	if err := normalizeAndValidateGlossary(&cfg); err != nil {
 		return nil, warnings, err
 	}
+	warnings = append(warnings, normalizeReadingView(&cfg.View)...)
 	warnings = append(warnings, lintConfig(cfg)...)
 	return &cfg, warnings, nil
 }
@@ -266,6 +270,9 @@ func defaultConfig() Config {
 			Strict: "refs",
 		},
 		View: View{
+			DirectoryFiles:  "auto",
+			ContentWidth:    "standard",
+			ContentAlign:    "left",
 			TreePosition:    "left",
 			TreeExpandDepth: 2,
 			TOCPanel:        "floating",
@@ -369,6 +376,40 @@ func lintViewConfig(view View) []Warning {
 		return []Warning{{Msg: fmt.Sprintf("view.toc_panel %q is invalid; expected floating or inline", view.TOCPanel)}}
 	}
 	return nil
+}
+
+func normalizeReadingView(view *View) []Warning {
+	var warnings []Warning
+	for _, field := range []struct {
+		path    string
+		value   *string
+		allowed []string
+	}{
+		{"view.directory-files", &view.DirectoryFiles, directoryFilesValues},
+		{"view.content-width", &view.ContentWidth, contentWidthValues},
+		{"view.content-align", &view.ContentAlign, contentAlignValues},
+	} {
+		if reason := readingValueError(*field.value, field.allowed); reason != "" {
+			warnings = append(warnings, Warning{Msg: fmt.Sprintf("%s %q is invalid; %s", field.path, *field.value, reason)})
+			*field.value = field.allowed[0]
+		}
+	}
+	return warnings
+}
+
+var (
+	directoryFilesValues = []string{"auto", "expanded", "collapsed"}
+	contentWidthValues   = []string{"standard", "narrow", "full"}
+	contentAlignValues   = []string{"left", "center", "right"}
+)
+
+func readingValueError(value string, allowed []string) string {
+	for _, option := range allowed {
+		if value == option {
+			return ""
+		}
+	}
+	return "must be one of " + strings.Join(allowed, ", ")
 }
 
 func enabledAgentPaths(agent Agent) []string {
@@ -537,6 +578,9 @@ type themePatch struct {
 }
 
 type viewPatch struct {
+	DirectoryFiles  *string `yaml:"directory-files"`
+	ContentWidth    *string `yaml:"content-width"`
+	ContentAlign    *string `yaml:"content-align"`
 	TreePosition    *string `yaml:"tree_position"`
 	TreeExpandDepth *int    `yaml:"tree_expand_depth"`
 	TOCPanel        *string `yaml:"toc_panel"`
@@ -780,6 +824,15 @@ func applyThemePatch(dst *Theme, patch *themePatch) {
 }
 
 func applyViewPatch(dst *View, patch *viewPatch) {
+	if patch.DirectoryFiles != nil {
+		dst.DirectoryFiles = *patch.DirectoryFiles
+	}
+	if patch.ContentWidth != nil {
+		dst.ContentWidth = *patch.ContentWidth
+	}
+	if patch.ContentAlign != nil {
+		dst.ContentAlign = *patch.ContentAlign
+	}
 	if patch.TreePosition != nil {
 		dst.TreePosition = *patch.TreePosition
 	}

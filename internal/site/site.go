@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -569,7 +570,7 @@ func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (
 	case render.KindHTML:
 		switch opts.HTML.View {
 		case "direct":
-			return pageContent{HTML: htmlDirectBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
+			return pageContent{HTML: b.htmlDirectBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 		case "source":
 			data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
 			if err != nil {
@@ -584,7 +585,7 @@ func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (
 			}
 			return pageContent{HTML: code.HTML, Title: path.Base(file.Path)}, nil
 		default:
-			return pageContent{HTML: htmlEmbedBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
+			return pageContent{HTML: b.htmlEmbedBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 		}
 	case render.KindCode:
 		data, err := os.ReadFile(filepath.Join(model.root, filepath.FromSlash(file.Path)))
@@ -600,9 +601,9 @@ func (b *Builder) fileBody(model siteModel, currentURL string, file fileEntry) (
 		}
 		return pageContent{HTML: code.HTML, Title: path.Base(file.Path)}, nil
 	case render.KindImage:
-		return pageContent{HTML: imageBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
+		return pageContent{HTML: b.imageBody(currentURL, file.Path), Title: path.Base(file.Path)}, nil
 	default:
-		return pageContent{HTML: binaryBody(currentURL, file), Title: path.Base(file.Path)}, nil
+		return pageContent{HTML: b.binaryBody(currentURL, file), Title: path.Base(file.Path)}, nil
 	}
 }
 
@@ -650,12 +651,12 @@ func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
 	data.NoIndex = b.cfg.Access.NoIndex
 	data.SearchEnabled = b.cfg.View.Search
 	data.TreePosition = b.cfg.View.TreePosition
+	data.DirectoryFiles = b.cfg.View.DirectoryFiles
+	data.ContentWidth = b.cfg.View.ContentWidth
+	data.ContentAlign = b.cfg.View.ContentAlign
 	data.Lang = b.cfg.Site.Language
 	data.TOCPanel = tocPanelMode(b.cfg.View.TOCPanel)
 	data.UI = theme.UIStrings(b.cfg.Site.Language)
-	if data.Tree != nil {
-		data.Tree.SearchEnabled = b.cfg.View.Search
-	}
 }
 
 func (b *Builder) dirBody(model siteModel, currentURL, dir string) (pageContent, *source.Commit, error) {
@@ -724,11 +725,16 @@ func (b *Builder) writeRootIndex(outDir string) error {
 	if b.cfg.Access.NoIndex {
 		noindex = `<meta name="robots" content="noindex">` + "\n"
 	}
-	html := "<!doctype html>\n<html><head><meta charset=\"utf-8\">\n" +
+	lang := b.cfg.Site.Language
+	ui := theme.UIStrings(lang)
+	if lang == "" {
+		lang = ui["language_code"]
+	}
+	html := "<!doctype html>\n<html lang=\"" + template.HTMLEscapeString(lang) + "\"><head><meta charset=\"utf-8\">\n" +
 		noindex +
 		"<meta http-equiv=\"refresh\" content=\"0; url=view/\">\n" +
 		"<title>" + template.HTMLEscapeString(b.siteTitle()) + "</title></head>\n" +
-		"<body><a href=\"view/\">Open site</a></body></html>\n"
+		"<body><a href=\"view/\">" + template.HTMLEscapeString(ui["open_site"]) + "</a></body></html>\n"
 	return os.WriteFile(filepath.Join(outDir, "index.html"), []byte(html), 0o644)
 }
 
@@ -739,21 +745,18 @@ func (b *Builder) writeRootIndex(outDir string) error {
 // 仓库自带根 404.html 时让位（镜像层已占该输出路径）。
 func (b *Builder) write404Page(outDir string) error {
 	lang := strings.TrimSpace(b.cfg.Site.Language)
-	heading, hint := "Page not found", "This path has no content on this site. The link may point outside the repository."
-	if strings.HasPrefix(strings.ToLower(lang), "zh") {
-		heading, hint = "页面不存在", "你访问的路径在本站没有对应内容，可能来自指向仓库之外的链接。"
+	ui := theme.UIStrings(lang)
+	if lang == "" {
+		lang = ui["language_code"]
 	}
-	langAttr := ""
-	if lang != "" {
-		langAttr = ` lang="` + template.HTMLEscapeString(lang) + `"`
-	}
+	langAttr := ` lang="` + template.HTMLEscapeString(lang) + `"`
 	html := "<!doctype html>\n<html" + langAttr + "><head><meta charset=\"utf-8\">\n" +
 		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
 		"<meta name=\"robots\" content=\"noindex\">\n" +
 		"<title>404 - " + template.HTMLEscapeString(b.siteTitle()) + "</title>\n" +
 		"<style>body{margin:0;display:grid;min-height:100vh;place-items:center;font:15px/1.6 ui-sans-serif,system-ui,sans-serif;color:#24292f;background:#fff}main{padding:2rem;text-align:center}h1{margin:0 0 .4rem;font-size:2.6rem}p{margin:.2rem 0;color:#6e7781}@media(prefers-color-scheme:dark){body{color:#e6edf3;background:#0d1117}p{color:#8b949e}}</style></head>\n" +
-		"<body><main><h1>404</h1><p><b>" + template.HTMLEscapeString(heading) + "</b></p><p>" +
-		template.HTMLEscapeString(hint) + "</p><p>" + template.HTMLEscapeString(b.siteTitle()) + "</p></main></body></html>\n"
+		"<body><main><h1>404</h1><p><b>" + template.HTMLEscapeString(ui["not_found"]) + "</b></p><p>" +
+		template.HTMLEscapeString(ui["not_found_hint"]) + "</p><p>" + template.HTMLEscapeString(b.siteTitle()) + "</p></main></body></html>\n"
 	return os.WriteFile(filepath.Join(outDir, "404.html"), []byte(html), 0o644)
 }
 
@@ -824,25 +827,30 @@ func dirEntries(model siteModel, currentURL, dir string) []theme.DirEntry {
 	return entries
 }
 
-func htmlEmbedBody(currentURL, repoPath string) template.HTML {
+func (b *Builder) htmlEmbedBody(currentURL, repoPath string) template.HTML {
 	mirror := template.HTMLEscapeString(render.RelTo(currentURL, mirrorURL(repoPath)))
-	return template.HTML(`<div class="toolbar"><a href="` + mirror + `">Open full screen</a></div><iframe class="html-preview" src="` + mirror + `"></iframe>`)
+	ui := theme.UIStrings(b.cfg.Site.Language)
+	return template.HTML(`<div class="toolbar"><a data-i18n="open_full_screen" href="` + mirror + `">` + template.HTMLEscapeString(ui["open_full_screen"]) + `</a></div><iframe class="html-preview" src="` + mirror + `" data-i18n-title="html_preview" title="` + template.HTMLEscapeString(ui["html_preview"]) + `"></iframe>`)
 }
 
-func htmlDirectBody(currentURL, repoPath string) template.HTML {
+func (b *Builder) htmlDirectBody(currentURL, repoPath string) template.HTML {
 	mirror := template.HTMLEscapeString(render.RelTo(currentURL, mirrorURL(repoPath)))
-	return template.HTML(`<div class="toolbar"><a href="` + mirror + `">Open HTML file</a></div>`)
+	ui := theme.UIStrings(b.cfg.Site.Language)
+	return template.HTML(`<div class="toolbar"><a data-i18n="open_html" href="` + mirror + `">` + template.HTMLEscapeString(ui["open_html"]) + `</a></div>`)
 }
 
-func imageBody(currentURL, repoPath string) template.HTML {
+func (b *Builder) imageBody(currentURL, repoPath string) template.HTML {
 	mirror := template.HTMLEscapeString(render.RelTo(currentURL, mirrorURL(repoPath)))
-	return template.HTML(`<p><a href="` + mirror + `">Open image</a></p><img class="preview" src="` + mirror + `" alt="">`)
+	ui := theme.UIStrings(b.cfg.Site.Language)
+	return template.HTML(`<p><a data-i18n="open_image" href="` + mirror + `">` + template.HTMLEscapeString(ui["open_image"]) + `</a></p><img class="preview" src="` + mirror + `" alt="">`)
 }
 
-func binaryBody(currentURL string, file fileEntry) template.HTML {
+func (b *Builder) binaryBody(currentURL string, file fileEntry) template.HTML {
 	mirror := template.HTMLEscapeString(render.RelTo(currentURL, mirrorURL(file.Path)))
 	name := template.HTMLEscapeString(path.Base(file.Path))
-	return template.HTML(fmt.Sprintf(`<p>%s · %d bytes</p><p><a href="%s" download>Download</a></p>`, name, file.Size, mirror))
+	ui := theme.UIStrings(b.cfg.Site.Language)
+	size := strconv.FormatInt(file.Size, 10)
+	return template.HTML(fmt.Sprintf(`<p>%s · <span data-i18n="bytes" data-i18n-param="%s">%s</span></p><p><a data-i18n="download" href="%s" download>%s</a></p>`, name, size, template.HTMLEscapeString(fmt.Sprintf(ui["bytes"], size)), mirror, template.HTMLEscapeString(ui["download"])))
 }
 
 func alternateHead(currentURL, repoPath string) template.HTML {
@@ -980,7 +988,7 @@ func sortTree(node *theme.TreeNode) {
 
 func breadcrumbs(currentURL, repoPath string, dir bool) []theme.Crumb {
 	var crumbs []theme.Crumb
-	crumbs = append(crumbs, theme.Crumb{Label: "root", Path: ".", Href: render.RelTo(currentURL, viewDirURL(""))})
+	crumbs = append(crumbs, theme.Crumb{Label: "root", Path: ".", Root: true, Href: render.RelTo(currentURL, viewDirURL(""))})
 	if repoPath == "" {
 		crumbs[0].Current = true
 		return crumbs

@@ -1,7 +1,9 @@
 package theme
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,6 +23,7 @@ var embedded embed.FS
 
 // Renderer owns the parsed template set and static theme resources.
 type Renderer struct {
+	assetVersion string
 	templates    *template.Template
 	customCSS    string
 	hasCustomCSS bool
@@ -35,6 +38,7 @@ type Crumb struct {
 	Path    string
 	Href    string
 	Current bool
+	Root    bool
 }
 
 // TreeNode is the file-tree shape consumed by the "tree" template. Href is
@@ -48,9 +52,7 @@ type TreeNode struct {
 	IsDir    bool
 	Current  bool
 	Expanded bool
-	// SearchEnabled controls the tree-top search entry on the root node.
-	SearchEnabled bool
-	Children      []*TreeNode
+	Children []*TreeNode
 }
 
 // DirEntry is one child row rendered by the "dirlist" template. Href is
@@ -66,6 +68,9 @@ type DirEntry struct {
 }
 
 type PageData struct {
+	DirectoryFiles   string
+	ContentWidth     string
+	ContentAlign     string
 	Title, SiteTitle string
 	RelRoot          string
 	TreePosition     string
@@ -73,6 +78,7 @@ type PageData struct {
 	Tree             *TreeNode
 	Kind             string
 	KindLabel        string
+	KindLabelKey     string
 	Body             template.HTML
 	TOC              []render.TOCItem
 	MirrorHref       string
@@ -89,7 +95,7 @@ type PageData struct {
 	SnapshotID       string
 	HeadExtra        template.HTML
 	DirEntries       []DirEntry
-	// Lang 为 <html lang> 属性值（site.language），空则省略该属性。
+	// Lang is the configured site language. Empty defaults to Simplified Chinese.
 	Lang string
 	// Terms are the glossary entries referenced on this page, after
 	// front-matter overrides, in first-appearance order.
@@ -116,11 +122,20 @@ func New(overrideDir, customCSS string, vars map[string]string) (*Renderer, erro
 		}
 	}
 
+	hash := sha256.New()
+	for _, name := range []string{"site.js", "site.css"} {
+		data, err := embeddedAsset(name)
+		if err != nil {
+			return nil, err
+		}
+		hash.Write(data)
+	}
 	copiedVars := make(map[string]string, len(vars))
 	for k, v := range vars {
 		copiedVars[k] = v
 	}
 	return &Renderer{
+		assetVersion: fmt.Sprintf("%x", hash.Sum(nil)[:8]),
 		templates:    tpl,
 		customCSS:    customCSS,
 		hasCustomCSS: customCSS != "",
@@ -131,10 +146,12 @@ func New(overrideDir, customCSS string, vars map[string]string) (*Renderer, erro
 func (r *Renderer) Page(w io.Writer, d PageData) error {
 	view := struct {
 		PageData
+		AssetVersion string
 		VarsCSS      template.CSS
 		HasCustomCSS bool
 	}{
 		PageData:     fillPageDefaults(d),
+		AssetVersion: r.assetVersion,
 		VarsCSS:      template.CSS(r.varsCSS()),
 		HasCustomCSS: r.hasCustomCSS,
 	}
@@ -142,17 +159,33 @@ func (r *Renderer) Page(w io.Writer, d PageData) error {
 }
 
 func fillPageDefaults(d PageData) PageData {
+	if d.DirectoryFiles == "" {
+		d.DirectoryFiles = "auto"
+	}
+	if d.ContentWidth == "" {
+		d.ContentWidth = "standard"
+	}
+	if d.ContentAlign == "" {
+		d.ContentAlign = "left"
+	}
 	if d.TreePosition == "" {
 		d.TreePosition = "left"
 	}
 	if d.TOCPanel == "" {
 		d.TOCPanel = "floating"
 	}
+	if d.Lang == "" {
+		d.Lang = "zh-CN"
+	}
 	if d.UI == nil {
 		d.UI = UIStrings(d.Lang)
 	}
 	if d.KindLabel == "" {
-		d.KindLabel = fallbackKindLabel(d.Kind, d.UI)
+		d.KindLabelKey = kindLabelKey(d.Kind)
+		d.KindLabel = d.UI[d.KindLabelKey]
+		if d.KindLabel == "" {
+			d.KindLabel = d.Kind
+		}
 	}
 	return d
 }
@@ -163,7 +196,11 @@ func (r *Renderer) WriteAssets(outDir string) error {
 		return err
 	}
 	for _, name := range []string{"site.css", "site.js", "mermaid.min.js"} {
-		if err := writeEmbeddedAsset(assetsDir, name); err != nil {
+		data, err := embeddedAsset(name)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(assetsDir, name), data, 0o644); err != nil {
 			return err
 		}
 	}
@@ -187,12 +224,19 @@ func (r *Renderer) WriteAssets(outDir string) error {
 	return nil
 }
 
-func writeEmbeddedAsset(assetsDir, name string) error {
+func embeddedAsset(name string) ([]byte, error) {
 	data, err := fs.ReadFile(embedded, "assets/"+name)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return os.WriteFile(filepath.Join(assetsDir, name), data, 0o644)
+	if name == "site.js" {
+		translations, err := json.Marshal(map[string]map[string]string{"zh-CN": uiZH, "en": uiEN})
+		if err != nil {
+			return nil, err
+		}
+		data = []byte(strings.Replace(string(data), "/* REPOLENS_UI_STRINGS */ {}", string(translations), 1))
+	}
+	return data, nil
 }
 
 func chromaCSS() (string, error) {
@@ -337,7 +381,7 @@ func pathBase(p string) string {
 // variants use zh; every other language falls back to English.
 func UIStrings(lang string) map[string]string {
 	source := uiEN
-	if strings.HasPrefix(strings.ToLower(lang), "zh") {
+	if lang == "" || strings.HasPrefix(strings.ToLower(lang), "zh") {
 		source = uiZH
 	}
 	out := make(map[string]string, len(source))
@@ -347,30 +391,56 @@ func UIStrings(lang string) map[string]string {
 	return out
 }
 
-func fallbackKindLabel(kind string, ui map[string]string) string {
+func kindLabelKey(kind string) string {
 	switch kind {
 	case "markdown":
-		return ui["kind_markdown"]
+		return "kind_markdown"
 	case "markdown-source":
-		return ui["kind_markdown_source"]
+		return "kind_markdown_source"
 	case "html", "html-embed", "html-direct":
-		return ui["kind_html"]
+		return "kind_html"
 	case "html-source":
-		return ui["kind_html_source"]
+		return "kind_html_source"
 	case "code":
-		return ui["kind_code"]
+		return "kind_code"
 	case "image":
-		return ui["kind_image"]
+		return "kind_image"
 	case "binary":
-		return ui["kind_binary"]
+		return "kind_binary"
 	case "dir":
-		return ui["kind_dir"]
+		return "kind_dir"
 	default:
-		return kind
+		return ""
 	}
 }
 
 var uiZH = map[string]string{
+	"root_crumb":       "根目录",
+	"language":         "界面语言",
+	"language_current": "简体中文",
+	"language_code":    "zh-CN",
+	"breadcrumbs":      "面包屑导航",
+	"layout":           "布局",
+	"layout_width":     "正文宽度",
+	"layout_align":     "正文对齐",
+	"width_standard":   "标准",
+	"align_left":       "靠左",
+	"align_center":     "居中",
+	"align_right":      "靠右",
+	"layout_reset":     "恢复站点默认值",
+
+	"open_full_screen":     "全屏打开",
+	"open_html":            "打开 HTML 文件",
+	"open_image":           "打开图片",
+	"html_preview":         "HTML 预览",
+	"bytes":                "%s 字节",
+	"open_site":            "打开站点",
+	"not_found":            "页面不存在",
+	"not_found_hint":       "你访问的路径在本站没有对应内容，可能来自指向仓库之外的链接。",
+	"dir_files":            "目录文件（%s）",
+	"dir_name":             "名称",
+	"dir_updated":          "更新时间",
+	"dir_empty":            "没有文件",
 	"tree":                 "文件树",
 	"tree_title":           "文件树（收起/浮出）",
 	"tree_actions":         "文件树操作",
@@ -406,6 +476,9 @@ var uiZH = map[string]string{
 	"search":               "搜索（/）",
 	"search_label":         "站内搜索",
 	"search_placeholder":   "搜索文件与章节...",
+	"tree_filter":          "筛选文件名",
+	"tree_filter_clear":    "清除文件筛选",
+	"tree_filter_empty":    "没有匹配的文件",
 	"search_intro":         "输入以搜索本站文件名与标题",
 	"search_empty":         "无匹配结果",
 	"search_unavailable":   "搜索不可用",
@@ -437,6 +510,32 @@ var uiZH = map[string]string{
 }
 
 var uiEN = map[string]string{
+	"root_crumb":       "root",
+	"language":         "Interface language",
+	"language_current": "English",
+	"language_code":    "en",
+	"breadcrumbs":      "Breadcrumbs",
+	"layout":           "Layout",
+	"layout_width":     "Content width",
+	"layout_align":     "Content alignment",
+	"width_standard":   "Standard",
+	"align_left":       "Left",
+	"align_center":     "Center",
+	"align_right":      "Right",
+	"layout_reset":     "Restore site defaults",
+
+	"open_full_screen":     "Open full screen",
+	"open_html":            "Open HTML file",
+	"open_image":           "Open image",
+	"html_preview":         "HTML preview",
+	"bytes":                "%s bytes",
+	"open_site":            "Open site",
+	"not_found":            "Page not found",
+	"not_found_hint":       "This path has no content on this site. The link may point outside the repository.",
+	"dir_files":            "Directory files (%s)",
+	"dir_name":             "Name",
+	"dir_updated":          "Updated",
+	"dir_empty":            "No files",
 	"tree":                 "Repository tree",
 	"tree_title":           "Repository tree",
 	"tree_actions":         "Repository tree actions",
@@ -472,6 +571,9 @@ var uiEN = map[string]string{
 	"search":               "Search (/)",
 	"search_label":         "Site search",
 	"search_placeholder":   "Search files and headings...",
+	"tree_filter":          "Filter by filename",
+	"tree_filter_clear":    "Clear file filter",
+	"tree_filter_empty":    "No matching files",
 	"search_intro":         "Type to search files and headings",
 	"search_empty":         "No matching results",
 	"search_unavailable":   "Search unavailable",

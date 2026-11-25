@@ -29,7 +29,7 @@ test.beforeAll(async () => {
 
   server = createServer((request, response) => {
     const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://127.0.0.1").pathname);
-    let filePath = join(output, pathname.replace(/^\/+/, ""));
+    let filePath = join(output, pathname.replace(/^\/(?:first\/|second\/)?/, ""));
     try {
       if (statSync(filePath).isDirectory()) filePath = join(filePath, "index.html");
       const contentTypes: Record<string, string> = {
@@ -77,6 +77,8 @@ test("anchor navigation works without JavaScript", async ({ browser }) => {
   await expect(page.locator("#glossary-mediation")).toBeVisible();
   await expect(page.locator("#glossary-mediation .glossary-title")).toHaveText("Mediation");
   await expect(page.locator("#btn-glossary")).toHaveCount(1);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(page.locator("#btn-language")).toBeHidden();
   await context.close();
 });
 
@@ -88,4 +90,59 @@ test("pjax navigation closes the drawer and drops previous terms", async ({ page
   await expect(page).toHaveURL(/docs\/other\.md/);
   await expect(page.locator("#glossary-drawer")).toHaveCount(0);
   await expect(page.locator("a.term")).toHaveCount(0);
+});
+
+test("persists interface language through PJAX history and isolates deployments", async ({ page }) => {
+  await page.goto(`${siteURL}/first/view/README.md/`);
+  const language = page.getByRole("button", { name: "界面语言" });
+  await language.click();
+  const rows = await page.locator("#language-menu label").evaluateAll(labels =>
+    labels.map(label => label.getBoundingClientRect().toJSON())
+  );
+  expect(rows[1].top).toBeGreaterThanOrEqual(rows[0].bottom);
+  expect(rows[1].left).toBe(rows[0].left);
+  await page.keyboard.press("Escape");
+  await expect(language).toBeFocused();
+  await language.click();
+  await page.getByRole("radio", { name: "English" }).click();
+
+  const term = page.locator("a.term").first();
+  await expect(term).toHaveAttribute("aria-label", "广告聚合 (term, view definition)");
+  await expect(term).toHaveText("广告聚合");
+  await expect(page.getByRole("link", { name: "root", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Interface language" })).toBeFocused();
+  await page.evaluate(() => { document.body.dataset.testPjax = "active"; });
+
+  await page.locator("#content a[href*='other.md']").click();
+  await expect(page).toHaveURL(/first\/view\/docs\/other\.md/);
+  await expect(page.locator("#content h1")).toHaveText("Other ¶");
+  await expect(page.locator("#btn-info")).toHaveAttribute("aria-label", "Page information");
+
+  await page.goBack();
+  await expect(term).toHaveAttribute("aria-label", "广告聚合 (term, view definition)");
+  await page.goForward();
+  await expect(page.locator("#content h1")).toHaveText("Other ¶");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.locator("body")).toHaveAttribute("data-test-pjax", "active");
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.goto(`${siteURL}/second/view/README.md/`);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(term).toHaveAttribute("aria-label", "广告聚合（术语，查看解释）");
+  await expect(page.getByRole("link", { name: "根目录", exact: true })).toBeVisible();
+});
+
+test("reveals heading permalinks on hover and keyboard focus", async ({ page }) => {
+  await page.goto(`${siteURL}/view/README.md/`);
+  const heading = page.locator("#content h1").first();
+  const link = heading.locator("a.anchor");
+  await expect(link).toHaveCSS("opacity", "0");
+  await heading.hover();
+  await expect(link).toHaveCSS("opacity", "1");
+  await page.mouse.move(0, 0);
+  await link.focus();
+  await expect(link).toHaveCSS("opacity", "1");
+  await link.press("Enter");
+  expect(new URL(page.url()).hash).toBeTruthy();
 });
