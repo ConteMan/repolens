@@ -908,14 +908,22 @@
           "alignItems": "center",
           "children": [
             {
-              "type": "icon",
+              "type": "path",
               "id": "LwGHY",
-              "name": "settings",
-              "width": 18,
-              "height": 18,
-              "icon": "settings",
-              "library": "lucide",
-              "fill": "$ink"
+              "name": "Lucide 0.468.0 / settings",
+              "width": 16,
+              "height": 16,
+              "geometry": "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0z",
+              "viewBox": [
+                0,
+                0,
+                24,
+                24
+              ],
+              "stroke": "$ink",
+              "strokeWidth": 1.3333333333333333,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
             }
           ]
         },
@@ -1459,14 +1467,22 @@
           "alignItems": "center",
           "children": [
             {
-              "type": "icon",
+              "type": "path",
               "id": "IlUZL",
-              "name": "sliders-horizontal",
+              "name": "Lucide 0.468.0 / sliders-horizontal",
               "width": 16,
               "height": 16,
-              "icon": "sliders-horizontal",
-              "library": "lucide",
-              "fill": "$ink"
+              "geometry": "M21 4L14 4 M10 4L3 4 M21 12L12 12 M8 12L3 12 M21 20L16 20 M12 20L3 20 M14 2L14 6 M8 10L8 14 M16 18L16 22",
+              "viewBox": [
+                0,
+                0,
+                24,
+                24
+              ],
+              "stroke": "$ink",
+              "strokeWidth": 1.3333333333333333,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
             },
             {
               "type": "text",
@@ -1746,6 +1762,99 @@
               ]
             }
           ]
+        },
+        {
+          "type": "frame",
+          "id": "numMB0",
+          "name": "字段 / 数值与单位",
+          "x": 176,
+          "y": 194,
+          "width": 240,
+          "height": 36,
+          "reusable": true,
+          "layout": "horizontal",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "numBox",
+              "name": "数字输入",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "cornerRadius": 6,
+              "stroke": "$edge",
+              "strokeWidth": 1,
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "numTxt",
+                  "name": "数值",
+                  "content": "2",
+                  "fill": "$ink",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "textAlign": "right"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "unitSel",
+              "name": "单位选择",
+              "width": 90,
+              "height": 36,
+              "fill": "$paper",
+              "cornerRadius": 6,
+              "stroke": "$edge",
+              "strokeWidth": 1,
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "unitTxt",
+                  "name": "单位",
+                  "content": "MB",
+                  "fill": "$ink",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "path",
+                  "id": "unitArr",
+                  "name": "Lucide 0.468.0 / chevron-down",
+                  "width": 14,
+                  "height": 14,
+                  "geometry": "m6 9 6 6 6-6",
+                  "viewBox": [
+                    0,
+                    0,
+                    24,
+                    24
+                  ],
+                  "stroke": "$muted",
+                  "strokeWidth": 1.1666666666666667,
+                  "strokeLinecap": "round",
+                  "strokeLinejoin": "round"
+                }
+              ],
+              "justifyContent": "space_between"
+            }
+          ]
         }
       ]
     },
@@ -1875,13 +1984,22 @@
                       "fontWeight": "600"
                     },
                     {
-                      "type": "icon",
+                      "type": "path",
                       "id": "g25xXb",
                       "width": 14,
                       "height": 14,
-                      "icon": "chevron-down",
-                      "library": "lucide",
-                      "fill": "$muted"
+                      "name": "Lucide 0.468.0 / chevron-down",
+                      "geometry": "m6 9 6 6 6-6",
+                      "viewBox": [
+                        0,
+                        0,
+                        24,
+                        24
+                      ],
+                      "stroke": "$muted",
+                      "strokeWidth": 1.1666666666666667,
+                      "strokeLinecap": "round",
+                      "strokeLinejoin": "round"
                     }
                   ]
                 }
@@ -1937,7 +2055,8 @@
                   "fill": "$surface",
                   "descendants": {
                     "IlUZL": {
-                      "icon": "play"
+                      "geometry": "M6 3 20 12 6 21 6 3Z",
+                      "name": "Lucide 0.468.0 / play"
                     },
                     "bbk1n": {
                       "content": "构建与预览",
@@ -3394,15 +3513,15 @@
                     },
                     {
                       "id": "n55tab",
-                      "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "5 MB",
+                      "name": "数字输入 / 5 MB",
                       "x": 263.06999999999994,
                       "y": 338,
                       "width": 447.93,
+                      "type": "ref",
+                      "ref": "numMB0",
                       "descendants": {
-                        "HuoLu": {
-                          "content": "5 MB"
+                        "numTxt": {
+                          "content": "5"
                         }
                       }
                     },
@@ -4037,15 +4156,15 @@
                     },
                     {
                       "id": "gO9Wg",
-                      "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "2 MB",
+                      "name": "数字输入 / 2 MB",
                       "x": 263.06999999999994,
                       "y": 118,
                       "width": 447.93,
+                      "type": "ref",
+                      "ref": "numMB0",
                       "descendants": {
-                        "HuoLu": {
-                          "content": "2 MB"
+                        "numTxt": {
+                          "content": "2"
                         }
                       }
                     },
@@ -5503,16 +5622,18 @@
                     },
                     {
                       "id": "AD1Pn",
-                      "type": "ref",
-                      "ref": "cxxRg",
-                      "name": "5 MB",
+                      "name": "数字输入 / -1 MB",
                       "x": 263.06999999999994,
                       "y": 338,
                       "width": 447.93,
-                      "stroke": "#A24A32",
+                      "type": "ref",
+                      "ref": "numMB0",
                       "descendants": {
-                        "HuoLu": {
-                          "content": "-1 MB"
+                        "numTxt": {
+                          "content": "-1"
+                        },
+                        "numBox": {
+                          "stroke": "#b42318"
                         }
                       }
                     },
