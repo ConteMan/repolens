@@ -12,7 +12,7 @@ macOS 支持 13 及以上版本。历史桌面版 0.1.0 使用 `desktop-v` 更�
 
 ## 准备候选
 
-维护者同步修改 `cmd/repolens-desktop/mygo.json`、[桌面更新说明](../cmd/repolens-desktop/CHANGELOG.md) 与根目录 [CHANGELOG](../CHANGELOG.md)。MyGo 在构建时将桌面更新说明写入应用内更新清单。CI 在 Windows 上检查原生工作区并生成候选安装包。完成两端生成结果对比、Windows 桌面体验与安装验收，再打正式标签。
+维护者同步修改 `cmd/repolens-desktop/mygo.json`、[桌面更新说明](../cmd/repolens-desktop/CHANGELOG.md) 与根目录 [CHANGELOG](../CHANGELOG.md)。MyGo 在构建时将桌面更新说明写入应用内更新清单。CI 在 Windows 上检查原生工作区并生成候选安装包。完成两端生成结果对比及 Windows runner 的安装、启动、构建、卸载验收，再打正式标签。1.10.0 的 Windows 11 实机体验回归按维护者确认安排在发布后。
 
 在具备 Developer ID 和 Apple 公证凭据的 Mac 上从发布提交构建。需要 NSIS 的 `makensis` 和 OpenSSL 3，可通过 Homebrew 安装 `nsis` 与 `openssl@3`。两个平台的更新使用同一把 Repolens 专用 Ed25519 密钥。默认路径为 `~/Library/Application Support/Repolens/update-keys/mygo-update.key`，权限 0600；可用 `REPOLENS_UPDATE_KEY_PATH` 指定备份恢复后的文件。私钥留在发布机。Apple 公证使用钥匙串中的 `cubbix-notary`。
 
