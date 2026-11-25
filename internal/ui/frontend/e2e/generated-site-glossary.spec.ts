@@ -96,6 +96,11 @@ test("persists interface language through PJAX history and isolates deployments"
   await page.goto(`${siteURL}/first/view/README.md/`);
   const language = page.getByRole("button", { name: "界面语言" });
   await language.click();
+  const rows = await page.locator("#language-menu label").evaluateAll(labels =>
+    labels.map(label => label.getBoundingClientRect().toJSON())
+  );
+  expect(rows[1].top).toBeGreaterThanOrEqual(rows[0].bottom);
+  expect(rows[1].left).toBe(rows[0].left);
   await page.keyboard.press("Escape");
   await expect(language).toBeFocused();
   await language.click();
