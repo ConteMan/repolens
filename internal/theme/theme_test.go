@@ -196,7 +196,7 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		Kind:          "markdown",
 		Body:          html("<p>Guide</p>"),
 		SearchEnabled: true,
-		Tree: &TreeNode{IsDir: true, SearchEnabled: true, Children: []*TreeNode{
+		Tree: &TreeNode{IsDir: true, Children: []*TreeNode{
 			{
 				Name:     "docs",
 				Path:     "docs",
@@ -233,7 +233,7 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<use href="#icon-tree"></use>`,
 		`<nav class="tree-nav" id="tree-src" data-i18n-aria-label="tree" aria-label="文件树">`,
 		`<div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" data-i18n-aria-label="tree_resize" aria-label="调整文件树宽度" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>`,
-		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
+		`data-tree-filter-input data-i18n-aria-label="tree_filter" aria-label="筛选文件名"`,
 		`<ul class="tree" data-tree-scroll>`,
 		`<div class="tree-actions js-only" role="group" data-i18n-aria-label="tree_actions" aria-label="文件树操作">`,
 		`data-tree-action="expand" data-i18n-title="tree_expand_all" title="全部展开" data-i18n-aria-label="tree_expand_all" aria-label="全部展开"`,

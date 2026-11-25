@@ -112,7 +112,7 @@
   <aside class="sidebar">
     <nav class="tree-nav" id="tree-src" data-i18n-aria-label="tree" aria-label="{{index .UI "tree"}}">
       {{template "tree-actions" .}}
-      {{template "tree" .Tree}}
+      {{if and .Tree .SearchEnabled}}{{template "tree-filter" .}}{{end}}{{template "tree" .Tree}}
     </nav>
   </aside>
   <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" data-i18n-aria-label="tree_resize" aria-label="{{index .UI "tree_resize"}}" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
@@ -166,3 +166,12 @@
   <button class="tree-action" type="button" data-tree-action="collapse" data-i18n-title="tree_collapse_all" title="{{index .UI "tree_collapse_all"}}" data-i18n-aria-label="tree_collapse_all" aria-label="{{index .UI "tree_collapse_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
   <button class="tree-action" type="button" data-tree-action="locate" data-i18n-title="tree_locate_current" title="{{index .UI "tree_locate_current"}}" data-i18n-aria-label="tree_locate_current" aria-label="{{index .UI "tree_locate_current"}}"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
 </div>{{end}}
+
+{{define "tree-filter"}}
+<div class="tree-filter js-only">
+  <svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+  <input type="text" data-tree-filter-input data-i18n-aria-label="tree_filter" aria-label="{{index .UI "tree_filter"}}" data-i18n-placeholder="tree_filter" placeholder="{{index .UI "tree_filter"}}" autocomplete="off" spellcheck="false">
+  <button class="tree-action" type="button" data-tree-filter-clear data-i18n-title="tree_filter_clear" title="{{index .UI "tree_filter_clear"}}" data-i18n-aria-label="tree_filter_clear" aria-label="{{index .UI "tree_filter_clear"}}" hidden><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+</div>
+<p class="tree-filter-empty" data-tree-filter-empty role="status" hidden><span data-i18n="tree_filter_empty">{{index .UI "tree_filter_empty"}}</span></p>
+{{end}}

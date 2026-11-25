@@ -510,7 +510,7 @@ func TestSearchSwitchAndAgentIndexIndependence(t *testing.T) {
 	assertMissing(t, outDir, "search.json")
 	page := readOutput(t, outDir, "view/README.md/index.html")
 	assertNotContains(t, page, `id="btn-search"`)
-	assertNotContains(t, page, `data-tree-search-placeholder`)
+	assertNotContains(t, page, `data-tree-filter-input`)
 	assertNotContains(t, page, `id="search-modal"`)
 }
 

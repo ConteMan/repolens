@@ -50,9 +50,7 @@ type TreeNode struct {
 	IsDir    bool
 	Current  bool
 	Expanded bool
-	// SearchEnabled controls the tree-top search entry on the root node.
-	SearchEnabled bool
-	Children      []*TreeNode
+	Children []*TreeNode
 }
 
 // DirEntry is one child row rendered by the "dirlist" template. Href is
@@ -461,6 +459,9 @@ var uiZH = map[string]string{
 	"search":               "搜索（/）",
 	"search_label":         "站内搜索",
 	"search_placeholder":   "搜索文件与章节...",
+	"tree_filter":          "筛选文件名",
+	"tree_filter_clear":    "清除文件筛选",
+	"tree_filter_empty":    "没有匹配的文件",
 	"search_intro":         "输入以搜索本站文件名与标题",
 	"search_empty":         "无匹配结果",
 	"search_unavailable":   "搜索不可用",
@@ -553,6 +554,9 @@ var uiEN = map[string]string{
 	"search":               "Search (/)",
 	"search_label":         "Site search",
 	"search_placeholder":   "Search files and headings...",
+	"tree_filter":          "Filter by filename",
+	"tree_filter_clear":    "Clear file filter",
+	"tree_filter_empty":    "No matching files",
 	"search_intro":         "Type to search files and headings",
 	"search_empty":         "No matching results",
 	"search_unavailable":   "Search unavailable",

@@ -728,43 +728,58 @@ body[data-tree-position="right"][data-tree-mode="floating"] .sidebar {
   outline-offset: 1px;
 }
 
-.tree-search {
+.tree-filter {
   display: flex;
-  gap: 0.45rem;
   align-items: center;
-  width: 100%;
+  gap: 0.4rem;
   min-height: 2rem;
   margin-bottom: 0.55rem;
-  padding: 0.35rem 0.55rem;
+  padding: 0 0.35rem 0 0.55rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--muted);
   background: var(--bg);
-  font: inherit;
-  font-size: 0.86rem;
-  cursor: pointer;
 }
 
-.tree-search:hover {
-  color: var(--fg);
-  background: var(--subtle-strong);
-}
-
-.tree-search:focus-visible {
+.tree-filter:focus-within {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-.tree-search span {
-  min-width: 0;
+.tree-filter input {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: var(--fg);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
 }
 
-.tree-search kbd {
+.tree-filter input::placeholder {
   color: var(--muted);
+}
+
+.tree-filter .tree-action {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.tree-filter .tree-action[hidden] {
+  display: none;
+}
+
+.tree-filter-empty {
+  margin: 0.15rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.tree[data-tree-matches] summary {
+  cursor: default;
 }
 
 .tree-actions {
@@ -788,7 +803,12 @@ body[data-tree-position="right"][data-tree-mode="floating"] .sidebar {
   cursor: pointer;
 }
 
-.tree-action:hover {
+.tree-action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tree-action:hover:not(:disabled) {
   color: var(--fg);
   border-color: var(--border);
   background: var(--subtle-strong);
@@ -929,6 +949,49 @@ h4 {
 
 .page {
   overflow-wrap: anywhere;
+}
+
+/* Keep document rhythm independent of navigation and generated file tables. */
+:where(.page-markdown, .readme) :is(ul, ol) {
+  padding-inline-start: 1.65em;
+}
+
+:where(.page-markdown, .readme) li + li {
+  margin-block-start: 0.35em;
+}
+
+:where(.page-markdown, .readme) li > :is(ul, ol) {
+  margin-block: 0.35em 0;
+}
+
+:where(.page-markdown, .readme) li:has(> :is(ul, ol)) + li {
+  margin-block-start: 0.85em;
+}
+
+:where(.page-markdown, .readme) > :is(p, ul, ol, blockquote, pre, .highlight, .table-scroll) {
+  margin-block: 1.05em;
+}
+
+:where(.page-markdown, .readme) :not(pre) > code {
+  padding: 0.12em 0.3em;
+  border-radius: 0.25em;
+  background: var(--subtle);
+}
+
+:where(.page-markdown, .readme) > pre:not(.mermaid) {
+  padding: 0.8em 1em;
+}
+
+:where(.page-markdown, .readme) > blockquote {
+  padding-block: 0.1em;
+}
+
+:where(.page-markdown, .readme) blockquote > :first-child {
+  margin-block-start: 0;
+}
+
+:where(.page-markdown, .readme) blockquote > :last-child {
+  margin-block-end: 0;
 }
 
 .page > :first-child {

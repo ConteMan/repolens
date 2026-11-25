@@ -657,9 +657,6 @@ func (b *Builder) fillCommonPageData(currentURL string, data *theme.PageData) {
 	data.Lang = b.cfg.Site.Language
 	data.TOCPanel = tocPanelMode(b.cfg.View.TOCPanel)
 	data.UI = theme.UIStrings(b.cfg.Site.Language)
-	if data.Tree != nil {
-		data.Tree.SearchEnabled = b.cfg.View.Search
-	}
 }
 
 func (b *Builder) dirBody(model siteModel, currentURL, dir string) (pageContent, *source.Commit, error) {

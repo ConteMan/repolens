@@ -120,7 +120,6 @@
     document.querySelectorAll('#language-menu input').forEach(function (option) {
       option.checked = option.value === languagePreference;
     });
-    initTreeSearchEntrypoints(document);
     if (body.getAttribute("data-search") === "open") {
       renderSearchResults($("search-input").value);
     }
@@ -590,9 +589,74 @@
       bindDetails(document);
     }
     Array.prototype.forEach.call(document.querySelectorAll("[data-tree-scroll]"), bindScroll);
-    initTreeSearchEntrypoints(document);
     applyTreeMode(savedTreePreference());
     setupSidebarResizer();
+  }
+
+  function appendTreeMatches(source, result, query) {
+    Array.prototype.forEach.call(source.children, function (item) {
+      var link = item.firstElementChild;
+      if (item.classList.contains("file")) {
+        if (link.querySelector("span").textContent.toLowerCase().includes(query)) {
+          result.appendChild(item.cloneNode(true));
+        }
+        return;
+      }
+
+      var details = link.nextElementSibling;
+      var children = details.lastElementChild;
+      var matches = children.cloneNode(false);
+      appendTreeMatches(children, matches, query);
+      if (!matches.childElementCount) {
+        return;
+      }
+
+      var branch = item.cloneNode(false);
+      var open = document.createElement("details");
+      var summary = details.firstElementChild.cloneNode(true);
+      summary.setAttribute("inert", "");
+      open.open = true;
+      open.append(summary, matches);
+      branch.append(link.cloneNode(true), open);
+      result.appendChild(branch);
+    });
+  }
+
+  function updateTreeFilter(value) {
+    var query = value.trim().toLowerCase();
+    document.querySelectorAll("[data-tree-filter-input]").forEach(function (input) {
+      if (input.value !== value) {
+        input.value = value;
+      }
+      var nav = input.closest("nav");
+      var original = nav.querySelector("[data-tree-scroll]");
+      var previous = nav.querySelector("[data-tree-matches]");
+      var empty = nav.querySelector("[data-tree-filter-empty]");
+      if (previous) {
+        previous.remove();
+      }
+      nav.querySelector("[data-tree-filter-clear]").hidden = !value;
+      original.hidden = !!query;
+      empty.hidden = true;
+      nav.querySelectorAll("[data-tree-action]").forEach(function (button) {
+        button.disabled = !!query;
+      });
+      if (!query) {
+        return;
+      }
+
+      // Keep the original tree and its persisted expansion state untouched.
+      var result = original.cloneNode(false);
+      result.hidden = false;
+      result.removeAttribute("data-tree-scroll");
+      result.setAttribute("data-tree-matches", "");
+      appendTreeMatches(original, result, query);
+      if (result.childElementCount) {
+        original.after(result);
+      } else {
+        empty.hidden = false;
+      }
+    });
   }
 
   function getZoomIndex() {
@@ -918,17 +982,6 @@
     }
     fetchPage(url, true).catch(function () { window.location.href = url.href; });
   }
-  function initTreeSearchEntrypoints(root) {
-    Array.prototype.forEach.call(root.querySelectorAll("[data-tree-search-placeholder]"), function (entry) {
-      var label = document.createElement("span"), key = document.createElement("kbd");
-      entry.hidden = false; entry.setAttribute("role", "button"); entry.setAttribute("tabindex", "0");
-      entry.setAttribute("aria-label", searchText("label"));
-      entry.textContent = "";
-      label.textContent = searchText("placeholder"); key.textContent = "/";
-      entry.appendChild(icon("icon-search")); entry.appendChild(label); entry.appendChild(key);
-    });
-  }
-
   function applyToolbarState() {
     applyZoom();
     applyLayout();
@@ -1295,8 +1348,9 @@
     } else if (button && button.id === "btn-search") {
       openSearch(button);
       return;
-    } else if (target.closest && target.closest("[data-tree-search-placeholder]")) {
-      openSearch(target.closest("[data-tree-search-placeholder]"));
+    } else if (button && button.hasAttribute("data-tree-filter-clear")) {
+      button.closest("nav").querySelector("[data-tree-filter-input]").focus();
+      updateTreeFilter("");
       return;
     } else if (target.closest && target.closest(".search-item")) {
       goSearchResult(searchResults[Number(target.closest(".search-item").getAttribute("data-search-index"))]);
@@ -1340,6 +1394,8 @@
   document.addEventListener("input", function (event) {
     if (event.target && event.target.id === "search-input") {
       renderSearchResults(event.target.value);
+    } else if (event.target.hasAttribute("data-tree-filter-input")) {
+      updateTreeFilter(event.target.value);
     }
   });
 
@@ -1377,13 +1433,26 @@
       closeGlossary(true);
       return;
     }
-    if (event.key === "/" && body.getAttribute("data-search") !== "open" && !editable) {
+    var filterInput = event.target.hasAttribute("data-tree-filter-input");
+    if (filterInput && event.isComposing) {
+      return;
+    }
+    if (filterInput && event.key === "Escape" && event.target.value) {
+      event.preventDefault();
+      updateTreeFilter("");
+      return;
+    }
+    if (filterInput && event.key === "Enter" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      var firstMatch = event.target.closest("nav").querySelector("[data-tree-matches] .tree-file");
+      if (firstMatch) {
+        event.preventDefault();
+        firstMatch.click();
+      }
+      return;
+    }
+    if (event.key === "/" && searchModal() && body.getAttribute("data-search") !== "open" && !editable) {
       event.preventDefault();
       openSearch(document.activeElement);
-    } else if ((event.key === "Enter" || event.key === " ") && event.target.closest && event.target.closest("[data-tree-search-placeholder]")) {
-      // 树顶搜索入口是 role="button" 的 div，键盘激活需自行处理。
-      event.preventDefault();
-      openSearch(event.target.closest("[data-tree-search-placeholder]"));
     } else if (body.getAttribute("data-search") === "open" && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
       selectSearch(event.key === "ArrowDown" ? 1 : -1);

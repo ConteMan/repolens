@@ -294,7 +294,7 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
 
   const fixedScroll = fixedTree.locator(":scope > .tree");
   const fixedActions = fixedTree.getByRole("group", { name: "Repository tree actions" });
-  const fixedSearch = fixedTree.locator(".tree-search");
+  const fixedSearch = fixedTree.locator(".tree-filter");
   const fixedActionsTop = (await fixedActions.boundingBox())?.y;
   const fixedSearchTop = (await fixedSearch.boundingBox())?.y;
   await fixedScroll.evaluate((tree) => {
@@ -333,7 +333,7 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
 
   const overlayScroll = overlayTree.locator(":scope > .tree");
   const overlayActions = overlayTree.getByRole("group", { name: "Repository tree actions" });
-  const overlaySearch = overlayTree.locator(".tree-search");
+  const overlaySearch = overlayTree.locator(".tree-filter");
   const overlayActionsTop = (await overlayActions.boundingBox())?.y;
   const overlaySearchTop = (await overlaySearch.boundingBox())?.y;
   await overlayScroll.evaluate((tree) => {
@@ -373,6 +373,60 @@ test("keeps bulk tree actions synchronized and locates the current file", async 
   await page.locator("#btn-tree").click();
   await expect(page.locator("body")).toHaveAttribute("data-overlay", "open");
   await expect(page.locator("#overlay-tree").getByRole("button", { name: "Locate current file" })).toBeVisible();
+});
+
+test("filters both tree layouts by filename without changing directory state", async ({ page }) => {
+  await page.goto(`${siteURL}/view/README.md/`);
+  const fixed = page.locator("#tree-src");
+  const overlay = page.locator("#overlay-tree");
+  const fixedFilter = fixed.getByRole("textbox", { name: "Filter by filename" });
+  const overlayFilter = overlay.getByRole("textbox", { name: "Filter by filename" });
+  let searchRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().endsWith("/search.json")) searchRequests += 1;
+  });
+
+  const scroll = fixed.locator("[data-tree-scroll]");
+  await fixed.getByRole("button", { name: "Expand all" }).click();
+  await scroll.evaluate((tree) => { tree.scrollTop = 300; });
+  const scrollTop = await scroll.evaluate((tree) => tree.scrollTop);
+  expect(scrollTop).toBeGreaterThan(0);
+  await fixedFilter.fill("OTHER.MD");
+  await expect(fixed.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await expect(fixed.getByRole("link", { name: currentPath })).toBeHidden();
+  await expect(fixed.getByRole("button", { name: "Clear file filter" })).toBeVisible();
+  await fixed.getByRole("button", { name: "Clear file filter" }).click();
+  await expect(fixedFilter).toBeFocused();
+  await expect.poll(() => scroll.evaluate((tree) => tree.scrollTop)).toBe(scrollTop);
+  await fixed.getByRole("button", { name: "Collapse all" }).click();
+
+  await fixedFilter.fill("deeply");
+  await expect(fixed.getByRole("status")).toHaveText("No matching files");
+  await fixedFilter.fill("OTHER.MD");
+  await expect(fixed.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await expect(page.locator("details[data-tree-path][open]")).toHaveCount(0);
+  expect(searchRequests).toBe(0);
+
+  await page.locator("#btn-tree").click();
+  await page.locator("#btn-tree").click();
+  await expect(overlayFilter).toHaveValue("OTHER.MD");
+  await expect(overlay.getByRole("link", { name: "docs/other.md" })).toBeVisible();
+  await overlayFilter.press("Escape");
+  await expect(overlayFilter).toHaveValue("");
+  await expect(overlay.getByRole("link", { name: "docs/other.md" })).toBeHidden();
+  await expect(page.locator("details[data-tree-path][open]")).toHaveCount(0);
+  await overlayFilter.fill("OTHER.MD");
+  await overlayFilter.press("Enter");
+  await expect(page).toHaveURL(`${siteURL}/view/docs/other.md/`);
+  await page.locator("#btn-tree").click();
+  await expect(overlayFilter).toHaveValue("");
+  await overlayFilter.fill("README");
+  await expect(overlay.getByRole("link", { name: "README.md", exact: true })).toBeVisible();
+  expect(searchRequests).toBe(0);
+
+  await overlay.getByRole("link", { name: "README.md", exact: true }).press("/");
+  await expect(page.getByRole("dialog", { name: "Site search" })).toBeVisible();
+  await expect.poll(() => searchRequests).toBe(1);
 });
 
 test("keeps the generated tree navigable without JavaScript", async ({ browser }) => {
