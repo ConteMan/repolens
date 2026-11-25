@@ -6,7 +6,7 @@ Thanks for your interest! repolens is developed docs-first and AI-agent-first: d
 
 ## Development setup
 
-Requirements: Go ≥ 1.25 and `git` on PATH. Changes to the `repolens ui` frontend also require Node.js 24 and pnpm 10.
+Requirements: Go ≥ 1.27.4 and `git` on PATH. Changes to the `repolens ui` frontend also require Node.js 24 and pnpm 10.
 
 ```sh
 git clone git@github.com:ConteMan/repolens.git
