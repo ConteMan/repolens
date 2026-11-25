@@ -15,7 +15,7 @@ import (
 )
 
 type desktopBuildState struct {
-	output             string
+	output             *string
 	result             build.NativeBuildResult
 	finished           time.Time
 	running, overwrite bool
@@ -88,7 +88,7 @@ func (d *desktopWindow) pickOutput() {
 			d.picking = false
 			d.buildState.err = err
 			if len(paths) > 0 {
-				d.buildState.output = paths[0]
+				d.buildState.output = &paths[0]
 				d.buildState.overwrite = false
 			}
 			d.window.Invalidate()
@@ -113,16 +113,17 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 			})
 			ui.Row(c).FillWidth().Height(44).AlignItems(ui.Center).Gap(8).Children(func() {
 				ui.Text(c, d.text("输出位置", "Output location")).WidthPercent(37).Bold()
-				label := b.output
-				if label == "" {
-					label = build.NativeOutputPath(d.session.BuilderPath, d.session.Builder.Output.Dir)
+				label := build.NativeOutputPath(d.session.BuilderPath, d.session.Builder.Output.Dir)
+				if b.output != nil {
+					label = *b.output
 				}
 				if label == "" {
 					label = d.text("应用缓存", "Application cache")
 				}
 				ui.Text(c, label).TextColor(c.Theme().TextMuted).Grow(1).MinWidth(0).TruncateMiddle().Tooltip(label)
-				if b.output != "" && ui.Button(c.Key("reset-output"), d.text("恢复默认", "Use default")).Disabled(d.busy).Clicked() {
-					b.output = ""
+				if b.output != nil && ui.Button(c.Key("reset-output"), d.text("恢复默认", "Use default")).Disabled(d.busy).Clicked() {
+					b.output = nil
+					b.err = nil
 					b.overwrite = false
 				}
 				if ui.Button(c.Key("output-directory"), d.text("更改目录", "Change folder")).Disabled(d.picking || d.busy).Clicked() {
@@ -157,7 +158,14 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 				})
 			}
 			if b.err != nil {
-				ui.Text(c, b.err.Error()).TextColor(c.Theme().Danger).Selectable()
+				d.buildIssue(c, b.err)
+			}
+			if build.BuildOutputErrorCode(b.err) == "output_not_owned" {
+				if ui.Button(c.Key("build-in-cache"), d.text("在应用缓存中构建", "Build in application cache")).Disabled(d.busy || d.dirty()).Clicked() {
+					cache := ""
+					b.output = &cache
+					d.runBuild(false)
+				}
 			}
 			if b.finished.IsZero() {
 				return
@@ -185,7 +193,7 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 				}
 			})
 			for _, warning := range b.result.Warnings {
-				ui.Text(c, warning).TextColor(c.Theme().TextMuted)
+				d.buildWarning(c, warning)
 			}
 		})
 	})

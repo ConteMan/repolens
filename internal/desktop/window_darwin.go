@@ -14,11 +14,6 @@ import (
 
 const defaultSidebarWidth float32 = 236
 
-var (
-	repositoryChevron = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m4 6 4 4 4-4"/></svg>`))
-	savedCheck        = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.6" d="m3 8 3.2 3.2L13 4.5"/></svg>`))
-)
-
 type desktopPage int
 
 const (
@@ -347,7 +342,7 @@ func (d *desktopWindow) repositorySelector(c *ui.Context) {
 			ui.Row(c).Gap(8).Wrap().Children(func() {
 				retry := ui.PrimaryButton(c.Key("retry-picker"), d.text("重新选择文件夹", "Choose Another Folder")).Height(36).Disabled(d.picking)
 				if d.openFocus {
-					c.Announce(d.openError.Error())
+					c.Announce(d.openMessage(d.openError))
 					retry.Focus()
 					d.openFocus = false
 				}
@@ -394,7 +389,7 @@ func (d *desktopWindow) content(c *ui.Context) {
 			return
 		}
 		if d.editor != nil {
-			ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(28, 40).Children(func() {
+			ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(28, desktopContentInset).Children(func() {
 				d.editor.view(c, d.english, d.applyRule, func() { d.editor = nil })
 			})
 		} else {
@@ -421,7 +416,7 @@ func (d *desktopWindow) siteTabs(c *ui.Context) {
 			break
 		}
 	}
-	ui.ScrollHorizontal(c.Key("site-tabs")).Height(36).FillWidth().Margin(0, 38, 16, 38).Children(func() {
+	ui.ScrollHorizontal(c.Key("site-tabs")).Height(36).FillWidth().Margin(0, desktopContentInset, 16, desktopContentInset).Children(func() {
 		ui.Tabs(c, &selected, labels[:]...)
 	})
 	d.siteTab = tabs[selected]
@@ -443,7 +438,7 @@ func (d *desktopWindow) welcome(c *ui.Context) {
 			}
 			button := ui.PrimaryButton(c.Key("welcome-picker"), label).Height(36).Disabled(d.picking)
 			if d.openFocus {
-				c.Announce(d.openError.Error())
+				c.Announce(d.openMessage(d.openError))
 				button.Focus()
 				d.openFocus = false
 			}
@@ -461,16 +456,13 @@ func (d *desktopWindow) openFailure(c *ui.Context) {
 		if d.openPath != "" {
 			ui.Text(c, filepath.Base(d.openPath)).Bold().Tooltip(d.openPath)
 		}
-		detail := d.openError.Error()
-		if errors.Is(d.openError, errNotGitWorktree) {
-			detail = d.text("所选文件夹不是 Git 工作树。请选择 Git 仓库的根目录。", "This folder is not a Git working tree. Choose the root folder of a Git repository.")
-		}
-		ui.Text(c, detail).TextColor(t.TextMuted).Selectable().Tooltip(d.openError.Error())
+		ui.Text(c, d.openMessage(d.openError)).TextColor(t.TextMuted).FillWidth()
+		d.diagnostic(c, ui.Box(c).Size(0, 0).Key(d.openError.Error()), d.openError.Error())
 	})
 }
 
 func (d *desktopWindow) rules(c *ui.Context) {
-	ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(6, 40, 0).Gap(12).Children(func() {
+	ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(6, desktopContentInset, 0).Gap(12).Children(func() {
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(12).Margin(0, 0, 18).Children(func() {
 			ui.Text(c, d.text("忽略路径", "Ignored Paths")).Bold().WidthPercent(24)
 			summary := d.text("继承", "Inherit")
@@ -604,9 +596,9 @@ func (d *desktopWindow) target() string {
 
 func (d *desktopWindow) footer(c *ui.Context) {
 	t := c.Theme()
-	ui.Column(c).FillWidth().Padding(12, 40, 30).Gap(8).Children(func() {
+	ui.Column(c).FillWidth().Padding(12, desktopContentInset, 30).Gap(8).Children(func() {
 		if d.saveError != nil {
-			ui.Text(c, d.saveError.Error()).TextColor(t.Danger).Selectable()
+			d.saveIssue(c)
 			if errors.Is(d.saveError, config.ErrRevisionConflict) {
 				if ui.Button(c.Key("reload"), d.text("重新读取文件…", "Reload File…")).Clicked() {
 					d.askDiscard(func() {

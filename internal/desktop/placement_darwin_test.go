@@ -34,6 +34,7 @@ func TestUpdateCheckResultDistinguishesMissingRelease(t *testing.T) {
 		err    error
 		want   updateStage
 	}{
+		{"unsigned development build", nil, mygo.ErrUpdatesDisabled, updateUnavailable},
 		{"no matching release", nil, errors.New("no release is published"), updateUnavailable},
 		{"missing architecture manifest", nil, errors.New("GET https://github.com/ConteMan/repolens/releases/download/desktop-v1/update-darwin-arm64.json: 404 Not Found"), updateUnavailable},
 		{"rate limit", nil, errors.New("GET https://api.github.com/repos/ConteMan/repolens/releases: 403 Forbidden"), updateIdle},

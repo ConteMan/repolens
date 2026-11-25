@@ -21,9 +21,20 @@ type NativeBuildResult struct {
 
 var ErrConfirmOutput = errors.New("confirm replacement of existing Repolens output")
 
+// BuildOutputErrorCode returns the stable code associated with an output validation failure.
+func BuildOutputErrorCode(err error) string {
+	var e *buildOutputError
+	if errors.As(err, &e) {
+		return e.code
+	}
+	return ""
+}
+
 // BuildNative shares the Web UI's output validation, staging and publication.
-func BuildNative(ctx context.Context, root, external, destination string, confirm bool) (NativeBuildResult, error) {
+// A nil override follows the external configuration. An explicit empty one uses the application cache.
+func BuildNative(ctx context.Context, root, external string, override *string, confirm bool) (NativeBuildResult, error) {
 	var result NativeBuildResult
+	var destination string
 	sourceSpec := source.Spec{Repo: root, Worktree: true}
 	if external != "" {
 		doc, err := config.LoadBuilderDocument(external)
@@ -40,10 +51,11 @@ func BuildNative(ctx context.Context, root, external, destination string, confir
 		if cfg.Source.Ref != nil {
 			sourceSpec.Ref = *cfg.Source.Ref
 		}
-		if destination == "" {
-			destination = NativeOutputPath(external, cfg.Output.Dir)
-		}
+		destination = NativeOutputPath(external, cfg.Output.Dir)
 		sourceSpec.Worktree = sourceSpec.Ref == "" && sourceSpec.Repo == root
+	}
+	if override != nil {
+		destination = *override
 	}
 	service := newBuildService(ctx)
 	target, err := service.buildTarget(root, destination, confirm)

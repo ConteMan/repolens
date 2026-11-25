@@ -23,7 +23,7 @@ func TestNativeBuildHonorsExternalOutput(t *testing.T) {
 		}
 	}
 	build := func(confirm bool) (NativeBuildResult, error) {
-		return BuildNative(context.Background(), repo, external, "", confirm)
+		return BuildNative(context.Background(), repo, external, nil, confirm)
 	}
 	result, err := build(false)
 	if err != nil {
@@ -45,5 +45,38 @@ func TestNativeBuildHonorsExternalOutput(t *testing.T) {
 	}
 	if _, err = build(true); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestNativeCacheOverridePreservesDeploymentFiles(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("# Preview"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	deploy := t.TempDir()
+	routes := filepath.Join(deploy, "_routes.json")
+	if err := os.WriteFile(routes, []byte("deployment-owned"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	external := filepath.Join(t.TempDir(), "config.yml")
+	if err := os.WriteFile(external, []byte("output:\n  dir: "+deploy+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := BuildNative(context.Background(), repo, external, nil, true); BuildOutputErrorCode(err) != "output_not_owned" {
+		t.Fatalf("expected protected deployment directory, got %v", err)
+	}
+	cache := ""
+	preview, err := BuildNative(context.Background(), repo, external, &cache, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preview.Directory == deploy || preview.Pages == 0 {
+		t.Fatalf("unexpected cache result: %#v", preview)
+	}
+	// This cache entry belongs only to this test's unique temporary repository.
+	t.Cleanup(func() { _ = os.RemoveAll(preview.Directory) })
+	data, err := os.ReadFile(routes)
+	if err != nil || string(data) != "deployment-owned" {
+		t.Fatalf("deployment contents changed: %q, %v", data, err)
 	}
 }

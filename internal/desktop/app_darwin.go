@@ -16,13 +16,6 @@ import (
 
 const projectURL = "https://github.com/ConteMan/repolens"
 
-var (
-	siteIcon         = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path d="M3 3h10v10H3zM3 6h10M7 6v7" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>`))
-	buildIcon        = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path d="m6 4 6 4-6 4z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>`))
-	preferencesIcon  = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path d="m6.7 2-.4 1.5-1.5.9-1.5-.4-1.3 2.2 1.1 1.1v1.4L2 9.8 3.3 12l1.5-.4 1.5.9.4 1.5h2.6l.4-1.5 1.5-.9 1.5.4L14 9.8l-1.1-1.1V7.3L14 6.2 12.7 4l-1.5.4-1.5-.9L9.3 2z" fill="none" stroke="currentColor" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor"/></svg>`))
-	externalLinkIcon = ui.MustParseSVG([]byte(`<svg viewBox="0 0 16 16"><path d="M6 10l6-6m-5 0h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`))
-)
-
 type desktopPreferences struct {
 	Language  string  `json:"language,omitempty"`
 	AutoCheck bool    `json:"auto_check"`
@@ -109,7 +102,7 @@ type desktopUpdate struct {
 func (d *desktopWindow) appPage(c *ui.Context) {
 	t := c.Theme()
 	ui.Scroll(c.Key("app-preferences")).FillWidth().Grow(1).MinHeight(0).Children(func() {
-		ui.Column(c).FillWidth().Padding(0, 38, 16).Gap(16).Children(func() {
+		ui.Column(c).FillWidth().Padding(0, desktopContentInset, 16).Gap(16).Children(func() {
 			d.preferenceRow(c, d.text("应用语言", "App Language"), func() {
 				labels := []string{d.text("跟随系统", "System"), "简体中文", "English"}
 				languages := []string{"", "zh", "en"}
@@ -120,7 +113,7 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 						break
 					}
 				}
-				if ui.Select(c.Key("interface-language"), &selected, labels).FillWidth().Height(36).Changed() {
+				if desktopSelect(c.Key("interface-language"), &selected, labels).FillWidth().Changed() {
 					old := d.preferences
 					for index, label := range labels {
 						if selected == label {
@@ -141,7 +134,7 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 				ui.Text(c, version).Selectable()
 			})
 			d.preferenceRow(c, d.text("项目主页", "Source Code"), func() {
-				link := ui.ButtonBase(c.Key("project-link")).Label("github.com/ConteMan/repolens").Height(36).AlignItems(ui.Center).Gap(4)
+				link := ui.ButtonBase(c.Key("project-link")).Label("github.com/ConteMan/repolens").Height(36).AlignSelf(ui.Start).Justify(ui.Start).AlignItems(ui.Center).Gap(4)
 				link.Children(func() {
 					ui.Text(c, "github.com/ConteMan/repolens").TextColor(t.Accent)
 					ui.Icon(c, externalLinkIcon).Size(14, 14).TextColor(t.Accent)
@@ -163,7 +156,7 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 				d.updateView(c)
 			})
 			if d.appError != nil {
-				ui.Text(c, d.appError.Error()).TextColor(t.Danger).Selectable()
+				d.desktopIssue(c, d.appError, "无法处理应用设置或打开链接。请查看技术详情。", "App settings or the link could not be handled. See the technical details.")
 			}
 		})
 	})
@@ -226,11 +219,7 @@ func (d *desktopWindow) updateView(c *ui.Context) {
 		}
 	}
 	if state.err != nil {
-		message := state.err.Error()
-		if errors.Is(state.err, mygo.ErrUpdatesDisabled) {
-			message = d.text("当前发行包未配置签名更新。", "Signed updates are unavailable for this build.")
-		}
-		ui.Text(c, message).TextColor(c.Theme().Danger).Selectable()
+		d.desktopIssue(c, state.err, "无法检查或下载桌面更新。请稍后重试。", "The desktop update could not be checked or downloaded. Try again later.")
 	}
 }
 
@@ -252,6 +241,8 @@ func (d *desktopWindow) checkUpdate(automatic bool) {
 
 func updateCheckResult(release *mygo.Update, err error) desktopUpdate {
 	switch {
+	case errors.Is(err, mygo.ErrUpdatesDisabled):
+		return desktopUpdate{stage: updateUnavailable}
 	case err != nil:
 		// MyGo 0.10 does not expose an HTTP status or a no-release error type.
 		message := err.Error()
@@ -283,7 +274,7 @@ func (d *desktopWindow) downloadUpdate() {
 		mygo.RunOnMain(func() {
 			if err != nil {
 				d.update.stage = updateAvailable
-				d.update.err = fmt.Errorf("%s: %w", d.text("下载更新失败", "Update download failed"), err)
+				d.update.err = err
 			} else {
 				d.update.stage = updateReady
 			}

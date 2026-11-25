@@ -50,7 +50,7 @@ func (d *desktopWindow) ignoreView(c *ui.Context) {
 			}
 			if !e.inherit {
 				ui.Text(c, t("每行一个 glob。留空可指定空列表。", "Enter one glob per line. Leave this blank for an empty list.")).TextColor(c.Theme().TextMuted)
-				input := ui.TextArea(c, &e.text).Height(130).FillWidth().Label(t("忽略路径", "Ignored Paths"))
+				input := desktopTextArea(c, &e.text).Height(130).FillWidth().Label(t("忽略路径", "Ignored Paths"))
 				if e.focus {
 					input.Focus()
 					e.focus = false

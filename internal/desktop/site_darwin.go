@@ -89,7 +89,7 @@ func (d *desktopWindow) sitePage(c *ui.Context, tab desktopSiteTab) {
 			tab      desktopSiteTab
 			path     string
 			external bool
-		}{d.session, tab, d.session.BuilderPath, d.externalTarget}).FillWidth().Padding(20, 40, 24).Gap(12).Children(func() {
+		}{d.session, tab, d.session.BuilderPath, d.externalTarget}).FillWidth().Padding(20, desktopContentInset, 24).Gap(12).Children(func() {
 			fields := siteFields(d.sharedDraft(), tab)
 			if tab == tabBuilder {
 				s := d.session
@@ -213,7 +213,7 @@ func (d *desktopWindow) editSiteField(c *ui.Context, field siteField, display, s
 			}
 			selectValue := func(value string, options []string, update func(string)) {
 				selected := ui.Local(box, "choice", func() string { return value })
-				control := ui.Select(c, selected, options).LabelledBy(label).Height(36).FillWidth().Background(c.Theme().Background)
+				control := desktopSelect(c, selected, options).LabelledBy(label).FillWidth()
 				if control.Changed() {
 					update(*selected)
 				} else if *selected != value {
@@ -382,14 +382,20 @@ func (d *desktopWindow) editSiteField(c *ui.Context, field siteField, display, s
 				placeholder += d.text("（例如 ", " (for example ") + field.example + d.text("）", ")")
 			}
 			var input ui.Element
-			if _, isMap := field.value.(**map[string]string); isMap {
-				input = ui.TextArea(c, text).Height(88).Placeholder("accent: '#3752b5'")
-			} else {
-				input = ui.TextInput(c, text).Height(36).Placeholder(placeholder)
+			var inputChanged bool
+			switch field.value.(type) {
+			case **config.RepositoryByteSize:
+				input, inputChanged = desktopNumeric(c, text, true, placeholder)
+			case **int:
+				input, inputChanged = desktopNumeric(c, text, false, placeholder)
+				input.FillWidth()
+			default:
+				input = desktopInput(c, text).FillWidth().Placeholder(placeholder)
+				inputChanged = input.Changed()
 			}
-			input.LabelledBy(label).FillWidth().Background(c.Theme().Background)
+			input.LabelledBy(label)
 			d.focusSiteField(input, field.key)
-			if input.Changed() {
+			if inputChanged {
 				if updateSiteField(field.value, *text) {
 					delete(d.siteInputErrors, d.siteErrorKey(field.key))
 				} else {
@@ -507,7 +513,7 @@ func (d *desktopWindow) themeVariables(c *ui.Context, field siteField, hint stri
 		ui.Column(c).Width(500).MaxWidthPercent(100).Gap(12).Children(func() {
 			ui.Text(c, d.text("编辑主题变量", "Edit Theme Variables")).Bold().FontSize(16)
 			ui.Text(c, d.text("每行输入一个键和值。清空内容可恢复继承。", "Enter one key and value per line. Clear the content to inherit.")).TextColor(c.Theme().TextMuted)
-			input := ui.TextArea(c, &edit.text).Height(160).FillWidth().Placeholder("accent: '#3752b5'").
+			input := desktopTextArea(c, &edit.text).Height(160).FillWidth().Placeholder("accent: '#3752b5'").
 				Label(d.text("主题变量", "Theme Variables")).AutoFocus()
 			if edit.bad {
 				input.Invalid(true).BorderColor(c.Theme().Danger)
@@ -550,7 +556,7 @@ func (d *desktopWindow) themeAssets(c *ui.Context, css, templates siteField) {
 				ui.Column(c).Key(field.key).FillWidth().Gap(4).Children(func() {
 					label := ui.Text(c, d.text(field.zh, field.en)).Bold()
 					ui.Row(c).FillWidth().Gap(8).Children(func() {
-						ui.TextInput(c, &edit.paths[i]).Height(36).Grow(1).MinWidth(0).LabelledBy(label).Placeholder(field.example)
+						desktopInput(c, &edit.paths[i]).Grow(1).MinWidth(0).LabelledBy(label).Placeholder(field.example)
 						choose := d.text("选择文件", "Choose File")
 						if i == 1 {
 							choose = d.text("选择目录", "Choose Folder")
@@ -569,7 +575,7 @@ func (d *desktopWindow) themeAssets(c *ui.Context, css, templates siteField) {
 				})
 			}
 			if edit.err != nil {
-				ui.Text(c, edit.err.Error()).TextColor(c.Theme().Danger)
+				d.desktopIssue(c, edit.err, "无法选择主题文件。请检查路径和权限。", "The theme file could not be selected. Check its path and permissions.")
 			}
 			d.themeEditorActions(c, &edit.open, func() bool {
 				for i, field := range fields {
