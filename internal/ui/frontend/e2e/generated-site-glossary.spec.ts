@@ -132,3 +132,17 @@ test("persists interface language through PJAX history and isolates deployments"
   await expect(term).toHaveAttribute("aria-label", "广告聚合（术语，查看解释）");
   await expect(page.getByRole("link", { name: "根目录", exact: true })).toBeVisible();
 });
+
+test("reveals heading permalinks on hover and keyboard focus", async ({ page }) => {
+  await page.goto(`${siteURL}/view/README.md/`);
+  const heading = page.locator("#content h1").first();
+  const link = heading.locator("a.anchor");
+  await expect(link).toHaveCSS("opacity", "0");
+  await heading.hover();
+  await expect(link).toHaveCSS("opacity", "1");
+  await page.mouse.move(0, 0);
+  await link.focus();
+  await expect(link).toHaveCSS("opacity", "1");
+  await link.press("Enter");
+  expect(new URL(page.url()).hash).toBeTruthy();
+});

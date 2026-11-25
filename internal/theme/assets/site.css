@@ -935,8 +935,33 @@ h4 {
   margin-top: 0;
 }
 
-.page a.heading-anchor {
+.page :is(h1, h2, h3, h4, h5, h6) > a.anchor {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  vertical-align: middle;
+  font-size: 0;
   color: var(--muted);
+}
+
+.page a.anchor::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .page :is(h1, h2, h3, h4, h5, h6):not(:hover) > a.anchor:not(:focus) {
+    opacity: 0;
+  }
+}
+
+.page a.anchor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .page blockquote {
