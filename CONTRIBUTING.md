@@ -6,7 +6,7 @@
 
 ## 开发环境
 
-要求：Go ≥ 1.25，PATH 上有 `git`（repolens 调用系统 git）。修改 `repolens ui` 前端时还需要 Node.js 24 与 pnpm 10。
+要求：Go ≥ 1.27.4，PATH 上有 `git`（repolens 调用系统 git）。修改 `repolens ui` 前端时还需要 Node.js 24 与 pnpm 10。
 
 ```sh
 git clone git@github.com:ConteMan/repolens.git

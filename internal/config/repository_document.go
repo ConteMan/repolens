@@ -301,9 +301,13 @@ func LoadRepositoryDocument(repoRoot string) (*RepositoryDocument, error) {
 		data = nil
 	}
 
+	return parseRepositoryDocument(filePath, revisionFor(data), data)
+}
+
+func parseRepositoryDocument(filePath, revision string, data []byte) (*RepositoryDocument, error) {
 	doc := &RepositoryDocument{
 		Path:     filePath,
-		Revision: revisionFor(data),
+		Revision: revision,
 	}
 	if len(strings.TrimSpace(string(data))) == 0 {
 		root, err := newMappingNode(nil)
@@ -330,6 +334,20 @@ func LoadRepositoryDocument(repoRoot string) (*RepositoryDocument, error) {
 	}
 	doc.root = root
 	return doc, nil
+}
+
+// Clone copies the current document, retaining its path and revision.
+func (d *RepositoryDocument) Clone() (*RepositoryDocument, error) {
+	data, err := d.YAML()
+	if err != nil {
+		return nil, err
+	}
+	clone, err := parseRepositoryDocument(d.Path, d.Revision, data)
+	if err != nil {
+		return nil, err
+	}
+	clone.root.IsFlowStyle = d.root.IsFlowStyle
+	return clone, nil
 }
 
 // Apply updates the editable repository settings. It leaves trusted-only,
@@ -532,6 +550,23 @@ func (d *RepositoryDocument) replaceRules(rules []RepositoryRuleSettings) error 
 	return d.reloadSettings()
 }
 
+// ReplaceRules replaces the ordered rules and leaves other YAML nodes intact.
+// A nil pointer leaves the rules unchanged. An empty slice writes rules: [].
+func (d *RepositoryDocument) ReplaceRules(rules *[]RepositoryRuleSettings) error {
+	if d == nil || d.root == nil {
+		return errors.New("repository document is not initialized")
+	}
+	settings := d.Settings
+	settings.Rules = rules
+	if err := validateRepositorySettings(settings); err != nil {
+		return err
+	}
+	if err := replaceRules(d.root, rules); err != nil {
+		return err
+	}
+	return d.reloadSettings()
+}
+
 func (d *RepositoryDocument) reloadSettings() error {
 	data, err := d.YAML()
 	if err != nil {
@@ -554,15 +589,10 @@ func (d *RepositoryDocument) YAML() ([]byte, error) {
 	return []byte(d.root.String() + "\n"), nil
 }
 
-// Write atomically commits the current document if the file revision has not
-// changed since LoadRepositoryDocument. It updates Revision on success.
-func (d *RepositoryDocument) Write() error {
-	if d == nil {
+// CheckRevision compares the stored revision with the current file contents.
+func (d *RepositoryDocument) CheckRevision() error {
+	if d == nil || d.root == nil {
 		return errors.New("repository document is not initialized")
-	}
-	data, err := d.YAML()
-	if err != nil {
-		return err
 	}
 	current, err := os.ReadFile(d.Path)
 	if err != nil && !os.IsNotExist(err) {
@@ -573,6 +603,19 @@ func (d *RepositoryDocument) Write() error {
 	}
 	if revisionFor(current) != d.Revision {
 		return fmt.Errorf("write repository config %q: %w", d.Path, ErrRevisionConflict)
+	}
+	return nil
+}
+
+// Write atomically commits the current document if the file revision has not
+// changed since LoadRepositoryDocument. It updates Revision on success.
+func (d *RepositoryDocument) Write() error {
+	data, err := d.YAML()
+	if err != nil {
+		return err
+	}
+	if err := d.CheckRevision(); err != nil {
+		return err
 	}
 
 	perm := os.FileMode(0o644)
@@ -670,6 +713,15 @@ func applyRulesWithMode(root *ast.MappingNode, rules *[]RepositoryRuleSettings, 
 		if err := appendMappingValue(root, "rules", sequence); err != nil {
 			return err
 		}
+	} else if _, absent := item.Value.(*ast.NullNode); absent && replace {
+		var err error
+		sequence, err = newSequenceNode()
+		if err != nil {
+			return err
+		}
+		if err := item.Replace(sequence); err != nil {
+			return err
+		}
 	} else {
 		var ok bool
 		sequence, ok = item.Value.(*ast.SequenceNode)
@@ -724,15 +776,16 @@ func applyRulesWithMode(root *ast.MappingNode, rules *[]RepositoryRuleSettings, 
 			return fmt.Errorf("rules[%d]: %w", index, err)
 		}
 		values = append(values, node)
+		var comment *ast.CommentGroupNode
 		if oldIndex >= 0 && len(oldComments) == len(oldValues) {
-			comments = append(comments, oldComments[oldIndex])
+			comment = oldComments[oldIndex]
 		}
+		comments = append(comments, comment)
 	}
 	sequence.Values = values
-	if len(comments) == len(values) {
-		sequence.ValueHeadComments = comments
-	} else {
-		sequence.ValueHeadComments = nil
+	sequence.ValueHeadComments = comments
+	if root.IsFlowStyle || len(values) == 0 || sequence.IsFlowStyle {
+		sequence.SetIsFlowStyle(true)
 	}
 	return nil
 }
@@ -797,7 +850,14 @@ func findRuleNode(values []ast.Node, used []bool, rule RepositoryRuleSettings) i
 			continue
 		}
 		match := findMappingValue(node, "match")
-		if match != nil && match.Value.String() == *rule.Match {
+		if match == nil {
+			continue
+		}
+		pattern := match.Value.String()
+		if scalar, ok := match.Value.(*ast.StringNode); ok {
+			pattern = scalar.Value
+		}
+		if pattern == *rule.Match {
 			return index
 		}
 	}

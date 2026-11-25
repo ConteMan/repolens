@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- macOS 新增 MyGo 原生规则编辑器，可打开本地 Git 工作树并在核对差异后保存路径规则。CLI 与桌面端共用 Go 1.27.4。
+
 ## [1.9.0] - 2026-11-25
 
 - 文件树支持在原地按文件名筛选；顶栏继续搜索文件和章节。改善 Markdown 列表分组与常用内容块的留白。
