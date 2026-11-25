@@ -1,6 +1,6 @@
 # 021: 原生桌面端打开仓库与保存规则
 
-- 状态：实现中
+- 状态：已实现
 - 关联：[Roadmap](../roadmap.md)、[ADR-004](../decisions/ADR-004-system-git.md)、[ADR-005](../decisions/ADR-005-config-trust-domains.md)、[ADR-006](../decisions/ADR-006-react-base-ui-admin.md)、[Spec 013](013-config-ui.md)、[原生桌面设计评审](../design/ui/reviews/desktop-native/README.md)
 
 ## 问题
@@ -35,3 +35,5 @@
 - 使用两个重叠匹配规则验证新增、修改、删除和调序。确认前磁盘内容一致，确认后重开文件核对顺序、继承与显式 `false`，并用 `config.Load` 验证级联结果。包含其他站点设置及可信字段的 fixture 在保存后保留原有语义，差异预览隐藏可信字段。
 - 验证非法 glob、取消保存、外部修改导致的 revision 冲突与写入失败。冲突或失败时保留草稿与磁盘上的现有内容。
 - 实现 PR 按冻结的设计节点记录页面、状态、窗口尺寸与截图。通过 `gofmt -l .`、`go vet ./...`、`go test ./...` 和 `go build ./...`，并按 ADR 确定的方式验证 macOS 桌面产物。
+
+首次 macOS 选择器与 Linux 质量门禁验收记录见 [CI 45594905844](https://github.com/ConteMan/repolens/actions/runs/45594905844)。
