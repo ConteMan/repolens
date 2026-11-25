@@ -102,7 +102,7 @@ type desktopUpdate struct {
 func (d *desktopWindow) appPage(c *ui.Context) {
 	t := c.Theme()
 	ui.Scroll(c.Key("app-preferences")).FillWidth().Grow(1).MinHeight(0).Children(func() {
-		ui.Column(c).FillWidth().Padding(0, desktopContentInset, 16).Gap(16).Children(func() {
+		ui.Column(c).FillWidth().Padding(0, desktopContentInset, 16).Gap(0).Children(func() {
 			d.preferenceRow(c, d.text("应用语言", "App Language"), func() {
 				labels := []string{d.text("跟随系统", "System"), "简体中文", "English"}
 				languages := []string{"", "zh", "en"}
@@ -152,7 +152,7 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 					d.savePreferences(old)
 				}
 			})
-			ui.Column(c).FillWidth().Gap(12).Children(func() {
+			ui.Column(c).FillWidth().Margin(32, 0, 0).Gap(16).Children(func() {
 				d.updateView(c)
 			})
 			if d.appError != nil {
@@ -163,10 +163,9 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 }
 
 func (d *desktopWindow) preferenceRow(c *ui.Context, label string, field func()) {
-	width, _ := c.Size()
-	ui.Row(c).FillWidth().Wrap().AlignItems(ui.Center).Gap(12).MinHeight(38).Children(func() {
-		ui.Text(c, label).Width(min(248, width*0.24)).Bold()
-		ui.Column(c).Grow(1).MinWidth(242).Children(field)
+	ui.Row(c).FillWidth().AlignItems(ui.Start).Gap(12).Height(64).Children(func() {
+		ui.Text(c, label).WidthPercent(35.5).Margin(10, 0, 0).Bold()
+		ui.Column(c).Grow(1).MinWidth(0).Justify(ui.Center).MinHeight(36).Children(field)
 	})
 }
 
@@ -179,45 +178,59 @@ func (d *desktopWindow) savePreferences(previous desktopPreferences) {
 
 func (d *desktopWindow) updateView(c *ui.Context) {
 	state := &d.update
+	t := d.text
+	check := t("检查更新", "Check for Updates")
+	var heading, detail string
 	switch state.stage {
 	case updateChecking:
-		ui.Button(c, d.text("正在检查…", "Checking…")).Height(36).Disabled(true)
+		heading = t("正在检查更新…", "Checking for Updates…")
 	case updateAvailable:
-		ui.Text(c, d.text("可下载版本 ", "Available version ")+state.release.Version)
-		if ui.PrimaryButton(c.Key("download-update"), d.text("下载更新", "Download Update")).Height(36).Clicked() {
-			d.downloadUpdate()
-		}
+		heading = t("有可用更新", "Update Available")
+		detail = fmt.Sprintf(t("%s 可下载。", "%s is available to download."), state.release.Version)
 	case updateDownloading:
-		ui.Button(c, d.text("正在下载…", "Downloading…")).Height(36).Disabled(true)
+		heading = t("正在下载更新…", "Downloading Update…")
 		if state.total > 0 {
-			ui.Textf(c, "%d%%", int(float64(state.received)/float64(state.total)*100))
+			detail = fmt.Sprintf("%d%%", int(float64(state.received)/float64(state.total)*100))
 		}
 	case updateReady:
-		ui.Text(c, d.text("更新已下载", "Update Downloaded")).Bold()
-		ui.Text(c, fmt.Sprintf(d.text("%s 已就绪。重启后完成安装。", "%s is ready. Restart to finish installing."), state.release.Version)).TextColor(c.Theme().TextMuted)
-		if ui.PrimaryButton(c.Key("restart-update"), d.text("重启并安装", "Restart and Install")).Height(36).Clicked() {
-			restart := func() {
-				if d.session == nil {
-					mygo.App.Relaunch()
-					return
+		heading = t("更新已下载", "Update Downloaded")
+		detail = fmt.Sprintf(t("%s 已就绪。重启后完成安装。", "%s is ready. Restart to finish installing."), state.release.Version)
+	case updateCurrent:
+		heading = t("已是最新版本", "Up to date")
+	case updateUnavailable:
+		heading = t("暂无适用于此 Mac 的桌面更新。", "No desktop update is available for this Mac yet.")
+	}
+	if heading != "" {
+		ui.Text(c, heading).FontSize(18).Bold()
+	}
+	if detail != "" {
+		ui.Text(c, detail).TextColor(c.Theme().TextMuted)
+	}
+	ui.Row(c).FillWidth().Wrap().Gap(8).Margin(11, 0, 0).Children(func() {
+		switch state.stage {
+		case updateReady:
+			if ui.PrimaryButton(c.Key("restart-update"), t("重启并安装", "Restart and Install")).Height(36).PaddingX(14).Clicked() {
+				restart := func() {
+					if d.session == nil {
+						mygo.App.Relaunch()
+						return
+					}
+					mygo.App.Relaunch(d.session.Root)
 				}
-				mygo.App.Relaunch(d.session.Root)
+				if !d.guardClose(restart) {
+					restart()
+				}
 			}
-			if !d.guardClose(restart) {
-				restart()
+		case updateAvailable:
+			if ui.PrimaryButton(c.Key("download-update"), t("下载更新", "Download Update")).Height(36).PaddingX(14).Clicked() {
+				d.downloadUpdate()
 			}
 		}
-	default:
-		if state.stage == updateCurrent {
-			ui.Text(c, d.text("已是最新版本。", "You’re up to date."))
-		}
-		if state.stage == updateUnavailable {
-			ui.Text(c, d.text("暂无适用于此 Mac 的桌面更新。", "No desktop update is available for this Mac yet.")).TextColor(c.Theme().TextMuted)
-		}
-		if ui.Button(c.Key("check-updates"), d.text("检查更新", "Check for Updates")).Height(36).Clicked() {
+		locked := state.stage == updateChecking || state.stage == updateDownloading || state.stage == updateReady
+		if ui.Button(c.Key("check-updates"), check).Height(36).PaddingX(14).Disabled(locked).Clicked() {
 			d.checkUpdate(false)
 		}
-	}
+	})
 	if state.err != nil {
 		d.desktopIssue(c, state.err, "无法检查或下载桌面更新。请稍后重试。", "The desktop update could not be checked or downloaded. Try again later.")
 	}

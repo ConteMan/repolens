@@ -216,6 +216,9 @@ func (d *desktopWindow) view(c *ui.Context) {
 		theme.TextMuted = ui.Hex("#62656a")
 		theme.Border = ui.Hex("#d8d9dc")
 		theme.Accent = ui.Hex("#3958be")
+		theme.AccentHover = ui.Hex("#304ba5")
+		theme.AccentPressed = ui.Hex("#283e88")
+		theme.AccentText = ui.Hex("#ffffff")
 		theme.InactiveAccent = theme.Accent
 		theme.Focus = theme.Accent
 		theme.Radius = 6
@@ -726,16 +729,41 @@ func (d *desktopWindow) prepare() {
 
 func (d *desktopWindow) confirmView(c *ui.Context) {
 	panel := ui.Modal(c.Key("save-confirmation"), &d.preview, func() {
-		ui.Column(c).Width(586).MaxWidthPercent(100).MaxHeightPercent(90).Gap(20).Children(func() {
-			ui.Text(c, d.text("保存站点设置？", "Save Site Settings?")).FontSize(16).Bold()
-			ui.Scroll(c.Key("save-diff")).Height(194).Shrink(1).MinHeight(0).FillWidth().Children(func() {
+		groups := d.confirmationGroups()
+		count, expanded := 0, len(groups) > 1
+		for _, group := range groups {
+			count += group.count()
+			for _, field := range group.fields {
+				expanded = expanded || len([]rune(field.before))+len([]rune(field.after)) > 44 ||
+					strings.ContainsAny(field.before+field.after, "\r\n")
+			}
+		}
+		expanded = expanded || count > 1
+		width, height := float32(438), float32(142)
+		if len(groups) == 1 && groups[0].rulesChanged {
+			width, height = 586, 194
+		}
+		if expanded {
+			width, height = 656, 380
+		}
+		ui.Column(c).Width(width).MaxWidthPercent(100).Gap(20).Children(func() {
+			ui.Text(c, d.text("保存站点设置？", "Save Site Settings?")).FontSize(22).Bold()
+			if expanded {
+				ui.Text(c, fmt.Sprintf(d.text("%d 项更改  ·  %d 个配置文件", "%d changes  ·  %d configuration files"), count, len(groups))).
+					TextColor(c.Theme().TextMuted)
+			}
+			ui.Scroll(c.Key("save-diff")).Height(height).Shrink(1).MinHeight(0).FillWidth().Children(func() {
 				ui.Column(c).FillWidth().Gap(20).Children(func() {
-					for _, change := range d.changes {
-						d.configurationChangeView(c, change)
+					for _, group := range groups {
+						d.configurationChangeView(c, group, expanded)
 					}
 				})
 			})
-			ui.Row(c).FillWidth().Gap(8).Justify(ui.End).Children(func() {
+			actions := ui.Row(c).FillWidth().Shrink(0).Gap(8).Justify(ui.End)
+			if expanded {
+				actions.Padding(12, 0, 0).BorderWidth(1, 0, 0, 0).BorderColor(c.Theme().Border)
+			}
+			actions.Children(func() {
 				if ui.Button(c.Key("cancel-save"), d.text("返回编辑", "Back to Editing")).Height(36).PaddingX(14).Clicked() {
 					d.preview = false
 					d.session.CancelSave()

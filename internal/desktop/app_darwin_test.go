@@ -47,3 +47,49 @@ func TestDesktopNoUpdateChannelStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestDesktopUpdateDesignStates(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "favus-documentation-portal")
+	initGit(t, root)
+	session, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	version := mygo.App.Version()
+	mygo.App.SetVersion("1.0.0")
+	t.Cleanup(func() { mygo.App.SetVersion(version) })
+	for _, state := range []struct {
+		name    string
+		width   int
+		english bool
+		update  desktopUpdate
+	}{
+		{"APP-01-update-ready", 1024, false, desktopUpdate{stage: updateReady, release: &mygo.Update{Version: "1.0.1"}}},
+		{"APP-02-up-to-date", 860, true, desktopUpdate{stage: updateCurrent}},
+		{"APP-update-checking", 860, true, desktopUpdate{stage: updateChecking}},
+		{"APP-update-downloading", 860, true, desktopUpdate{stage: updateDownloading, received: 20, total: 50}},
+	} {
+		t.Run(state.name, func(t *testing.T) {
+			d := &desktopWindow{sidebar: defaultSidebarWidth, session: session, page: pageApp, english: state.english, update: state.update}
+			if state.width == 860 {
+				d.sidebar = 192
+			}
+			d.preferences.AutoCheck = true
+			if state.english {
+				d.preferences.Language = "en"
+			}
+			view := ui.NewTester(d.view, state.width, 632)
+			view.Frame()
+			if path := os.Getenv("REPOLENS_DESKTOP_EVIDENCE"); path != "" {
+				f, err := os.Create(filepath.Join(path, state.name+".png"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				encodeErr := png.Encode(f, view.Image())
+				if err := errors.Join(encodeErr, f.Close()); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}

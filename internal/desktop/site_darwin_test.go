@@ -1,6 +1,8 @@
 package desktop
 
 import (
+	"image/png"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -82,6 +84,74 @@ func TestSiteByteSizeDisplayRoundTrips(t *testing.T) {
 		var reopened *config.RepositoryByteSize
 		if !updateSiteField(&reopened, display) || reopened == nil || *reopened != *size {
 			t.Fatalf("display value %q does not round-trip", display)
+		}
+	}
+}
+
+func TestConfirmationShowsEffectiveInheritedSize(t *testing.T) {
+	root := t.TempDir()
+	initGit(t, root)
+	session, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session.Settings.Agent.LLMSFull.MaxSize = new(config.RepositoryByteSize(3 * 1024 * 1024))
+	changes, err := session.PrepareChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := &desktopWindow{session: session, english: true, changes: changes, preview: true, sidebar: defaultSidebarWidth, siteTab: tabAgent}
+	view := ui.NewTester(d.view, 1024, 632)
+	if _, ok := view.Find("2 MB (inherited)   →   3 MB"); !ok {
+		t.Fatal("confirmation did not show inherited default and the proposed value")
+	}
+	if path := os.Getenv("REPOLENS_DESKTOP_EVIDENCE"); path != "" {
+		f, err := os.Create(filepath.Join(path, "confirmation-short.png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, view.Image()); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestConfirmationLongChangesKeepActionsVisible(t *testing.T) {
+	root := t.TempDir()
+	initGit(t, root)
+	session, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	external := filepath.Join(t.TempDir(), "build.yml")
+	writeConfig(t, external, "source:\n  ref: main\n")
+	if err := session.LoadBuilder(external); err != nil {
+		t.Fatal(err)
+	}
+	session.Settings.Site.Home = new("docs/operations/regional-workspaces/release-management/getting-started/overview-for-project-maintainers.md")
+	session.Settings.Ignore = &[]string{"build/**", ".cache/**", "packages/documentation/generated/**"}
+	session.Builder.Source.Ref = new("release/docs")
+	changes, err := session.PrepareChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := &desktopWindow{session: session, english: true, changes: changes, preview: true, sidebar: defaultSidebarWidth, siteTab: tabAgent}
+	view := ui.NewTester(d.view, 1024, 632)
+	for _, label := range []string{"3 changes  ·  2 configuration files", "Before", "After", "Confirm Save"} {
+		bounds, ok := view.Find(label)
+		if !ok || bounds.Y < 0 || bounds.Y+bounds.H > 632 {
+			t.Fatalf("%q is outside the visible viewport: %+v", label, bounds)
+		}
+	}
+	if path := os.Getenv("REPOLENS_DESKTOP_EVIDENCE"); path != "" {
+		f, err := os.Create(filepath.Join(path, "confirmation-long.png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, view.Image()); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

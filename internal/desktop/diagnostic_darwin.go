@@ -20,8 +20,12 @@ func (d *desktopWindow) desktopIssue(c *ui.Context, err error, zh, en string) {
 }
 
 func (d *desktopWindow) diagnostic(c *ui.Context, panel ui.Element, detail string) {
+	d.detailDisclosure(c, panel, detail, d.text("错误详情", "Error Details"))
+}
+
+func (d *desktopWindow) detailDisclosure(c *ui.Context, panel ui.Element, detail, label string) {
 	open := ui.Local(panel, "diagnostic", func() bool { return false })
-	ui.Collapsible(c, d.text("技术详情", "Technical Details"), open, func() {
+	ui.Collapsible(c, label, open, func() {
 		ui.Text(c, detail).FillWidth().Selectable().TextColor(c.Theme().TextMuted)
 	})
 }
@@ -63,7 +67,7 @@ func (d *desktopWindow) buildIssue(c *ui.Context, err error) {
 		d.desktopIssue(c, err, "无法访问输出目录。请检查路径和权限，或使用应用缓存。", "The output folder could not be accessed. Check its path and permissions, or use the app cache.")
 		return
 	}
-	d.desktopIssue(c, err, "无法完成构建或打开预览。请查看技术详情。", "The build or preview could not be completed. See the technical details.")
+	d.desktopIssue(c, err, "无法完成构建或打开预览。请查看错误详情。", "The build or preview could not be completed. See the error details.")
 }
 
 func (d *desktopWindow) buildWarning(c *ui.Context, warning string) {
@@ -83,6 +87,6 @@ func (d *desktopWindow) buildWarning(c *ui.Context, warning string) {
 	panel := ui.Column(c).Key(warning).FillWidth().Gap(4)
 	panel.Children(func() {
 		ui.Text(c, label).TextColor(c.Theme().TextMuted)
-		d.diagnostic(c, panel, warning)
+		d.detailDisclosure(c, panel, warning, d.text("警告详情", "Warning Details"))
 	})
 }
