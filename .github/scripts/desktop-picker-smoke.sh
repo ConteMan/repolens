@@ -45,12 +45,12 @@ auto="$work/automation"
 "$work/picker" "$app_pid" cancel
 for ((attempt = 0; attempt < 30; attempt++)); do
   "$auto" snapshot >"$artifact_dir/after-cancel.txt"
-  if rg -q 'key=welcome-picker( focused)?$' "$artifact_dir/after-cancel.txt"; then
+  if grep -Eq 'key=welcome-picker( focused)?$' "$artifact_dir/after-cancel.txt"; then
     break
   fi
   sleep 0.2
 done
-if ! rg -q 'key=welcome-picker( focused)?$' "$artifact_dir/after-cancel.txt"; then
+if ! grep -Eq 'key=welcome-picker( focused)?$' "$artifact_dir/after-cancel.txt"; then
   echo "Welcome picker remained disabled after cancel" >&2
   exit 1
 fi
@@ -59,6 +59,6 @@ fi
 "$work/picker" "$app_pid" open "$fixture"
 "$auto" wait --text 'Paths and Rules'
 "$auto" snapshot >"$artifact_dir/after-open.txt"
-rg -F 'fixture repository/.repolens.yml' "$artifact_dir/after-open.txt"
+grep -F 'fixture repository/.repolens.yml' "$artifact_dir/after-open.txt"
 "$auto" screenshot "$artifact_dir/opened-repository.png"
 echo "System directory picker smoke passed for cancel and opening a repository with spaces in its path." >>"$GITHUB_STEP_SUMMARY"
