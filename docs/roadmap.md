@@ -29,6 +29,7 @@
 - 站内搜索：文件名 ＋ 标题级构建期索引，客户端检索，零外部请求（[012](specs/012-site-search.md)）
 - 图形化管理界面：`repolens ui` 本地 Web GUI——选目录、可视化配置写回 YAML、构建与预览（[013](specs/013-config-ui.md)）
 - UI 会话级构建输出：默认缓存与自定义绝对目录二选一，保持工作树语义与输出所有权检查，不写入仓库配置（[014](specs/014-ui-session-output.md)）
+- MyGo 原生桌面端第一阶段：在 macOS 打开本地仓库并编辑、确认、保存规则（[Spec 021](specs/021-native-desktop-rules.md)）。
 - 桌面固定文件树侧栏调宽：保留站点作者默认值，访问者可用指针或键盘调整并按部署 base path 本地持久化（[015](specs/015-resizable-fixed-tree.md)）
 - 站点快照新鲜度：已打开页面通过同源元数据检测新部署并提供主动重新加载提示（[016](specs/016-site-snapshot-freshness.md)）
 - 术语标注与解释：仓库可选约定，正文标注 ＋ 页内术语表 ＋ 解释抽屉，默认关闭（[017](specs/017-glossary-terms.md)，准入边界见 [ADR-007](decisions/ADR-007-optional-repo-conventions.md)；spec 与 ADR 确认前不进入实现）
@@ -41,7 +42,7 @@
 - 正文术语的启发式自动识别与自动加注（ADR-007 决策 2 明确排除；如提供只能是面向人的建议输出，不进入渲染）
 - 全站术语索引页面（涉及新的 URL 约定，需先修订 ADR-001）
 - 格式导出（PDF / docx / epub）
-- 原生桌面壳（Wails/Tauri——Web UI 验证后再议）
+
 - 客户端加密（PageCrypt 思路，设计已在 ADR-005 预留）
 - 多仓库聚合（v1 单仓，聚合交给部署层拼路径）
 - 增量构建、数学公式渲染、Mermaid 之外的图表引擎
@@ -66,5 +67,6 @@ M 编号是 Spec 的分组与验收单元——把一批相关 Spec 聚成一个
 | M11 术语标注 | 术语标注、页内术语表与解释抽屉，随附 Agent Skill | [017–018](specs/README.md) | 未启用时产物零差异、无 JS 可读、搜索与 `llms.txt` 集成、example fixture 构建检查通过、质量门禁全绿 |
 | M12 Skill 分发 | skill 内嵌二进制，安装/列出/更新子命令与多 Agent 目录适配 | [019](specs/README.md) | 干净仓库一条命令装好、重复执行幂等、本地修改不被覆盖、离线更新生效、质量门禁全绿 |
 | M13 浏览站阅读体验 | 界面语言、目录文件折叠和正文布局 | [020](specs/020-browser-reading.md) | 首屏兼容、读者偏好按站点隔离、无脚本目录与布局通过验收 |
+| M14 原生规则编辑 | macOS 工作树选择与有序规则编辑 | [021](specs/021-native-desktop-rules.md) | 原生窗口中确认保存，重开后验证顺序与级联结果 |
 
 > v1.x 首轮推进顺序为 M7 → M5 → M6 → M8；后续增强由独立里程碑与 Spec 承接，不改变 `output` 信任域或部署边界。
