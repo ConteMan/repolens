@@ -17,6 +17,7 @@ Documentation often already lives in a Git repository, but reading it comfortabl
 - **Two-layer output** — a byte-for-byte *mirror* of the repository (relative links in your HTML just work; every file has a stable raw URL) plus a generated *view* layer with navigation chrome under `/view/`.
 - **Pre-rendered MPA** — every page is a real URL that works on any static host, enhanced by a thin vanilla-JS layer for file-tree state and smooth navigation. Generated sites require no frontend framework or Node runtime.
 - **Rule-based rendering** — an ordered, cascading rule model (`glob → pipeline options`) customizes rendering per path; sensible defaults need no config at all.
+- **Reading preferences** — Switch between Simplified Chinese and English, and choose a content width and alignment for each site. Directory file lists can be expanded or collapsed. By default, they start collapsed when a directory has a README.
 - **Glossary annotations** — mark a word as a term in your prose and readers expand its explanation in place, without leaving the page or the site. The syntax is a plain Markdown link, so the repository still reads fine on GitHub. Off by default.
 - **Agent-friendly** — `llms.txt`, optional `llms-full.txt`, and a machine-readable JSON site index generated on every build.
 - **Deploy anywhere** — output is a plain static directory: Cloudflare Pages, GitHub Pages, object storage, nginx. Fully relative links, zero external requests, works behind any auth proxy.

@@ -96,6 +96,24 @@ func TestDerivedPageTitleVisibility(t *testing.T) {
 	}
 }
 
+func TestDirectoryDisclosureDefaults(t *testing.T) {
+	renderer := newRendererWithLayout(t, `{{template "page" .}}`)
+	for _, mode := range []string{"auto", "expanded", "collapsed"} {
+		for _, body := range []template.HTML{"", "<p>Intro</p>"} {
+			var out bytes.Buffer
+			err := renderer.Page(&out, PageData{Kind: "dir", DirectoryFiles: mode, Body: body, Lang: "zh-CN"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantOpen := mode == "expanded" || (mode == "auto" && body == "")
+			gotOpen := strings.Contains(out.String(), `<details class="dir-list" open>`)
+			if gotOpen != wantOpen || !strings.Contains(out.String(), "目录文件（0）") || !strings.Contains(out.String(), "没有文件") {
+				t.Errorf("mode=%q body=%q: unexpected directory disclosure: %s", mode, body, out.String())
+			}
+		}
+	}
+}
+
 func TestDirlistGoldenHTML(t *testing.T) {
 	t.Parallel()
 
@@ -202,26 +220,29 @@ func TestHybridTreeLayoutRendering(t *testing.T) {
 		`<button class="tb-btn" id="btn-tree" type="button"`,
 		`<button class="tb-btn" id="btn-back" type="button"`,
 		`<button class="tb-btn" id="btn-fwd" type="button"`,
-		`<nav class="tb-crumbs" aria-label="Breadcrumbs">`,
+		`<nav class="tb-crumbs" data-i18n-aria-label="breadcrumbs" aria-label="面包屑导航">`,
 		`<button class="tb-btn js-only" id="btn-zoom-out" type="button"`,
 		`<span class="zoom-readout js-only" id="zoom-readout">100%</span>`,
-		`<button class="tb-btn js-only" id="btn-width" type="button"`,
+		`<button class="tb-btn preference-toggle" id="btn-layout" type="button" aria-expanded="false" aria-controls="layout-menu"`,
+		`data-width="standard" data-align="left"`,
+		`name="layout-width" value="standard" checked`,
+		`name="layout-align" value="left" checked`,
 		`<span class="info-wrap js-only" id="info-wrap">`,
 		`<button class="tb-btn js-only" id="btn-search" type="button"`,
-		`<div class="search-modal" id="search-modal" role="dialog" aria-label="Site search"`,
+		`<div class="search-modal" id="search-modal" role="dialog" data-i18n-aria-label="search_label" aria-label="站内搜索"`,
 		`<use href="#icon-tree"></use>`,
-		`<nav class="tree-nav" id="tree-src" aria-label="Repository tree">`,
-		`<div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="Resize repository tree" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>`,
+		`<nav class="tree-nav" id="tree-src" data-i18n-aria-label="tree" aria-label="文件树">`,
+		`<div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" data-i18n-aria-label="tree_resize" aria-label="调整文件树宽度" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>`,
 		`<div class="tree-search" data-tree-search-placeholder hidden></div>`,
 		`<ul class="tree" data-tree-scroll>`,
-		`<div class="tree-actions js-only" role="group" aria-label="Repository tree actions">`,
-		`data-tree-action="expand" title="Expand all" aria-label="Expand all"`,
-		`data-tree-action="collapse" title="Collapse all" aria-label="Collapse all"`,
-		`data-tree-action="locate" title="Locate current file" aria-label="Locate current file"`,
+		`<div class="tree-actions js-only" role="group" data-i18n-aria-label="tree_actions" aria-label="文件树操作">`,
+		`data-tree-action="expand" data-i18n-title="tree_expand_all" title="全部展开" data-i18n-aria-label="tree_expand_all" aria-label="全部展开"`,
+		`data-tree-action="collapse" data-i18n-title="tree_collapse_all" title="全部折叠" data-i18n-aria-label="tree_collapse_all" aria-label="全部折叠"`,
+		`data-tree-action="locate" data-i18n-title="tree_locate_current" title="定位当前文件" data-i18n-aria-label="tree_locate_current" aria-label="定位当前文件"`,
 		`<span class="tree-chevron" aria-hidden="true"></span>`,
 		`<div class="scrim" id="scrim" aria-hidden="true"></div>`,
-		`<div class="overlay" id="tree-overlay" role="dialog" aria-label="Repository tree">`,
-		`<nav class="overlay-tree" id="overlay-tree" aria-label="Repository tree"></nav>`,
+		`<div class="overlay" id="tree-overlay" role="dialog" data-i18n-aria-label="tree" aria-label="文件树">`,
+		`<nav class="overlay-tree" id="overlay-tree" data-i18n-aria-label="tree" aria-label="文件树"></nav>`,
 		`<button class="tb-btn" id="btn-pin-tree" type="button"`,
 		`<details data-tree-path="docs" open>`,
 		`<summary title="docs" aria-label="docs">`,
@@ -438,7 +459,7 @@ func TestSnapshotFreshnessPageDataAndStrings(t *testing.T) {
 		`data-snapshot-src="../../../_assets/snapshot.json"`,
 		`id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden`,
 		`此站点已有新版本。`,
-		`id="snapshot-reload" type="button">重新加载</button>`,
+		`id="snapshot-reload" type="button" data-i18n="snapshot_reload">重新加载</button>`,
 	} {
 		if !strings.Contains(html, want) {
 			t.Fatalf("snapshot page missing %q\n%s", want, html)
@@ -548,16 +569,18 @@ func TestToolbarPageDataAndLanguage(t *testing.T) {
 	for _, want := range []string{
 		`<html class="no-js" lang="en">`,
 		`title="Page information"`,
-		`<div class="info-row"><span>Path</span><code data-page-path>docs/guide.md</code></div>`,
-		`<div class="info-row"><span>Size</span><b>1.5 KiB</b></div>`,
+		`<div class="info-row"><span data-i18n="path">Path</span><code data-page-path>docs/guide.md</code></div>`,
+		`<div class="info-row"><span data-i18n="size">Size</span><b>1.5 KiB</b></div>`,
 		`<code>0123456</code><small>docs: update guide</small>`,
 		`href="../../docs/guide.md"`,
 		`href="source/"`,
-		`Raw file guide.md`,
+		`Raw file</span> guide.md`,
 		`Search (/)`,
+		`name="ui-language" value="en" checked`,
+		`<span data-i18n="language_current">English</span>`,
 		`<a href="../" title="docs" aria-label="docs">docs</a>`,
 		`<span class="tb-file" title="docs/guide.md" aria-label="docs/guide.md" aria-current="page">guide.md</span>`,
-		`<aside class="toc-panel" id="toc-panel" aria-label="Table of contents">`,
+		`<aside class="toc-panel" id="toc-panel" data-i18n-aria-label="toc_title" aria-label="Table of contents">`,
 		`<a href="#intro" data-lv="2">Intro</a>`,
 	} {
 		if !strings.Contains(got, want) {
@@ -675,7 +698,7 @@ func TestGlossaryAppendixAndDrawer(t *testing.T) {
 	organicAt := strings.Index(got, `id="glossary-organic"`)
 	for _, want := range []string{
 		`<section class="glossary-appendix" id="glossary"`,
-		`<h2>术语</h2>`,
+		`<h2 data-i18n="glossary">术语</h2>`,
 		`id="glossary-mediation"`,
 		`id="glossary-organic"`,
 		`data-glossary="mediation"`,
@@ -717,7 +740,7 @@ func TestGlossaryAppendixAndDrawer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Page() error = %v", err)
 	}
-	if !strings.Contains(en.String(), `<h2>Glossary</h2>`) {
+	if !strings.Contains(en.String(), `<h2 data-i18n="glossary">Glossary</h2>`) {
 		t.Fatalf("en glossary heading missing\n%s", en.String())
 	}
 

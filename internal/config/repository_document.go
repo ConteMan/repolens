@@ -108,6 +108,9 @@ func (s *RepositoryByteSize) UnmarshalYAML(raw []byte) error {
 
 // RepositoryViewSettings contains the editable browser view fields.
 type RepositoryViewSettings struct {
+	DirectoryFiles  *string `yaml:"directory-files" json:"directory-files"`
+	ContentWidth    *string `yaml:"content-width" json:"content-width"`
+	ContentAlign    *string `yaml:"content-align" json:"content-align"`
 	TreePosition    *string `yaml:"tree_position" json:"tree_position"`
 	TreeExpandDepth *int    `yaml:"tree_expand_depth" json:"tree_expand_depth"`
 	TOCPanel        *string `yaml:"toc_panel" json:"toc_panel"`
@@ -179,6 +182,22 @@ func ValidateRepositorySettings(settings RepositorySettings) []RepositoryValidat
 				validatePattern(&issues, path+".match", *rule.Match)
 			}
 			validateRuleSettings(&issues, path, rule)
+		}
+	}
+	for _, field := range []struct {
+		path    string
+		value   *string
+		allowed []string
+	}{
+		{"view.directory-files", settings.View.DirectoryFiles, directoryFilesValues},
+		{"view.content-width", settings.View.ContentWidth, contentWidthValues},
+		{"view.content-align", settings.View.ContentAlign, contentAlignValues},
+	} {
+		if field.value == nil {
+			continue
+		}
+		if reason := readingValueError(*field.value, field.allowed); reason != "" {
+			appendValidationIssue(&issues, field.path, "invalid_value", reason)
 		}
 	}
 	if settings.View.TreeExpandDepth != nil && *settings.View.TreeExpandDepth < 0 {
@@ -348,6 +367,9 @@ func (d *RepositoryDocument) Apply(settings RepositorySettings) error {
 		return err
 	}
 	if err := applySettingsSection(d.root, "view", []settingValue{
+		{key: "directory-files", value: settings.View.DirectoryFiles},
+		{key: "content-width", value: settings.View.ContentWidth},
+		{key: "content-align", value: settings.View.ContentAlign},
 		{key: "tree_position", value: settings.View.TreePosition},
 		{key: "tree_expand_depth", value: settings.View.TreeExpandDepth},
 		{key: "toc_panel", value: settings.View.TOCPanel},
@@ -414,6 +436,9 @@ func (d *RepositoryDocument) clearUnsetSettings(settings RepositorySettings) err
 		return err
 	}
 	if err := clearUnsetSettingsSection(d.root, "view", []settingValue{
+		{key: "directory-files", value: settings.View.DirectoryFiles},
+		{key: "content-width", value: settings.View.ContentWidth},
+		{key: "content-align", value: settings.View.ContentAlign},
 		{key: "tree_position", value: settings.View.TreePosition}, {key: "tree_expand_depth", value: settings.View.TreeExpandDepth},
 		{key: "toc_panel", value: settings.View.TOCPanel}, {key: "search", value: settings.View.Search},
 	}); err != nil {

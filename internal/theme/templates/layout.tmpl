@@ -12,7 +12,7 @@
 {{if .HasCustomCSS}}<link rel="stylesheet" href="{{.RelRoot}}_assets/custom.css">{{end}}
 {{.HeadExtra}}
 </head>
-<body data-page-kind="{{.Kind}}" data-tree-position="{{.TreePosition}}"{{if .SnapshotID}} data-snapshot-id="{{.SnapshotID}}" data-snapshot-src="{{.RelRoot}}_assets/snapshot.json"{{end}}>
+<body data-page-kind="{{.Kind}}" data-tree-position="{{.TreePosition}}" data-width="{{or .ContentWidth "standard"}}" data-align="{{or .ContentAlign "left"}}"{{if .SnapshotID}} data-snapshot-id="{{.SnapshotID}}" data-snapshot-src="{{.RelRoot}}_assets/snapshot.json"{{end}}>
 <svg class="icon-sprite" aria-hidden="true" focusable="false">
   <symbol id="icon-folder" viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.4 1.6h7.6v7.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></symbol>
   <symbol id="icon-file" viewBox="0 0 16 16"><path d="M3 1.5h6.5L13 5v9.5H3z"/><path d="M9.5 1.5V5H13"/></symbol>
@@ -41,88 +41,118 @@
 {{end}}</svg>
 <header class="topbar">
   <div class="tb-group js-only">
-    <button class="tb-btn" id="btn-tree" type="button" title="{{index .UI "tree_title"}}" aria-label="{{index .UI "tree"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
-    <button class="tb-btn" id="btn-back" type="button" title="{{index .UI "back"}}" aria-label="{{index .UI "back"}}"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
-    <button class="tb-btn" id="btn-fwd" type="button" title="{{index .UI "forward"}}" aria-label="{{index .UI "forward"}}"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
+    <button class="tb-btn" id="btn-tree" type="button" data-i18n-title="tree_title" title="{{index .UI "tree_title"}}" data-i18n-aria-label="tree" aria-label="{{index .UI "tree"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-tree"></use></svg></button>
+    <button class="tb-btn" id="btn-back" type="button" data-i18n-title="back" title="{{index .UI "back"}}" data-i18n-aria-label="back" aria-label="{{index .UI "back"}}"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+    <button class="tb-btn" id="btn-fwd" type="button" data-i18n-title="forward" title="{{index .UI "forward"}}" data-i18n-aria-label="forward" aria-label="{{index .UI "forward"}}"><svg class="icon" aria-hidden="true"><use href="#icon-fwd"></use></svg></button>
   </div>
-  <nav class="tb-crumbs" aria-label="Breadcrumbs">
-    {{range .Breadcrumbs}}{{if .Current}}<span class="tb-file" title="{{.Path}}" aria-label="{{.Path}}" aria-current="page">{{.Label}}</span>{{else}}<a href="{{.Href}}" title="{{.Path}}" aria-label="{{.Path}}">{{.Label}}</a>{{end}}{{end}}
+  <nav class="tb-crumbs" data-i18n-aria-label="breadcrumbs" aria-label="{{index .UI "breadcrumbs"}}">
+    {{range .Breadcrumbs}}
+    {{$label := .Label}}{{if .Root}}{{$label = index $.UI "root_crumb"}}{{end}}
+    {{if .Current}}<span class="tb-file" title="{{.Path}}" {{if .Root}}data-i18n="root_crumb" data-i18n-aria-label="root_crumb" aria-label="{{$label}}"{{else}}aria-label="{{.Path}}"{{end}} aria-current="page">{{$label}}</span>{{else}}<a href="{{.Href}}" title="{{.Path}}" {{if .Root}}data-i18n="root_crumb" data-i18n-aria-label="root_crumb" aria-label="{{$label}}"{{else}}aria-label="{{.Path}}"{{end}}>{{$label}}</a>{{end}}{{end}}
   </nav>
   <div class="tb-group">
-    {{if and .TOC (eq .TOCPanel "floating")}}<button class="tb-btn js-only" id="btn-toc" type="button" title="{{index .UI "toc_title"}}" aria-label="{{index .UI "toc_title"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-toc"></use></svg></button>{{end}}
+    {{if and .TOC (eq .TOCPanel "floating")}}<button class="tb-btn js-only" id="btn-toc" type="button" data-i18n-title="toc_title" title="{{index .UI "toc_title"}}" data-i18n-aria-label="toc_title" aria-label="{{index .UI "toc_title"}}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#icon-toc"></use></svg></button>{{end}}
     {{if and .TOC (eq .TOCPanel "floating")}}<span class="tb-sep js-only"></span>{{end}}
-    <button class="tb-btn js-only" id="btn-zoom-out" type="button" title="{{index .UI "zoom_out"}}" aria-label="{{index .UI "zoom_out"}}"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
+    <button class="tb-btn js-only" id="btn-zoom-out" type="button" data-i18n-title="zoom_out" title="{{index .UI "zoom_out"}}" data-i18n-aria-label="zoom_out" aria-label="{{index .UI "zoom_out"}}"><svg class="icon" aria-hidden="true"><use href="#icon-minus"></use></svg></button>
     <span class="zoom-readout js-only" id="zoom-readout">100%</span>
-    <button class="tb-btn js-only" id="btn-zoom-in" type="button" title="{{index .UI "zoom_in"}}" aria-label="{{index .UI "zoom_in"}}"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
-    <button class="tb-btn js-only" id="btn-width" type="button" title="{{index .UI "width"}}" aria-label="{{index .UI "width"}}"><svg class="icon" aria-hidden="true"><use href="#icon-width"></use></svg><span id="width-label">{{index .UI "width_default"}}</span></button>
+    <button class="tb-btn js-only" id="btn-zoom-in" type="button" data-i18n-title="zoom_in" title="{{index .UI "zoom_in"}}" data-i18n-aria-label="zoom_in" aria-label="{{index .UI "zoom_in"}}"><svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+    <div class="layout-wrap js-only" id="layout-wrap">
+      <button class="tb-btn preference-toggle" id="btn-layout" type="button" aria-expanded="false" aria-controls="layout-menu"><span data-i18n="layout">{{index .UI "layout"}}</span></button>
+      <div class="layout-menu" id="layout-menu" role="group" data-i18n-aria-label="layout" aria-label="{{index .UI "layout"}}" hidden>
+        <fieldset>
+          <legend data-i18n="layout_width">{{index .UI "layout_width"}}</legend>
+          <div class="layout-options">
+            <label><input type="radio" name="layout-width" value="narrow"{{if eq (or .ContentWidth "standard") "narrow"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_narrow">{{index .UI "width_narrow"}}</span></span></label>
+            <label><input type="radio" name="layout-width" value="standard"{{if eq (or .ContentWidth "standard") "standard"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_standard">{{index .UI "width_standard"}}</span></span></label>
+            <label><input type="radio" name="layout-width" value="full"{{if eq (or .ContentWidth "standard") "full"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="width_full">{{index .UI "width_full"}}</span></span></label>
+          </div>
+        </fieldset>
+        <fieldset id="layout-align-options"{{if eq .ContentWidth "full"}} disabled{{end}}>
+          <legend data-i18n="layout_align">{{index .UI "layout_align"}}</legend>
+          <div class="layout-options">
+            <label><input type="radio" name="layout-align" value="left"{{if eq (or .ContentAlign "left") "left"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_left">{{index .UI "align_left"}}</span></span></label>
+            <label><input type="radio" name="layout-align" value="center"{{if eq (or .ContentAlign "left") "center"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_center">{{index .UI "align_center"}}</span></span></label>
+            <label><input type="radio" name="layout-align" value="right"{{if eq (or .ContentAlign "left") "right"}} checked{{end}}><span class="layout-option"><span class="layout-icon" aria-hidden="true"></span><span data-i18n="align_right">{{index .UI "align_right"}}</span></span></label>
+          </div>
+        </fieldset>
+        <button class="tb-btn layout-reset" id="layout-reset" type="button" data-i18n="layout_reset">{{index .UI "layout_reset"}}</button>
+      </div>
+    </div>
     <span class="tb-sep js-only"></span>
     <span class="info-wrap js-only" id="info-wrap">
-      <button class="tb-btn" id="btn-info" type="button" title="{{index .UI "info"}}" aria-label="{{index .UI "info"}}" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
-      <div class="info-panel" role="dialog" aria-label="{{index .UI "info"}}">
-        <div class="info-row"><span>{{index .UI "path"}}</span><code data-page-path>{{.RepoPath}}</code></div>
-        <div class="info-row"><span>{{index .UI "type"}}</span><b>{{.KindLabel}}</b></div>
-        {{if .FileSize}}<div class="info-row"><span>{{index .UI "size"}}</span><b>{{formatSize .FileSize false}}</b></div>{{end}}
-        {{if .LastCommit}}<div class="info-row"><span>{{index .UI "last_updated"}}</span><b>{{formatInfoDate .LastCommit}}</b></div>
-        <div class="info-row"><span>{{index .UI "commit"}}</span><span class="info-commit"><svg class="icon" aria-hidden="true"><use href="#icon-commit"></use></svg><code>{{shortHash7 .LastCommit.Hash}}</code>{{if .LastCommit.Subject}}<small>{{.LastCommit.Subject}}</small>{{end}}</span></div>{{end}}
-        <div class="info-actions">{{if .MirrorHref}}<a href="{{.MirrorHref}}">{{index .UI "view_raw"}}</a>{{end}}{{if .RepoPath}}<a href="#" id="info-copy">{{index .UI "copy_path"}}</a>{{end}}</div>
+      <button class="tb-btn" id="btn-info" type="button" data-i18n-title="info" title="{{index .UI "info"}}" data-i18n-aria-label="info" aria-label="{{index .UI "info"}}" aria-pressed="false" aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></button>
+      <div class="info-panel" role="dialog" data-i18n-aria-label="info" aria-label="{{index .UI "info"}}">
+        <div class="info-row"><span data-i18n="path">{{index .UI "path"}}</span><code data-page-path>{{.RepoPath}}</code></div>
+        <div class="info-row"><span data-i18n="type">{{index .UI "type"}}</span><b{{if .KindLabelKey}} data-i18n="{{.KindLabelKey}}"{{end}}>{{.KindLabel}}</b></div>
+        {{if .FileSize}}<div class="info-row"><span data-i18n="size">{{index .UI "size"}}</span><b>{{formatSize .FileSize false}}</b></div>{{end}}
+        {{if .LastCommit}}<div class="info-row"><span data-i18n="last_updated">{{index .UI "last_updated"}}</span><b>{{formatInfoDate .LastCommit}}</b></div>
+        <div class="info-row"><span data-i18n="commit">{{index .UI "commit"}}</span><span class="info-commit"><svg class="icon" aria-hidden="true"><use href="#icon-commit"></use></svg><code>{{shortHash7 .LastCommit.Hash}}</code>{{if .LastCommit.Subject}}<small>{{.LastCommit.Subject}}</small>{{end}}</span></div>{{end}}
+        <div class="info-actions">{{if .MirrorHref}}<a href="{{.MirrorHref}}" data-i18n="view_raw">{{index .UI "view_raw"}}</a>{{end}}{{if .RepoPath}}<a href="#" id="info-copy" data-i18n="copy_path">{{index .UI "copy_path"}}</a>{{end}}</div>
       </div>
     </span>
-    {{if .SourceHref}}<a class="tb-btn" id="btn-source" href="{{.SourceHref}}" title="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}" aria-label="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}"><svg class="icon" aria-hidden="true"><use href="#icon-code"></use></svg></a>{{end}}
+    {{if .SourceHref}}<a class="tb-btn" id="btn-source" href="{{.SourceHref}}" data-i18n-title="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}return_rendered{{else}}source{{end}}" data-i18n-aria-label="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}return_rendered{{else}}source{{end}}" title="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}" aria-label="{{if or (eq .Kind "markdown-source") (eq .Kind "html-source")}}{{index .UI "return_rendered"}}{{else}}{{index .UI "source"}}{{end}}"><svg class="icon" aria-hidden="true"><use href="#icon-code"></use></svg></a>{{end}}
     {{if .MirrorHref}}<span class="dl-wrap" id="dl-wrap">
-      <button class="tb-btn js-only" id="btn-dl" type="button" title="{{index .UI "download"}}" aria-label="{{index .UI "download"}}" aria-haspopup="menu" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></button>
+      <button class="tb-btn js-only" id="btn-dl" type="button" data-i18n-title="download" title="{{index .UI "download"}}" data-i18n-aria-label="download" aria-label="{{index .UI "download"}}" aria-haspopup="menu" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></button>
       <span class="dl-menu">
-        <a href="{{.MirrorHref}}" download><svg class="icon" aria-hidden="true"><use href="#icon-{{iconName .Kind false}}"></use></svg>{{index .UI "download_raw"}} {{baseName .RepoPath}}{{if .FileSize}}<small>{{formatSize .FileSize false}}</small>{{end}}</a>
+        <a href="{{.MirrorHref}}" download><svg class="icon" aria-hidden="true"><use href="#icon-{{iconName .Kind false}}"></use></svg><span data-i18n="download_raw">{{index .UI "download_raw"}}</span> {{baseName .RepoPath}}{{if .FileSize}}<small>{{formatSize .FileSize false}}</small>{{end}}</a>
       </span>
     </span>
-    <noscript><a class="tb-btn" href="{{.MirrorHref}}" download title="{{index .UI "download"}}" aria-label="{{index .UI "download"}}"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></a></noscript>{{end}}
-    {{if .SearchEnabled}}<button class="tb-btn js-only" id="btn-search" type="button" title="{{index .UI "search"}}" aria-label="{{index .UI "search"}}"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>{{end}}
+    <noscript><a class="tb-btn" href="{{.MirrorHref}}" download data-i18n-title="download" title="{{index .UI "download"}}" data-i18n-aria-label="download" aria-label="{{index .UI "download"}}"><svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg></a></noscript>{{end}}
+    <div class="lang-wrap js-only" id="language-wrap">
+      <button class="tb-btn preference-toggle" id="btn-language" type="button" aria-expanded="false" aria-controls="language-menu" data-i18n-aria-label="language" aria-label="{{index .UI "language"}}"><span data-i18n="language_current">{{index .UI "language_current"}}</span></button>
+      <div class="lang-menu" id="language-menu" role="group" data-i18n-aria-label="language" aria-label="{{index .UI "language"}}" hidden>
+        <label lang="zh-CN"><input type="radio" name="ui-language" value="zh-CN"{{if eq (index .UI "language_code") "zh-CN"}} checked{{end}}>简体中文</label>
+        <label lang="en"><input type="radio" name="ui-language" value="en"{{if eq (index .UI "language_code") "en"}} checked{{end}}>English</label>
+      </div>
+    </div>
+    {{if .SearchEnabled}}<button class="tb-btn js-only" id="btn-search" type="button" data-i18n-title="search" title="{{index .UI "search"}}" data-i18n-aria-label="search" aria-label="{{index .UI "search"}}"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></button>{{end}}
   </div>
 </header>
 <div class="shell">
   <aside class="sidebar">
-    <nav class="tree-nav" id="tree-src" aria-label="{{index .UI "tree"}}">
+    <nav class="tree-nav" id="tree-src" data-i18n-aria-label="tree" aria-label="{{index .UI "tree"}}">
       {{template "tree-actions" .}}
       {{template "tree" .Tree}}
     </nav>
   </aside>
-  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" aria-label="{{index .UI "tree_resize"}}" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
+  <div class="sidebar-resizer js-only" id="sidebar-resizer" role="separator" data-i18n-aria-label="tree_resize" aria-label="{{index .UI "tree_resize"}}" aria-orientation="vertical" aria-valuemin="220" aria-valuemax="520" aria-valuenow="300" tabindex="0"></div>
   <main class="content" id="content">
     {{if not .HidePageTitle}}<h1>{{.Title}}</h1>{{end}}
     {{template "page" .}}
   </main>
 </div>
 <div class="scrim" id="scrim" aria-hidden="true"></div>
-{{if .SearchEnabled}}<div class="search-modal" id="search-modal" role="dialog" aria-label="{{index .UI "search_label"}}" data-search-label="{{index .UI "search_label"}}" data-search-root="{{.RelRoot}}" data-search-src="{{.RelRoot}}search.json" data-search-placeholder="{{index .UI "search_placeholder"}}" data-search-intro="{{index .UI "search_intro"}}" data-search-empty="{{index .UI "search_empty"}}" data-search-unavailable="{{index .UI "search_unavailable"}}" data-search-files="{{index .UI "search_files"}}" data-search-headings="{{index .UI "search_headings"}}" data-search-select="{{index .UI "search_select"}}" data-search-open="{{index .UI "search_open"}}" data-search-escape="{{index .UI "search_escape"}}">
-  <input class="search-input" id="search-input" type="text" placeholder="{{index .UI "search_placeholder"}}" autocomplete="off">
-  <div class="search-results" id="search-results"><div class="search-empty">{{index .UI "search_intro"}}</div></div>
-  <div class="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> {{index .UI "search_select"}}</span><span><kbd>Enter</kbd> {{index .UI "search_open"}}</span><span><kbd>Esc</kbd> {{index .UI "search_escape"}}</span></div>
+{{if .SearchEnabled}}<div class="search-modal" id="search-modal" role="dialog" data-i18n-aria-label="search_label" aria-label="{{index .UI "search_label"}}" data-i18n-data-search-label="search_label" data-search-label="{{index .UI "search_label"}}" data-search-root="{{.RelRoot}}" data-search-src="{{.RelRoot}}search.json" data-i18n-data-search-placeholder="search_placeholder" data-search-placeholder="{{index .UI "search_placeholder"}}" data-i18n-data-search-intro="search_intro" data-search-intro="{{index .UI "search_intro"}}" data-i18n-data-search-empty="search_empty" data-search-empty="{{index .UI "search_empty"}}" data-i18n-data-search-unavailable="search_unavailable" data-search-unavailable="{{index .UI "search_unavailable"}}" data-i18n-data-search-files="search_files" data-search-files="{{index .UI "search_files"}}" data-i18n-data-search-headings="search_headings" data-search-headings="{{index .UI "search_headings"}}" data-i18n-data-search-select="search_select" data-search-select="{{index .UI "search_select"}}" data-i18n-data-search-open="search_open" data-search-open="{{index .UI "search_open"}}" data-i18n-data-search-escape="search_escape" data-search-escape="{{index .UI "search_escape"}}">
+  <input class="search-input" id="search-input" type="text" data-i18n-aria-label="search_label" aria-label="{{index .UI "search_label"}}" data-i18n-placeholder="search_placeholder" placeholder="{{index .UI "search_placeholder"}}" autocomplete="off">
+  <div class="search-results" id="search-results"><div class="search-empty" data-i18n="search_intro">{{index .UI "search_intro"}}</div></div>
+  <div class="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="search_select">{{index .UI "search_select"}}</span></span><span><kbd>Enter</kbd> <span data-i18n="search_open">{{index .UI "search_open"}}</span></span><span><kbd>Esc</kbd> <span data-i18n="search_escape">{{index .UI "search_escape"}}</span></span></div>
 </div>{{end}}
-<div class="overlay" id="tree-overlay" role="dialog" aria-label="{{index .UI "tree"}}">
+<div class="overlay" id="tree-overlay" role="dialog" data-i18n-aria-label="tree" aria-label="{{index .UI "tree"}}">
   <div class="overlay-head">
-    <span>{{.SiteTitle}} · {{index .UI "tree"}}</span>
-    <button class="tb-btn" id="btn-pin-tree" type="button" title="{{index .UI "pin_tree_title"}}"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>{{index .UI "pin_tree"}}</button>
+    <span>{{.SiteTitle}} · <span data-i18n="tree">{{index .UI "tree"}}</span></span>
+    <button class="tb-btn" id="btn-pin-tree" type="button" data-i18n-title="pin_tree_title" title="{{index .UI "pin_tree_title"}}"><svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg><span data-i18n="pin_tree">{{index .UI "pin_tree"}}</span></button>
   </div>
-  <nav class="overlay-tree" id="overlay-tree" aria-label="{{index .UI "tree"}}"></nav>
+  <nav class="overlay-tree" id="overlay-tree" data-i18n-aria-label="tree" aria-label="{{index .UI "tree"}}"></nav>
 </div>
-{{if and .TOC (eq .TOCPanel "floating")}}<aside class="toc-panel" id="toc-panel" aria-label="{{index .UI "toc_title"}}">
-  <div class="toc-panel-head">{{index .UI "toc"}}</div>
+{{if and .TOC (eq .TOCPanel "floating")}}<aside class="toc-panel" id="toc-panel" data-i18n-aria-label="toc_title" aria-label="{{index .UI "toc_title"}}">
+  <div class="toc-panel-head" data-i18n="toc">{{index .UI "toc"}}</div>
   <div class="toc-panel-body" id="toc-body">{{range .TOC}}{{template "toc-panel-item" .}}{{end}}</div>
 </aside>{{end}}
 {{if .Terms}}{{/* Custom layouts must consume PageData.Terms and keep an equivalent appendix + these class/id hooks for the drawer. */}}<div id="glossary-ui">
-  <button class="glossary-fab js-only" id="btn-glossary" type="button" title="{{index .UI "glossary_fab"}}" aria-label="{{index .UI "glossary_fab"}}" aria-haspopup="dialog" aria-controls="glossary-drawer"><svg class="icon" aria-hidden="true"><use href="#icon-glossary"></use></svg></button>
+  <button class="glossary-fab js-only" id="btn-glossary" type="button" data-i18n-title="glossary_fab" title="{{index .UI "glossary_fab"}}" data-i18n-aria-label="glossary_fab" aria-label="{{index .UI "glossary_fab"}}" aria-haspopup="dialog" aria-controls="glossary-drawer"><svg class="icon" aria-hidden="true"><use href="#icon-glossary"></use></svg></button>
   <div class="glossary-scrim" id="glossary-scrim" hidden></div>
   <aside class="glossary-drawer" id="glossary-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="glossary-drawer-title" aria-hidden="true">
     <div class="glossary-drawer-head">
-      <button class="tb-btn" id="glossary-drawer-back" type="button" hidden title="{{index .UI "glossary_back"}}" aria-label="{{index .UI "glossary_back"}}"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+      <button class="tb-btn" id="glossary-drawer-back" type="button" hidden data-i18n-title="glossary_back" title="{{index .UI "glossary_back"}}" data-i18n-aria-label="glossary_back" aria-label="{{index .UI "glossary_back"}}"><svg class="icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
       <h2 class="glossary-drawer-title" id="glossary-drawer-title"></h2>
-      <button class="tb-btn" id="glossary-drawer-close" type="button" title="{{index .UI "glossary_close"}}" aria-label="{{index .UI "glossary_close"}}"><svg class="icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
+      <button class="tb-btn" id="glossary-drawer-close" type="button" data-i18n-title="glossary_close" title="{{index .UI "glossary_close"}}" data-i18n-aria-label="glossary_close" aria-label="{{index .UI "glossary_close"}}"><svg class="icon" aria-hidden="true"><use href="#icon-close"></use></svg></button>
     </div>
     <div class="glossary-drawer-body" id="glossary-drawer-body"></div>
   </aside>
 </div>
 {{end}}{{if .SnapshotID}}<aside class="snapshot-notice js-only" id="snapshot-notice" role="status" aria-live="polite" aria-atomic="true" hidden>
-  <span>{{index .UI "snapshot_update"}}</span>
-  <button id="snapshot-reload" type="button">{{index .UI "snapshot_reload"}}</button>
+  <span data-i18n="snapshot_update">{{index .UI "snapshot_update"}}</span>
+  <button id="snapshot-reload" type="button" data-i18n="snapshot_reload">{{index .UI "snapshot_reload"}}</button>
 </aside>{{end}}
 {{if .HasMermaid}}<script defer src="{{.RelRoot}}_assets/mermaid.min.js"></script>{{end}}
 <script defer src="{{.RelRoot}}_assets/site.js"></script>
@@ -131,8 +161,8 @@
 
 {{define "toc-panel-item"}}<a href="#{{.Anchor}}" data-lv="{{.Level}}">{{.Title}}</a>{{range .Children}}{{template "toc-panel-item" .}}{{end}}{{end}}
 
-{{define "tree-actions"}}<div class="tree-actions js-only" role="group" aria-label="{{index .UI "tree_actions"}}">
-  <button class="tree-action" type="button" data-tree-action="expand" title="{{index .UI "tree_expand_all"}}" aria-label="{{index .UI "tree_expand_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
-  <button class="tree-action" type="button" data-tree-action="collapse" title="{{index .UI "tree_collapse_all"}}" aria-label="{{index .UI "tree_collapse_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
-  <button class="tree-action" type="button" data-tree-action="locate" title="{{index .UI "tree_locate_current"}}" aria-label="{{index .UI "tree_locate_current"}}"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
+{{define "tree-actions"}}<div class="tree-actions js-only" role="group" data-i18n-aria-label="tree_actions" aria-label="{{index .UI "tree_actions"}}">
+  <button class="tree-action" type="button" data-tree-action="expand" data-i18n-title="tree_expand_all" title="{{index .UI "tree_expand_all"}}" data-i18n-aria-label="tree_expand_all" aria-label="{{index .UI "tree_expand_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-expand-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="collapse" data-i18n-title="tree_collapse_all" title="{{index .UI "tree_collapse_all"}}" data-i18n-aria-label="tree_collapse_all" aria-label="{{index .UI "tree_collapse_all"}}"><svg class="icon" aria-hidden="true"><use href="#icon-collapse-all"></use></svg></button>
+  <button class="tree-action" type="button" data-tree-action="locate" data-i18n-title="tree_locate_current" title="{{index .UI "tree_locate_current"}}" data-i18n-aria-label="tree_locate_current" aria-label="{{index .UI "tree_locate_current"}}"><svg class="icon" aria-hidden="true"><use href="#icon-locate"></use></svg></button>
 </div>{{end}}

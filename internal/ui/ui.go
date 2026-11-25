@@ -366,7 +366,10 @@ func repositorySettingsFromEffectiveConfig(effective config.Config, repositoryRu
 		Rules: rules,
 		Theme: config.RepositoryThemeSettings{Vars: mapPointer(effective.Theme.Vars), CSS: stringPointer(effective.Theme.CSS), Templates: stringPointer(effective.Theme.Templates)},
 		View: config.RepositoryViewSettings{
-			TreePosition: stringPointer(effective.View.TreePosition), TreeExpandDepth: intPointer(effective.View.TreeExpandDepth),
+			DirectoryFiles: stringPointer(effective.View.DirectoryFiles),
+			ContentWidth:   stringPointer(effective.View.ContentWidth),
+			ContentAlign:   stringPointer(effective.View.ContentAlign),
+			TreePosition:   stringPointer(effective.View.TreePosition), TreeExpandDepth: intPointer(effective.View.TreeExpandDepth),
 			TOCPanel: stringPointer(effective.View.TOCPanel), Search: boolPointer(effective.View.Search),
 		},
 		Agent: config.RepositoryAgentSettings{
@@ -425,6 +428,9 @@ func repositorySettingSources(settings config.RepositorySettings) map[string]str
 	mark("theme.vars", settings.Theme.Vars)
 	mark("theme.css", settings.Theme.CSS)
 	mark("theme.templates", settings.Theme.Templates)
+	mark("view.directory-files", settings.View.DirectoryFiles)
+	mark("view.content-width", settings.View.ContentWidth)
+	mark("view.content-align", settings.View.ContentAlign)
 	mark("view.tree_position", settings.View.TreePosition)
 	mark("view.tree_expand_depth", settings.View.TreeExpandDepth)
 	mark("view.toc_panel", settings.View.TOCPanel)

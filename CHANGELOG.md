@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 浏览站支持简体中文与英语切换，目录文件列表可按配置折叠，布局菜单可设置正文宽度与位置。
+
 ## [1.8.0] - 2026-08-20
 
 ### Added

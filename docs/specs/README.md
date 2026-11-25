@@ -25,7 +25,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [017](017-glossary-terms.md) | 术语标注与解释 | internal/render, site, theme | M11 | 已实现 |
 | [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 已实现 |
 | [019](019-skill-install.md) | Skill 安装与更新 | skills, internal/skill, cli | M12 | 已实现 |
-| [020](020-browser-reading.md) | 浏览站阅读体验 | internal/config, theme, site, ui | M13 | 已确认 |
+| [020](020-browser-reading.md) | 浏览站阅读体验 | internal/config, theme, site, ui | M13 | 已实现 |
 
 ## 依赖与实现顺序
 

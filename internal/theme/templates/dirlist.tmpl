@@ -1,25 +1,25 @@
 {{define "dirlist"}}
 <article class="page page-dir">
   {{if .Body}}<section class="readme">{{.Body}}</section>{{end}}
-  <section class="dir-list" aria-labelledby="dir-list-heading">
-    <h2 id="dir-list-heading">Files</h2>
+  <details class="dir-list"{{if or (eq .DirectoryFiles "expanded") (and (ne .DirectoryFiles "collapsed") (not .Body))}} open{{end}}>
+    {{$count := printf "%d" (len .DirEntries)}}<summary><span data-i18n="dir_files" data-i18n-param="{{$count}}">{{printf .UI.dir_files $count}}</span></summary>
     <table>
       <thead>
-        <tr><th>Name</th><th>Kind</th><th>Size</th><th>Updated</th></tr>
+        <tr><th data-i18n="dir_name">{{.UI.dir_name}}</th><th data-i18n="type">{{.UI.type}}</th><th data-i18n="size">{{.UI.size}}</th><th data-i18n="dir_updated">{{.UI.dir_updated}}</th></tr>
       </thead>
       <tbody>
         {{range .DirEntries}}
         <tr>
           <td><a class="dir-entry-name" href="{{.Href}}"><svg class="icon icon-{{iconName .Kind .IsDir}}" aria-hidden="true"><use href="#icon-{{iconName .Kind .IsDir}}"></use></svg><span>{{.Name}}</span></a></td>
-          <td>{{.Kind}}</td>
+          {{$key := printf "kind_%s" .Kind}}<td data-i18n="{{$key}}">{{or (index $.UI $key) .Kind}}</td>
           <td>{{formatSize .Size .IsDir}}</td>
           <td>{{formatDate .LastCommit}}</td>
         </tr>
         {{else}}
-        <tr><td colspan="4">No files</td></tr>
+        <tr><td colspan="4" data-i18n="dir_empty">{{.UI.dir_empty}}</td></tr>
         {{end}}
       </tbody>
     </table>
-  </section>
+  </details>
 </article>
 {{end}}

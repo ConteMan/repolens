@@ -57,10 +57,27 @@ func TestLoadTable(t *testing.T) {
 				if cfg.View.TreePosition != "left" || cfg.View.TreeExpandDepth != 2 || cfg.View.TOCPanel != "floating" || !cfg.View.Search {
 					t.Fatalf("view defaults = %#v", cfg.View)
 				}
+				if cfg.View.DirectoryFiles != "auto" || cfg.View.ContentWidth != "standard" || cfg.View.ContentAlign != "left" {
+					t.Fatalf("reading view defaults = %#v", cfg.View)
+				}
 				if !cfg.Agent.LLMSTxt || !cfg.Agent.LLMSFull.Enabled ||
 					cfg.Agent.LLMSFull.MaxSize != 2*1024*1024 || !cfg.Agent.IndexJSON {
 					t.Fatalf("agent defaults = %#v", cfg.Agent)
 				}
+			},
+		},
+		{
+			name:     "reading view merges and validates effective values",
+			repoYAML: "view: {directory-files: expanded, content-width: narrow, content-align: center}",
+			extYAML:  "view: {content-width: full, content-align: unsupported}",
+			assert: func(t *testing.T, cfg *Config, warnings []Warning) {
+				if cfg.View.DirectoryFiles != "expanded" || cfg.View.ContentWidth != "full" || cfg.View.ContentAlign != "left" {
+					t.Fatalf("reading view = %#v", cfg.View)
+				}
+				if len(warnings) != 1 {
+					t.Fatalf("warnings = %v, want one", warnings)
+				}
+				requireWarningContains(t, warnings, "view.content-align")
 			},
 		},
 		{

@@ -33,7 +33,10 @@ test.beforeAll(async () => {
   execFileSync("git", ["-C", repository, "add", "."]);
   execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: add tree fixture"]);
   execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", leftOutput]);
-  writeFileSync(join(repository, ".repolens.yml"), "site:\n  language: en\nview:\n  tree_position: right\n");
+  writeFileSync(join(repository, ".repolens.yml"), [
+    "site:", "  language: en", "view:", "  tree_position: right",
+    "  content-width: narrow", "  content-align: center", "",
+  ].join("\n"));
   execFileSync("git", ["-C", repository, "add", ".repolens.yml"]);
   execFileSync("git", ["-C", repository, "commit", "--quiet", "-m", "test: move tree to the right"]);
   execFileSync("go", ["run", "../../../cmd/repolens", "build", repository, "-o", rightOutput]);
@@ -71,6 +74,80 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   rmSync(fixtureRoot, { recursive: true, force: true });
+});
+
+test("migrates the old width to a single deployment and restores that site's defaults", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("seeded-layout-test")) {
+      localStorage.setItem("repolens:width", "default");
+      sessionStorage.setItem("seeded-layout-test", "true");
+    }
+  });
+  await page.goto(`${siteURL}/right/view/`);
+  const body = page.locator("body");
+  const layout = page.getByRole("button", { name: "Layout" });
+  const menu = page.locator("#layout-menu");
+  await expect(body).toHaveAttribute("data-width", "standard");
+  await expect(body).toHaveAttribute("data-align", "center");
+  expect(await page.evaluate(() => localStorage.getItem("repolens:width"))).toBeNull();
+
+  await layout.click();
+  await expect(menu.getByRole("radio", { name: "Standard" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(layout).toBeFocused();
+
+  await layout.click();
+  await menu.getByRole("button", { name: "Restore site defaults" }).click();
+  await expect(layout).toBeFocused();
+  await expect(body).toHaveAttribute("data-width", "narrow");
+  await expect(body).toHaveAttribute("data-align", "center");
+  await page.reload();
+  await expect(body).toHaveAttribute("data-width", "narrow");
+});
+
+test("remembers alignment through full width, PJAX, and reload within one deployment", async ({ page }) => {
+  await page.goto(`${siteURL}/docs/view/`);
+  const body = page.locator("body");
+  const layout = page.getByRole("button", { name: "Layout" });
+  const menu = page.locator("#layout-menu");
+  await layout.click();
+  await menu.getByText("Right", { exact: true }).click();
+  await menu.getByText("Full", { exact: true }).click();
+  await expect(body).toHaveAttribute("data-width", "full");
+  await expect(body).toHaveAttribute("data-align", "right");
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeChecked();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeDisabled();
+  await menu.getByText("Narrow", { exact: true }).click();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeEnabled();
+  await expect(menu.getByRole("radio", { name: "Right" })).toBeChecked();
+  await page.keyboard.press("Escape");
+
+  await page.locator("#tree-src").getByRole("link", { name: "docs", exact: true }).click();
+  await expect(page).toHaveURL(`${siteURL}/docs/view/docs/`);
+  await expect(body).toHaveAttribute("data-width", "narrow");
+  await expect(body).toHaveAttribute("data-align", "right");
+  await page.goBack();
+  await expect(body).toHaveAttribute("data-align", "right");
+  await page.reload();
+  await expect(body).toHaveAttribute("data-align", "right");
+
+  await page.goto(`${siteURL}/view/`);
+  await expect(body).toHaveAttribute("data-width", "standard");
+  await expect(body).toHaveAttribute("data-align", "left");
+});
+
+test("uses the authored reading layout with JavaScript disabled", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto(`${siteURL}/right/view/`);
+    await expect(page.locator("body")).toHaveAttribute("data-width", "narrow");
+    await expect(page.locator("#content")).toHaveCSS("justify-self", "center");
+    await expect(page.locator("#btn-layout")).toBeHidden();
+  } finally {
+    await context.close();
+  }
 });
 
 test("highlights and locates the default home file", async ({ page }) => {

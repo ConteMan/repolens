@@ -129,7 +129,7 @@ func TestGlossarySyntax(t *testing.T) {
 			src:  "See [广告聚合](term:mediation).\n",
 			opts: MarkdownOptions{Glossary: true, Terms: lib, GlossaryTermLabel: "%s（术语，查看解释）"},
 			contains: []string{
-				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="广告聚合（术语，查看解释）">广告聚合</a>`,
+				`<a class="term" href="#glossary-mediation" data-glossary="mediation" data-i18n-aria-label="glossary_term_label" data-i18n-param="广告聚合" aria-label="广告聚合（术语，查看解释）">广告聚合</a>`,
 			},
 			wantKeys: []string{"mediation"},
 		},
@@ -280,7 +280,7 @@ func TestGlossarySyntax(t *testing.T) {
 			src:  "[**bold**](term:mediation)\n",
 			opts: MarkdownOptions{Glossary: true, Terms: lib, GlossaryTermLabel: "%s (term, view definition)"},
 			contains: []string{
-				`<a class="term" href="#glossary-mediation" data-glossary="mediation" aria-label="bold (term, view definition)"><strong>bold</strong></a>`,
+				`<a class="term" href="#glossary-mediation" data-glossary="mediation" data-i18n-aria-label="glossary_term_label" data-i18n-param="bold" aria-label="bold (term, view definition)"><strong>bold</strong></a>`,
 			},
 			wantKeys: []string{"mediation"},
 		},
