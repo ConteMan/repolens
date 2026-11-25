@@ -56,10 +56,23 @@ if ! grep -Eq 'key=welcome-picker( focused)?$' "$artifact_dir/after-cancel.txt";
 fi
 
 "$auto" click 'key=welcome-picker'
+invalid="$work/ordinary folder"
+mkdir "$invalid"
+"$work/picker" "$app_pid" open "$invalid"
+"$auto" wait --text 'Could Not Open Repository'
+"$auto" screenshot "$artifact_dir/REPO-02.png"
+"$auto" click 'key=welcome-picker'
 "$work/picker" "$app_pid" open "$fixture"
 "$auto" wait --text 'Paths and Rules'
 "$auto" snapshot >"$artifact_dir/after-open.txt"
 grep -F 'fixture repository' "$artifact_dir/after-open.txt"
 grep -F 'Repository / .repolens.yml' "$artifact_dir/after-open.txt"
 "$auto" screenshot "$artifact_dir/opened-repository.png"
-echo "System directory picker smoke passed for cancel and opening a repository with spaces in its path." >>"$GITHUB_STEP_SUMMARY"
+"$auto" click 'key=repository-picker'
+"$auto" click 'key=switch-repository'
+"$work/picker" "$app_pid" open "$invalid"
+"$auto" wait --text 'Could Not Open Repository'
+"$auto" screenshot "$artifact_dir/REPO-03.png"
+"$auto" click 'key=dismiss-open-error'
+"$auto" wait --text 'fixture repository'
+echo "System directory picker passed cancellation, invalid folder recovery, repository opening and preservation after a failed switch." >>"$GITHUB_STEP_SUMMARY"
