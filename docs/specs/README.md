@@ -1,6 +1,6 @@
 # 功能规格（Specs）
 
-v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–019（M5–M12，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
+v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.x 新增 009–020（M5–M13，见 roadmap），每份含行为定义、**接口契约**与验收标准。实现 Agent 以单份 spec 为工作单元，无需本仓之外的上下文。
 
 ## 索引
 
@@ -25,6 +25,7 @@ v1 拆分为 8 份可独立实现的 spec（001–008，已全部实现）；v1.
 | [017](017-glossary-terms.md) | 术语标注与解释 | internal/render, site, theme | M11 | 已实现 |
 | [018](018-glossary-skill.md) | 术语标注 Agent Skill | skills | M11 | 已实现 |
 | [019](019-skill-install.md) | Skill 安装与更新 | skills, internal/skill, cli | M12 | 已实现 |
+| [020](020-browser-reading.md) | 浏览站阅读体验 | internal/config, theme, site, ui | M13 | 已确认 |
 
 ## 依赖与实现顺序
 
