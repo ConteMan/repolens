@@ -102,7 +102,7 @@ type desktopUpdate struct {
 func (d *desktopWindow) appPage(c *ui.Context) {
 	t := c.Theme()
 	ui.Scroll(c.Key("app-preferences")).FillWidth().Grow(1).MinHeight(0).Children(func() {
-		ui.Column(c).FillWidth().Padding(0, desktopContentInset, 16).Gap(0).Children(func() {
+		ui.Column(c).FillWidth().Padding(0, desktopInset(c), 16).Gap(0).Children(func() {
 			d.preferenceRow(c, d.text("应用语言", "App Language"), func() {
 				labels := []string{d.text("跟随系统", "System"), "简体中文", "English"}
 				languages := []string{"", "zh", "en"}
@@ -156,7 +156,7 @@ func (d *desktopWindow) appPage(c *ui.Context) {
 				d.updateView(c)
 			})
 			if d.appError != nil {
-				d.desktopIssue(c, d.appError, "无法处理应用设置或打开链接。请查看技术详情。", "App settings or the link could not be handled. See the technical details.")
+				d.desktopIssue(c, d.appError, "无法处理应用设置或打开链接。请查看错误详情。", "App settings or the link could not be handled. See the error details.")
 			}
 		})
 	})
@@ -180,6 +180,10 @@ func (d *desktopWindow) updateView(c *ui.Context) {
 	state := &d.update
 	t := d.text
 	check := t("检查更新", "Check for Updates")
+	if state.err != nil {
+		d.updateFailureView(c)
+		return
+	}
 	var heading, detail string
 	switch state.stage {
 	case updateChecking:
@@ -198,7 +202,7 @@ func (d *desktopWindow) updateView(c *ui.Context) {
 	case updateCurrent:
 		heading = t("已是最新版本", "Up to date")
 	case updateUnavailable:
-		heading = t("暂无适用于此 Mac 的桌面更新。", "No desktop update is available for this Mac yet.")
+		heading = t("暂无可用的桌面更新", "No desktop update available")
 	}
 	if heading != "" {
 		ui.Text(c, heading).FontSize(18).Bold()
@@ -231,9 +235,31 @@ func (d *desktopWindow) updateView(c *ui.Context) {
 			d.checkUpdate(false)
 		}
 	})
-	if state.err != nil {
-		d.desktopIssue(c, state.err, "无法检查或下载桌面更新。请稍后重试。", "The desktop update could not be checked or downloaded. Try again later.")
+}
+
+func (d *desktopWindow) updateFailureView(c *ui.Context) {
+	detail := d.update.err.Error()
+	heading := d.text("暂时无法检查更新", "Couldn’t check for updates")
+	action := d.text("重新检查", "Retry Check")
+	if d.update.release != nil {
+		heading = d.text("更新下载失败", "Couldn’t download the update")
+		action = d.text("重新下载", "Retry Download")
 	}
+	panel := ui.Column(c.Key("update-error")).FillWidth().Padding(16).Gap(8).
+		Radius(8).Background(c.Theme().Surface)
+	panel.Children(func() {
+		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(12).Children(func() {
+			ui.Text(c, heading).Grow(1).MinWidth(0).Bold()
+			if ui.Button(c.Key("retry-update"), action).Height(desktopControlHeight).PaddingX(14).Shrink(0).Clicked() {
+				if d.update.release != nil {
+					d.downloadUpdate()
+				} else {
+					d.checkUpdate(false)
+				}
+			}
+		})
+		d.diagnostic(c, panel, detail)
+	})
 }
 
 func (d *desktopWindow) checkUpdate(automatic bool) {
@@ -258,10 +284,12 @@ func updateCheckResult(release *mygo.Update, err error) desktopUpdate {
 		return desktopUpdate{stage: updateUnavailable}
 	case err != nil:
 		// MyGo 0.10 does not expose an HTTP status or a no-release error type.
-		message := err.Error()
-		if message == "no release is published" ||
-			(strings.HasPrefix(message, "GET https://github.com/") && strings.HasSuffix(message, ": 404 Not Found")) {
-			return desktopUpdate{stage: updateUnavailable}
+		for cause := err; cause != nil; cause = errors.Unwrap(cause) {
+			message := cause.Error()
+			if message == "no release is published" ||
+				(strings.HasPrefix(message, "GET "+projectURL+"/releases/download/desktop-v") && strings.HasSuffix(message, ": 404 Not Found")) {
+				return desktopUpdate{stage: updateUnavailable}
+			}
 		}
 		return desktopUpdate{stage: updateIdle, err: err}
 	case release == nil:

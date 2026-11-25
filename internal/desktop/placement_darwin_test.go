@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/egoist/mygo"
@@ -35,7 +36,8 @@ func TestUpdateCheckResultDistinguishesMissingRelease(t *testing.T) {
 		want   updateStage
 	}{
 		{"unsigned development build", nil, mygo.ErrUpdatesDisabled, updateUnavailable},
-		{"no matching release", nil, errors.New("no release is published"), updateUnavailable},
+		{"no matching tagged release", nil, fmt.Errorf("mygo: checking for updates: %w", fmt.Errorf("%w in ConteMan/repolens tagged desktop-v", errors.New("no release is published"))), updateUnavailable},
+		{"missing repository", nil, fmt.Errorf("mygo: checking for updates: %w", errors.New("GET https://api.github.com/repos/ConteMan/repolens/releases: 404 Not Found")), updateIdle},
 		{"missing architecture manifest", nil, errors.New("GET https://github.com/ConteMan/repolens/releases/download/desktop-v1/update-darwin-arm64.json: 404 Not Found"), updateUnavailable},
 		{"rate limit", nil, errors.New("GET https://api.github.com/repos/ConteMan/repolens/releases: 403 Forbidden"), updateIdle},
 		{"latest installed", nil, nil, updateCurrent},

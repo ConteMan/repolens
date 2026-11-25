@@ -9,6 +9,11 @@ import (
 const desktopContentInset = 40
 const desktopControlHeight = 36
 
+func desktopInset(c *ui.Context) float32 {
+	width, _ := c.Size()
+	return min(desktopContentInset, max(16, (width-640)/4))
+}
+
 func desktopInput(c *ui.Context, value *string) ui.Element {
 	return ui.TextInput(c, value).Height(desktopControlHeight).PaddingX(12).Background(c.Theme().Background)
 }

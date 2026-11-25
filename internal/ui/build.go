@@ -161,13 +161,10 @@ func resolveBuildSourcePath(root, value string) string {
 	return filepath.Join(root, filepath.FromSlash(value))
 }
 
-func (s *buildService) outputPath(repository string) (string, error) {
-	root, err := s.cacheRoot()
+func cachedBuildOutput(repository string, cacheRoot func() (string, error)) (string, error) {
+	root, err := cacheRoot()
 	if err != nil {
 		return "", err
-	}
-	if err := os.MkdirAll(root, 0o755); err != nil {
-		return "", fmt.Errorf("create build cache directory: %w", err)
 	}
 	sum := sha256.Sum256([]byte(repository))
 	return filepath.Join(root, hex.EncodeToString(sum[:])), nil

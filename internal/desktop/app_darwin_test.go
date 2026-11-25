@@ -2,12 +2,13 @@ package desktop
 
 import (
 	"errors"
-	"github.com/egoist/mygo"
 	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -66,6 +67,8 @@ func TestDesktopUpdateDesignStates(t *testing.T) {
 	}{
 		{"APP-01-update-ready", 1024, false, desktopUpdate{stage: updateReady, release: &mygo.Update{Version: "1.0.1"}}},
 		{"APP-02-up-to-date", 860, true, desktopUpdate{stage: updateCurrent}},
+		{"APP-update-check-failed", 1024, false, desktopUpdate{stage: updateIdle, err: errors.New("mygo: checking for updates: context deadline exceeded")}},
+		{"APP-update-download-failed", 740, true, desktopUpdate{stage: updateAvailable, release: &mygo.Update{Version: "1.0.1"}, err: errors.New("download interrupted")}},
 		{"APP-update-checking", 860, true, desktopUpdate{stage: updateChecking}},
 		{"APP-update-downloading", 860, true, desktopUpdate{stage: updateDownloading, received: 20, total: 50}},
 	} {
@@ -80,6 +83,26 @@ func TestDesktopUpdateDesignStates(t *testing.T) {
 			}
 			view := ui.NewTester(d.view, state.width, 632)
 			view.Frame()
+			if state.update.err != nil {
+				action := d.text("重新检查", "Retry Check")
+				if state.update.release != nil {
+					action = d.text("重新下载", "Retry Download")
+				}
+				if _, found := view.Find(action); !found {
+					t.Fatal("missing retry action")
+				}
+				detail := state.update.err.Error()
+				if _, found := view.Find(detail); found {
+					t.Fatal("raw error should start collapsed")
+				}
+				if err := view.Click(d.text("错误详情", "Error Details")); err != nil {
+					t.Fatal(err)
+				}
+				view.Advance(250 * time.Millisecond)
+				if _, found := view.Find(detail); !found {
+					t.Fatal("missing expanded diagnostic")
+				}
+			}
 			if path := os.Getenv("REPOLENS_DESKTOP_EVIDENCE"); path != "" {
 				f, err := os.Create(filepath.Join(path, state.name+".png"))
 				if err != nil {

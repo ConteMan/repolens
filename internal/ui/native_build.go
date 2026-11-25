@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ConteMan/repolens/internal/config"
 	"github.com/ConteMan/repolens/internal/source"
@@ -34,29 +33,15 @@ func BuildOutputErrorCode(err error) string {
 // A nil override follows the external configuration. An explicit empty one uses the application cache.
 func BuildNative(ctx context.Context, root, external string, override *string, confirm bool) (NativeBuildResult, error) {
 	var result NativeBuildResult
-	var destination string
-	sourceSpec := source.Spec{Repo: root, Worktree: true}
+	var cfg config.BuilderSettings
 	if external != "" {
 		doc, err := config.LoadBuilderDocument(external)
 		if err != nil {
 			return result, err
 		}
-		cfg := doc.Settings
-		if cfg.Source.Repo != nil && *cfg.Source.Repo != "" {
-			sourceSpec.Repo = *cfg.Source.Repo
-			if !filepath.IsAbs(sourceSpec.Repo) && !strings.Contains(sourceSpec.Repo, ":") {
-				sourceSpec.Repo = filepath.Join(filepath.Dir(external), sourceSpec.Repo)
-			}
-		}
-		if cfg.Source.Ref != nil {
-			sourceSpec.Ref = *cfg.Source.Ref
-		}
-		destination = NativeOutputPath(external, cfg.Output.Dir)
-		sourceSpec.Worktree = sourceSpec.Ref == "" && sourceSpec.Repo == root
+		cfg = doc.Settings
 	}
-	if override != nil {
-		destination = *override
-	}
+	sourceSpec, destination := nativeBuildInputs(root, external, cfg, override)
 	service := newBuildService(ctx)
 	target, err := service.buildTarget(root, destination, confirm)
 	if err != nil {
@@ -90,13 +75,53 @@ func BuildNative(ctx context.Context, root, external string, override *string, c
 	return result, nil
 }
 
-// NativeOutputPath resolves a builder's explicit destination relative to its configuration.
-func NativeOutputPath(external string, dir *string) string {
-	if dir == nil || *dir == "" {
-		return ""
+// NativeBuildLocations describes the paths used for a desktop build before it runs.
+type NativeBuildLocations struct {
+	Source       source.Spec
+	RemoteMirror string
+	Output       string
+}
+
+// ResolveNativeBuildLocations resolves the configured paths without creating any directories.
+func ResolveNativeBuildLocations(root, external string, cfg config.BuilderSettings, override *string) (NativeBuildLocations, error) {
+	input, destination := nativeBuildInputs(root, external, cfg, override)
+	locations := NativeBuildLocations{Source: input}
+	local, remote, err := source.RepositoryDirectory(input.Repo)
+	if err != nil {
+		return locations, err
 	}
-	if filepath.IsAbs(*dir) {
-		return filepath.Clean(*dir)
+	if remote {
+		locations.RemoteMirror = local
 	}
-	return filepath.Join(filepath.Dir(external), *dir)
+	if destination == "" {
+		locations.Output, err = cachedBuildOutput(root, defaultBuildCacheRoot)
+	} else {
+		locations.Output, err = normalizeOutputPath(destination)
+	}
+	return locations, err
+}
+
+func nativeBuildInputs(root, external string, cfg config.BuilderSettings, override *string) (source.Spec, string) {
+	input := source.Spec{Repo: root}
+	if repo := cfg.Source.Repo; repo != nil && *repo != "" {
+		input.Repo = *repo
+		if !source.IsRemote(*repo) && !filepath.IsAbs(*repo) {
+			input.Repo = filepath.Join(filepath.Dir(external), *repo)
+		}
+	}
+	if ref := cfg.Source.Ref; ref != nil {
+		input.Ref = *ref
+	}
+	input.Worktree = input.Ref == "" && input.Repo == root
+	var destination string
+	if dir := cfg.Output.Dir; dir != nil && *dir != "" {
+		destination = *dir
+		if !filepath.IsAbs(destination) {
+			destination = filepath.Join(filepath.Dir(external), destination)
+		}
+	}
+	if override != nil {
+		destination = *override
+	}
+	return input, destination
 }

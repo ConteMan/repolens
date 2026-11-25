@@ -225,14 +225,26 @@ func (d *desktopWindow) view(c *ui.Context) {
 		c.SetTheme(&theme)
 	}
 	d.sidebar = min(max(d.sidebar, 192), 340)
-	split := ui.Split(c.Key("workspace"), &d.sidebar, func() { d.navigation(c) }, func() { d.content(c) }).
-		SplitReset(defaultSidebarWidth).Fill()
-	if split.Changed() && d.window != nil {
-		d.sidebar = min(max(d.sidebar, 192), 340)
-		old := d.preferences
-		d.preferences.Sidebar = d.sidebar
-		d.savePreferences(old)
-	}
+	viewport, _ := c.Size()
+	sidebarLimit := max(float32(154), viewport-540)
+	workspace := ui.Column(c).Fill()
+	sidebar := ui.Local(workspace, "sidebar", func() float32 { return min(d.sidebar, sidebarLimit) })
+	workspace.Children(func() {
+		split := ui.Split(c.Key("workspace"), sidebar, func() { d.navigation(c) }, func() { d.content(c) }).
+			SplitReset(defaultSidebarWidth).Fill()
+		if split.Changed() {
+			d.sidebar = min(max(*sidebar, 192), 340)
+			if d.window != nil {
+				old := d.preferences
+				d.preferences.Sidebar = d.sidebar
+				d.savePreferences(old)
+			}
+		}
+		if shown := min(d.sidebar, sidebarLimit); *sidebar != shown {
+			*sidebar = shown
+			c.Invalidate()
+		}
+	})
 	if d.ignoreEditor != nil && !d.discard {
 		d.ignoreView(c)
 	}
@@ -371,35 +383,37 @@ func (d *desktopWindow) repositorySelector(c *ui.Context) {
 func (d *desktopWindow) content(c *ui.Context) {
 	ui.Column(c).Fill().Background(c.Theme().Background).Children(func() {
 		ui.Row(c).Height(48).FillWidth().DragWindow()
-		switch d.page {
-		case pageApp:
-			d.appPage(c)
-			return
-		case pageBuild:
-			d.buildPage(c)
-			return
-		}
-		if d.session == nil {
-			d.welcome(c)
-			return
-		}
-		d.siteTabs(c)
-		if d.session.BuilderPath != "" && d.siteTab != tabBuilder && d.editor == nil {
-			d.targetSelector(c)
-		}
-		if d.siteTab != tabRules {
-			d.sitePage(c, d.siteTab)
+		ui.Column(c).FillWidth().MaxWidth(1000).MinHeight(0).Grow(1).AlignSelf(ui.Center).Children(func() {
+			switch d.page {
+			case pageApp:
+				d.appPage(c)
+				return
+			case pageBuild:
+				d.buildPage(c)
+				return
+			}
+			if d.session == nil {
+				d.welcome(c)
+				return
+			}
+			d.siteTabs(c)
+			if d.session.BuilderPath != "" && d.siteTab != tabBuilder && d.editor == nil {
+				d.targetSelector(c)
+			}
+			if d.siteTab != tabRules {
+				d.sitePage(c, d.siteTab)
+				d.footer(c)
+				return
+			}
+			if d.editor != nil {
+				ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(28, desktopInset(c)).Children(func() {
+					d.editor.view(c, d.english, d.applyRule, func() { d.editor = nil })
+				})
+			} else {
+				d.rules(c)
+			}
 			d.footer(c)
-			return
-		}
-		if d.editor != nil {
-			ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(28, desktopContentInset).Children(func() {
-				d.editor.view(c, d.english, d.applyRule, func() { d.editor = nil })
-			})
-		} else {
-			d.rules(c)
-		}
-		d.footer(c)
+		})
 	})
 }
 
@@ -420,7 +434,7 @@ func (d *desktopWindow) siteTabs(c *ui.Context) {
 			break
 		}
 	}
-	ui.ScrollHorizontal(c.Key("site-tabs")).Height(36).FillWidth().Margin(0, desktopContentInset, 16, desktopContentInset).Children(func() {
+	ui.ScrollHorizontal(c.Key("site-tabs")).Height(36).FillWidth().Margin(0, desktopInset(c), 16, desktopInset(c)).Children(func() {
 		ui.Tabs(c, &selected, labels[:]...)
 	})
 	d.siteTab = tabs[selected]
@@ -430,7 +444,7 @@ func (d *desktopWindow) welcome(c *ui.Context) {
 	_, height := c.Size()
 	top := min(max(height-480, 48), 152)
 	ui.Scroll(c).Grow(1).MinHeight(0).FillWidth().Children(func() {
-		ui.Column(c).FillWidth().Padding(top, 38, 38, 81).Gap(18).Children(func() {
+		ui.Column(c).FillWidth().Padding(top, desktopInset(c), 38, desktopInset(c)).Gap(18).Children(func() {
 			ui.Text(c, d.text("打开 Git 仓库", "Open a Git Repository")).FontSize(30).Bold()
 			label := d.text("选择文件夹…", "Choose Folder…")
 			if d.openError != nil {
@@ -440,7 +454,7 @@ func (d *desktopWindow) welcome(c *ui.Context) {
 				ui.Text(c, d.text("选择文档所在的 Git 工作树根目录。", "Choose the Git working tree that contains your documentation.")).
 					FontSize(16).TextColor(c.Theme().TextMuted).Margin(0, 0, 18, 0)
 			}
-			button := ui.PrimaryButton(c.Key("welcome-picker"), label).Height(36).Disabled(d.picking)
+			button := ui.PrimaryButton(c.Key("welcome-picker"), label).AlignSelf(ui.Start).Height(36).PaddingX(14).Disabled(d.picking)
 			if d.openFocus {
 				c.Announce(d.openMessage(d.openError))
 				button.Focus()
@@ -466,7 +480,7 @@ func (d *desktopWindow) openFailure(c *ui.Context) {
 }
 
 func (d *desktopWindow) rules(c *ui.Context) {
-	ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(6, desktopContentInset, 0).Gap(12).Children(func() {
+	ui.Column(c).Grow(1).MinHeight(0).FillWidth().Padding(6, desktopInset(c), 0).Gap(12).Children(func() {
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(12).Margin(0, 0, 18).Children(func() {
 			ui.Text(c, d.text("忽略路径", "Ignored Paths")).Bold().WidthPercent(24)
 			summary := d.text("继承", "Inherit")
@@ -600,7 +614,7 @@ func (d *desktopWindow) target() string {
 
 func (d *desktopWindow) footer(c *ui.Context) {
 	t := c.Theme()
-	ui.Column(c).FillWidth().Padding(12, desktopContentInset, 30).Gap(8).Children(func() {
+	ui.Column(c).FillWidth().Padding(12, desktopInset(c), 30).Gap(8).Children(func() {
 		if d.saveError != nil {
 			d.saveIssue(c)
 			if errors.Is(d.saveError, config.ErrRevisionConflict) {

@@ -138,18 +138,20 @@ func openWorktree(ctx context.Context, repo string) (*Tree, error) {
 	return &Tree{Root: root, Files: files}, nil
 }
 
-func prepareRepository(ctx context.Context, repo string) (string, bool, error) {
-	if !isRemote(repo) {
+// RepositoryDirectory locates a local repository or the mirror used for a remote source.
+func RepositoryDirectory(repo string) (string, bool, error) {
+	if !IsRemote(repo) {
 		abs, err := filepath.Abs(repo)
-		if err != nil {
-			return "", false, err
-		}
-		return abs, false, nil
+		return abs, false, err
 	}
+	path, err := cachedRepoPath(repo)
+	return path, true, err
+}
 
-	cacheDir, err := cachedRepoPath(repo)
-	if err != nil {
-		return "", true, err
+func prepareRepository(ctx context.Context, repo string) (string, bool, error) {
+	cacheDir, remote, err := RepositoryDirectory(repo)
+	if err != nil || !remote {
+		return cacheDir, remote, err
 	}
 	if err := os.MkdirAll(filepath.Dir(cacheDir), 0o755); err != nil {
 		return "", true, err
@@ -480,7 +482,8 @@ func cachedRepoPath(repo string) (string, error) {
 	return filepath.Join(cacheRoot, "repolens", "repos", key), nil
 }
 
-func isRemote(repo string) bool {
+// IsRemote reports whether repo names a supported Git transport.
+func IsRemote(repo string) bool {
 	if scpLikeURL.MatchString(repo) {
 		return true
 	}

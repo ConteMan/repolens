@@ -89,7 +89,7 @@ func (d *desktopWindow) sitePage(c *ui.Context, tab desktopSiteTab) {
 			tab      desktopSiteTab
 			path     string
 			external bool
-		}{d.session, tab, d.session.BuilderPath, d.externalTarget}).FillWidth().Padding(20, desktopContentInset, 24).Gap(12).Children(func() {
+		}{d.session, tab, d.session.BuilderPath, d.externalTarget}).FillWidth().Padding(20, desktopInset(c), 24).Gap(12).Children(func() {
 			fields := siteFields(d.sharedDraft(), tab)
 			if tab == tabBuilder {
 				s := d.session

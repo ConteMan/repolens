@@ -99,28 +99,33 @@ func (d *desktopWindow) pickOutput() {
 func (d *desktopWindow) buildPage(c *ui.Context) {
 	b := &d.buildState
 	ui.Scroll(c.Key("build-panel")).Fill().Children(func() {
-		ui.Column(c).FillWidth().PaddingX(38).Gap(20).Children(func() {
-			ui.Row(c).FillWidth().Height(44).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, d.text("构建来源", "Build source")).WidthPercent(37).Bold()
-				label := d.text("当前工作目录（含未提交修改）", "Working tree, including local changes")
-				if src := d.session.Builder.Source.Repo; src != nil && *src != "" {
-					label = *src
-				}
-				if ref := d.session.Builder.Source.Ref; ref != nil && *ref != "" {
-					label += " @ " + *ref
-				}
-				ui.Text(c, label).TextColor(c.Theme().TextMuted).Grow(1).TruncateMiddle().Tooltip(label)
-			})
-			ui.Row(c).FillWidth().Height(44).AlignItems(ui.Center).Gap(8).Children(func() {
-				ui.Text(c, d.text("输出位置", "Output location")).WidthPercent(37).Bold()
-				label := build.NativeOutputPath(d.session.BuilderPath, d.session.Builder.Output.Dir)
-				if b.output != nil {
-					label = *b.output
-				}
-				if label == "" {
-					label = d.text("应用缓存", "Application cache")
-				}
-				ui.Text(c, label).TextColor(c.Theme().TextMuted).Grow(1).MinWidth(0).TruncateMiddle().Tooltip(label)
+		ui.Column(c).FillWidth().PaddingX(desktopInset(c)).Gap(20).Children(func() {
+			locations, locationErr := build.ResolveNativeBuildLocations(d.session.Root, d.session.BuilderPath, d.session.Builder, b.output)
+			pathRow := func(key, label, value, tip string, actions func()) {
+				ui.Row(c.Key(key)).FillWidth().Height(44).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, label).Width(108).Shrink(0).Bold()
+					ui.Text(c, value).Width(0).Grow(1).MinWidth(0).TextColor(c.Theme().TextMuted).SingleLine().TruncateMiddle().Tooltip(tip)
+					if actions != nil {
+						actions()
+					}
+				})
+			}
+			src := locations.Source
+			tip := src.Repo
+			if src.Worktree {
+				tip += d.text("\n包含未提交的修改", "\nIncludes uncommitted changes")
+			}
+			pathRow("build-source", d.text("构建来源", "Build source"), src.Repo, tip, nil)
+			if src.Ref != "" {
+				pathRow("build-ref", d.text("Git 引用", "Git ref"), src.Ref, src.Ref, nil)
+			}
+			if locations.RemoteMirror != "" {
+				pathRow("source-mirror", d.text("仓库缓存", "Repository cache"), locations.RemoteMirror, locations.RemoteMirror, nil)
+			}
+			if path := d.session.BuilderPath; path != "" {
+				pathRow("build-config", d.text("构建者配置", "Builder config"), path, path, nil)
+			}
+			pathRow("build-output", d.text("输出位置", "Output location"), locations.Output, locations.Output, func() {
 				if b.output != nil && ui.Button(c.Key("reset-output"), d.text("恢复默认", "Use default")).Disabled(d.busy).Clicked() {
 					b.output = nil
 					b.err = nil
@@ -130,6 +135,9 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 					d.pickOutput()
 				}
 			})
+			if locationErr != nil {
+				d.buildIssue(c, locationErr)
+			}
 			name := d.text("构建站点", "Build site")
 			if !b.finished.IsZero() {
 				name = d.text("重新构建", "Rebuild")
@@ -138,7 +146,7 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 				name = d.text("构建中…", "Building…")
 			}
 			ui.Row(c).Margin(20, 0, 0, 0).Gap(12).AlignItems(ui.Center).Children(func() {
-				if ui.Button(c.Key("start-build"), name).Height(36).Disabled(d.busy || d.dirty()).Clicked() {
+				if ui.Button(c.Key("start-build"), name).Height(36).Disabled(d.busy || d.dirty() || locationErr != nil).Clicked() {
 					d.runBuild(false)
 				}
 				if d.dirty() {
@@ -173,14 +181,11 @@ func (d *desktopWindow) buildPage(c *ui.Context) {
 			ui.Row(c).Margin(22, 0, 10, 0).Height(1).FillWidth().Background(c.Theme().Border)
 			ui.Text(c, d.text("构建成功", "Build succeeded")).FontSize(24).Bold()
 			source := b.result.Source
-			if source == d.session.Root {
-				source = d.text("本地工作目录", "Local working tree")
-			}
 			date := b.finished.Format("2006-01-02 15:04")
 			if b.finished.Format("2006-01-02") == time.Now().Format("2006-01-02") {
 				date = d.text("今天 ", "Today ") + b.finished.Format("15:04")
 			}
-			ui.Text(c, fmt.Sprintf(d.text("%s  ·  %s  ·  %d 个页面", "%s  ·  %s  ·  %d pages"), date, source, b.result.Pages)).TextColor(c.Theme().TextMuted).Tooltip(b.result.Source)
+			ui.Text(c, fmt.Sprintf(d.text("%s  ·  %s  ·  %d 个页面", "%s  ·  %s  ·  %d pages"), date, source, b.result.Pages)).FillWidth().SingleLine().TruncateMiddle().TextColor(c.Theme().TextMuted).Tooltip(b.result.Source)
 			ui.Row(c).Margin(20, 0, 0, 0).Gap(8).Children(func() {
 				if ui.PrimaryButton(c.Key("preview-build"), d.text("打开站点预览", "Open site preview")).Height(36).PaddingX(14).Clicked() {
 					b.err = b.startPreview()
