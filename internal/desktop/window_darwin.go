@@ -80,8 +80,8 @@ func Run(path, language string) error {
 
 		d.window = mygo.NewWindow(mygo.WindowOptions{
 			Title: "Repolens", Width: 1024, Height: 632, MinWidth: 740, MinHeight: 450,
-			TitleBarStyle:        mygo.TitleBarHiddenInset,
-			TrafficLightPosition: &mygo.Point{X: 18, Y: 18},
+			TitleBarStyle:        mygo.TitleBarHidden,
+			TrafficLightPosition: &mygo.Point{X: 12, Y: 12},
 			StateKey:             "workspace",
 			Content:              ui.View(d.view),
 		})
@@ -248,8 +248,8 @@ func (d *desktopWindow) navigation(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Fill().Background(t.Surface).Children(func() {
 		ui.Row(c).FillWidth().Height(48).DragWindow()
-		ui.Column(c).FillWidth().Gap(4).PaddingX(18).Children(func() {
-			ui.Row(c).Height(36).FillWidth().AlignItems(ui.Center).DragWindow().Children(func() {
+		ui.Column(c).FillWidth().Gap(4).PaddingX(10).Children(func() {
+			ui.Row(c).Height(36).FillWidth().PaddingX(8).AlignItems(ui.Center).DragWindow().Children(func() {
 				ui.Text(c, "Repolens").FontSize(21).Bold()
 			})
 			d.repositorySelector(c)
@@ -304,13 +304,14 @@ func (d *desktopWindow) navigationButton(c *ui.Context, page desktopPage, label 
 func (d *desktopWindow) repositorySelector(c *ui.Context) {
 	t := c.Theme()
 	name := d.text("选择仓库", "Choose Repository")
-	description := name
 	if d.session != nil {
 		name = filepath.Base(d.session.Root)
-		description = d.session.Root
 	}
-	button := ui.ButtonBase(c.Key("repository-picker")).FillWidth().Height(28).AlignItems(ui.Center).
-		Gap(4).Label(name).Tooltip(description).Disabled(d.picking)
+	button := ui.ButtonBase(c.Key("repository-picker")).FillWidth().Height(28).PaddingX(8).AlignItems(ui.Center).
+		Gap(4).Label(name).Disabled(d.picking)
+	if d.session != nil {
+		button.Tooltip(d.session.Root)
+	}
 	if button.Hovered() {
 		button.Background(t.Background).Radius(6)
 	}
@@ -739,30 +740,31 @@ func (d *desktopWindow) confirmView(c *ui.Context) {
 			}
 		}
 		expanded = expanded || count > 1
-		width, height := float32(438), float32(142)
-		if len(groups) == 1 && groups[0].rulesChanged {
-			width, height = 586, 194
-		}
-		if expanded {
-			width, height = 656, 380
-		}
-		ui.Column(c).Width(width).MaxWidthPercent(100).Gap(20).Children(func() {
+		windowWidth, windowHeight := c.Size()
+		width := max(160, min(960, windowWidth-88))
+		height := max(90, min(640, windowHeight-260))
+		layout := ui.Column(c).Width(width).MaxWidthPercent(100).Gap(12)
+		mode := ui.Local(layout, "confirmation-mode", func() int { return 0 })
+		layout.Children(func() {
 			ui.Text(c, d.text("保存站点设置？", "Save Site Settings?")).FontSize(22).Bold()
 			if expanded {
 				ui.Text(c, fmt.Sprintf(d.text("%d 项更改  ·  %d 个配置文件", "%d changes  ·  %d configuration files"), count, len(groups))).
 					TextColor(c.Theme().TextMuted)
 			}
-			ui.Scroll(c.Key("save-diff")).Height(height).Shrink(1).MinHeight(0).FillWidth().Children(func() {
+			ui.Tabs(c.Key("preview-type"), mode, d.text("变更摘要", "Summary"), d.text("YAML 差异", "YAML Diff"))
+			ui.Scroll(c.Key(*mode)).Height(height).Shrink(1).MinHeight(0).FillWidth().Children(func() {
 				ui.Column(c).FillWidth().Gap(20).Children(func() {
 					for _, group := range groups {
-						d.configurationChangeView(c, group, expanded)
+						if *mode == 1 {
+							d.yamlConfirmationGroup(c, group.change)
+						} else {
+							d.configurationChangeView(c, group, expanded)
+						}
 					}
 				})
 			})
 			actions := ui.Row(c).FillWidth().Shrink(0).Gap(8).Justify(ui.End)
-			if expanded {
-				actions.Padding(12, 0, 0).BorderWidth(1, 0, 0, 0).BorderColor(c.Theme().Border)
-			}
+			actions.Padding(12, 0, 0).BorderWidth(1, 0, 0, 0).BorderColor(c.Theme().Border)
 			actions.Children(func() {
 				if ui.Button(c.Key("cancel-save"), d.text("返回编辑", "Back to Editing")).Height(36).PaddingX(14).Clicked() {
 					d.preview = false

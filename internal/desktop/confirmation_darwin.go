@@ -372,10 +372,7 @@ func (d *desktopWindow) configurationChangeView(c *ui.Context, group confirmatio
 			}
 			d.confirmationDetails(c, data, ruleChanges(data.before, data.after))
 		}
-		raw := ui.Local(ui.Box(c).Size(0, 0), "raw", func() bool { return false })
-		ui.Collapsible(c, t("查看 YAML 差异", "View YAML diff"), raw, func() {
-			ui.Text(c, strings.TrimSuffix(change.Diff, "\n")).Font("monospace").FillWidth().Selectable()
-		})
+
 	})
 }
 

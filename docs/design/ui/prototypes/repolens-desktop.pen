@@ -1939,7 +1939,7 @@
               "gap": "$titleRepoGap",
               "padding": [
                 0,
-                18
+                10
               ],
               "children": [
                 {
@@ -1960,6 +1960,10 @@
                       "fontSize": 21,
                       "fontWeight": "bold"
                     }
+                  ],
+                  "padding": [
+                    0,
+                    8
                   ]
                 },
                 {
@@ -2001,7 +2005,12 @@
                       "strokeLinecap": "round",
                       "strokeLinejoin": "round"
                     }
-                  ]
+                  ],
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "cornerRadius": 6
                 }
               ]
             },
@@ -9035,6 +9044,464 @@
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "C7moT",
+      "x": 3408,
+      "y": 4560,
+      "name": "SITE-16 · 确认写入 · YAML 差异",
+      "clip": true,
+      "width": 1280,
+      "height": 800,
+      "fill": "$paper",
+      "layout": "none",
+      "children": [
+        {
+          "id": "Ou5bt",
+          "type": "ref",
+          "ref": "S4y4j",
+          "width": 1280,
+          "height": 800,
+          "name": "桌面窗口",
+          "x": 0,
+          "y": 0,
+          "descendants": {
+            "O49SC6": {
+              "fill": "$paper"
+            },
+            "uhLtR": {
+              "type": "frame",
+              "id": "Nh2ya",
+              "name": "页面内容",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sF8mt",
+                  "x": 0,
+                  "y": 10,
+                  "name": "基础信息",
+                  "fill": "#3b59c7",
+                  "content": "基础信息",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "frame",
+                  "id": "xl5FI",
+                  "x": 0,
+                  "y": 33,
+                  "name": "当前分组",
+                  "width": 62,
+                  "height": 2,
+                  "fill": "#3b59c7",
+                  "layout": "none"
+                },
+                {
+                  "type": "text",
+                  "id": "SIqO5",
+                  "x": 83,
+                  "y": 10,
+                  "name": "浏览与主题",
+                  "fill": "#65676b",
+                  "content": "浏览与主题",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "CePq9",
+                  "x": 182,
+                  "y": 10,
+                  "name": "渲染与术语",
+                  "fill": "#65676b",
+                  "content": "渲染与术语",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "J4TBAU",
+                  "x": 281,
+                  "y": 10,
+                  "name": "路径与规则",
+                  "fill": "#65676b",
+                  "content": "路径与规则",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "qopZI",
+                  "x": 380,
+                  "y": 10,
+                  "name": "Agent 输出",
+                  "fill": "#65676b",
+                  "content": "Agent 输出",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "wbUDU",
+                  "x": 470,
+                  "y": 10,
+                  "name": "构建者配置",
+                  "fill": "#65676b",
+                  "content": "构建者配置",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "fbk1Y",
+                  "x": 0,
+                  "y": 60,
+                  "name": "表单滚动视口",
+                  "clip": true,
+                  "width": 711,
+                  "height": 440,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HH6tI",
+                      "x": 0,
+                      "y": 20,
+                      "name": "站点名称",
+                      "fill": "#202124",
+                      "content": "站点名称",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "o3Xm6N",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "Favus 文档",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 8,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": "Favus 文档"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "F0DrBH",
+                      "x": 0,
+                      "y": 75,
+                      "name": "站点语言",
+                      "fill": "#202124",
+                      "content": "站点语言",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "xqtmJ",
+                      "type": "ref",
+                      "ref": "RLM9s",
+                      "name": "简体中文  ▾",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 63,
+                      "descendants": {
+                        "Zixyv": {
+                          "content": "简体中文"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "P04Hw",
+                      "x": 0,
+                      "y": 130,
+                      "name": "首页文件",
+                      "fill": "#202124",
+                      "content": "首页文件",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "y3ZQL",
+                      "type": "ref",
+                      "ref": "cxxRg",
+                      "name": "README.md",
+                      "width": 447.93,
+                      "x": 263.06999999999994,
+                      "y": 118,
+                      "descendants": {
+                        "HuoLu": {
+                          "content": "README.md"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "M4RwC",
+                  "type": "ref",
+                  "ref": "T1baO",
+                  "name": "全局保存操作栏",
+                  "width": 711,
+                  "x": 0,
+                  "y": 500,
+                  "descendants": {
+                    "yRLq9": {
+                      "content": "保存到    仓库 / .repolens.yml"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "RNyKa",
+          "x": 0,
+          "y": 0,
+          "name": "对话框背景",
+          "width": 1280,
+          "height": 800,
+          "fill": "#20212466",
+          "layout": "none"
+        },
+        {
+          "type": "frame",
+          "id": "JRZ5M",
+          "x": 136,
+          "y": 38,
+          "name": "保存确认",
+          "width": 1008,
+          "height": 724,
+          "fill": "$paper",
+          "cornerRadius": 12,
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 24,
+          "children": [
+            {
+              "type": "text",
+              "id": "r9h0n",
+              "name": "标题",
+              "fill": "$ink",
+              "content": "保存站点设置？",
+              "fontFamily": "Noto Sans",
+              "fontSize": 22,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "text",
+              "id": "TLlxI",
+              "name": "更改统计",
+              "fill": "$muted",
+              "content": "2 项更改  ·  2 个配置文件",
+              "fontFamily": "Noto Sans",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Z06UrO",
+              "name": "预览模式",
+              "width": "fill_container",
+              "height": 36,
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "IEVXU",
+                  "name": "变更摘要",
+                  "fill": "$muted",
+                  "content": "变更摘要",
+                  "fontFamily": "Noto Sans",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "yl0V1",
+                  "name": "当前模式",
+                  "height": 34,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bGnyF",
+                      "name": "YAML 差异",
+                      "fill": "$accent",
+                      "content": "YAML 差异",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XmBQM",
+                      "width": 70,
+                      "height": 2,
+                      "fill": "$accent"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vkeI0",
+              "name": "YAML 差异滚动区",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "L4tT1",
+                  "name": "/Users/lin/Projects/favus-documentation-portal/.repolens.yml",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Y4LJ5H",
+                      "name": "文件路径",
+                      "fill": "$ink",
+                      "content": "/Users/lin/Projects/favus-documentation-portal/.repolens.yml",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zMyOu",
+                      "name": "YAML 文本",
+                      "width": "fill_container",
+                      "fill": "$surface",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G17yiz",
+                          "name": "统一差异",
+                          "fill": "$ink",
+                          "content": "@@ -1,5 +1,5 @@\n site:\n-  title: Favus Docs\n+  title: Favus Documentation Portal\n rules:\n   - match: docs/**\n     render: true",
+                          "fontFamily": "Roboto Mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "N4cvrW",
+                  "name": "/Users/lin/.config/repolens/build.yml",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FnvoF",
+                      "name": "文件路径",
+                      "fill": "$ink",
+                      "content": "/Users/lin/.config/repolens/build.yml",
+                      "fontFamily": "Noto Sans",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HNx3A",
+                      "name": "YAML 文本",
+                      "width": "fill_container",
+                      "fill": "$surface",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n3vIU1",
+                          "name": "统一差异",
+                          "fill": "$ink",
+                          "content": "@@ -1,4 +1,4 @@\n output:\n-  base_path: /docs/\n+  base_path: /portal/\n access:\n   noindex: true",
+                          "fontFamily": "Roboto Mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "c5wwBY",
+              "name": "操作栏分隔线",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "$edge"
+            },
+            {
+              "type": "frame",
+              "id": "xbgur",
+              "name": "固定操作组",
+              "width": "fill_container",
+              "gap": 8,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "ulzT3",
+                  "type": "ref",
+                  "ref": "fZ6he",
+                  "descendants": {
+                    "JhTm5": {
+                      "content": "返回编辑"
+                    }
+                  }
+                },
+                {
+                  "id": "pLJCa",
+                  "type": "ref",
+                  "ref": "FqyhL",
+                  "descendants": {
+                    "sBShM": {
+                      "content": "确认保存"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }

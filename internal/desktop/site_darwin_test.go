@@ -4,6 +4,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ConteMan/repolens/internal/config"
@@ -144,8 +145,18 @@ func TestConfirmationLongChangesKeepActionsVisible(t *testing.T) {
 			t.Fatalf("%q is outside the visible viewport: %+v", label, bounds)
 		}
 	}
+	if err := view.Click("YAML Diff"); err != nil {
+		t.Fatal(err)
+	}
+	for _, label := range []string{"Confirm Save", "Back to Editing"} {
+		bounds, ok := view.Find(label)
+		if !ok || bounds.Y < 0 || bounds.Y+bounds.H > 632 {
+			t.Fatalf("%q is outside the YAML view: %+v", label, bounds)
+		}
+	}
+
 	if path := os.Getenv("REPOLENS_DESKTOP_EVIDENCE"); path != "" {
-		f, err := os.Create(filepath.Join(path, "confirmation-long.png"))
+		f, err := os.Create(filepath.Join(path, "confirmation-yaml-expanded.png"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,5 +164,15 @@ func TestConfirmationLongChangesKeepActionsVisible(t *testing.T) {
 		if err := png.Encode(f, view.Image()); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestConfirmationYAMLShowsOnlyChangedLines(t *testing.T) {
+	before := "site:\n  title: Old\n  home: README.md\nview:\n  search: false\n"
+	after := "site:\n  title: New\n  home: README.md\nview:\n  search: false\n"
+	diff := confirmationYAMLDiff(before, after)
+	if !strings.Contains(diff, "-  title: Old\n+  title: New") ||
+		strings.Contains(diff, "-  home:") || strings.Contains(diff, "+  home:") {
+		t.Fatalf("unexpected YAML changes:\n%s", diff)
 	}
 }
