@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-25
+
 - 文件树支持在原地按文件名筛选；顶栏继续搜索文件和章节。改善 Markdown 列表分组与常用内容块的留白。
 
 ### Added
@@ -181,7 +183,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project skeleton: CLI scaffold, design docs, ADRs, CI quality gate.
 - Vendored Mermaid v11.16.0 UMD build for local-only diagram rendering.
 
-[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/ConteMan/repolens/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/ConteMan/repolens/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/ConteMan/repolens/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/ConteMan/repolens/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/ConteMan/repolens/compare/v1.6.2...v1.6.3
