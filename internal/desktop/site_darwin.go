@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -116,7 +117,15 @@ func (d *desktopWindow) sitePage(c *ui.Context, tab desktopSiteTab) {
 				if effectiveErr == nil && tab != tabBuilder {
 					display, source = d.effectiveField(resolved[index], repository[index], external[index])
 				}
-				d.editSiteField(c, field, display, source)
+				switch field.key {
+				case "theme.vars":
+					d.themeVariables(c, field, source)
+				case "theme.css":
+					d.themeAssets(c, field, fields[index+1])
+				case "theme.templates":
+				default:
+					d.editSiteField(c, field, display, source)
+				}
 			}
 		})
 	})
@@ -439,7 +448,9 @@ func siteFieldValue(value any) *string {
 	case **int:
 		return formatConfirmationValue(*v)
 	case **config.RepositoryByteSize:
-		return formatConfirmationValue(*v)
+		if *v != nil {
+			return new(displayByteSize(int64(**v)))
+		}
 	case **bool:
 		return formatConfirmationValue(*v)
 	case **map[string]string:
@@ -451,6 +462,166 @@ func siteFieldValue(value any) *string {
 		}
 	}
 	return nil
+}
+
+func displayByteSize(bytes int64) string {
+	units := []string{"B", "KB", "MB", "GB", "TB"}
+	unit := 0
+	for bytes != 0 && bytes%1024 == 0 && unit < len(units)-1 {
+		bytes /= 1024
+		unit++
+	}
+	if unit == 0 {
+		return strconv.FormatInt(bytes, 10)
+	}
+	return strconv.FormatInt(bytes, 10) + " " + units[unit]
+}
+
+func (d *desktopWindow) themeRow(c *ui.Context, label, action, hint string, actionState *bool) ui.Element {
+	row := ui.Row(c).FillWidth().Gap(12).AlignItems(ui.Center)
+	row.Children(func() {
+		ui.Text(c, label).Bold().WidthPercent(36).Tooltip(hint)
+		if ui.Button(c, action).Grow(1).Height(36).Clicked() {
+			*actionState = true
+		}
+	})
+	return row
+}
+
+func (d *desktopWindow) themeVariables(c *ui.Context, field siteField, hint string) {
+	type draft struct {
+		open, bad bool
+		text      string
+	}
+	begin := false
+	row := d.themeRow(c.Key(field.key), d.text(field.zh, field.en), d.text("编辑变量…", "Edit Variables…"), hint, &begin)
+	edit := ui.Local(row, "draft", func() draft { return draft{} })
+	if begin {
+		edit.open, edit.bad, edit.text = true, false, ""
+		if value := siteFieldValue(field.value); value != nil {
+			edit.text = *value
+		}
+		c.Invalidate()
+	}
+	panel := ui.Modal(c.Key("theme-vars"), &edit.open, func() {
+		ui.Column(c).Width(500).MaxWidthPercent(100).Gap(12).Children(func() {
+			ui.Text(c, d.text("编辑主题变量", "Edit Theme Variables")).Bold().FontSize(16)
+			ui.Text(c, d.text("每行输入一个键和值。清空内容可恢复继承。", "Enter one key and value per line. Clear the content to inherit.")).TextColor(c.Theme().TextMuted)
+			input := ui.TextArea(c, &edit.text).Height(160).FillWidth().Placeholder("accent: '#3752b5'").
+				Label(d.text("主题变量", "Theme Variables")).AutoFocus()
+			if edit.bad {
+				input.Invalid(true).BorderColor(c.Theme().Danger)
+				input.DescribedBy(ui.Text(c, d.siteFieldError(field, edit.text)).TextColor(c.Theme().Danger))
+			}
+			d.themeEditorActions(c, &edit.open, func() bool {
+				edit.bad = !updateSiteField(field.value, edit.text)
+				return !edit.bad
+			})
+		})
+	})
+	panel.Padding(24).Radius(12)
+}
+
+func (d *desktopWindow) themeAssets(c *ui.Context, css, templates siteField) {
+	type draft struct {
+		open  bool
+		paths [2]string
+		err   error
+	}
+	fields := [2]siteField{css, templates}
+	begin := false
+	row := d.themeRow(c.Key("theme-assets"), d.text("自定义 CSS / 模板", "Custom CSS / Templates"),
+		d.text("选择文件与目录…", "Choose File and Folder…"), "", &begin)
+	edit := ui.Local(row, "draft", func() draft { return draft{} })
+	if begin {
+		edit.open, edit.err, edit.paths = true, nil, [2]string{}
+		for i, field := range fields {
+			if value := siteFieldValue(field.value); value != nil {
+				edit.paths[i] = *value
+			}
+		}
+		c.Invalidate()
+	}
+	panel := ui.Modal(c.Key("theme-assets-editor"), &edit.open, func() {
+		ui.Column(c).Width(520).MaxWidthPercent(100).Gap(12).Children(func() {
+			ui.Text(c, d.text("自定义 CSS / 模板", "Custom CSS / Templates")).Bold().FontSize(16)
+			ui.Text(c, d.text("可手动输入路径。留空可恢复继承。", "You can enter paths manually. Leave a path blank to inherit.")).TextColor(c.Theme().TextMuted)
+			for i, field := range fields {
+				ui.Column(c).Key(field.key).FillWidth().Gap(4).Children(func() {
+					label := ui.Text(c, d.text(field.zh, field.en)).Bold()
+					ui.Row(c).FillWidth().Gap(8).Children(func() {
+						ui.TextInput(c, &edit.paths[i]).Height(36).Grow(1).MinWidth(0).LabelledBy(label).Placeholder(field.example)
+						choose := d.text("选择文件", "Choose File")
+						if i == 1 {
+							choose = d.text("选择目录", "Choose Folder")
+						}
+						if ui.Button(c, choose).Height(36).Disabled(d.window == nil || d.picking).Clicked() {
+							d.pickThemeAsset(i == 1, choose, func(path string, err error) {
+								if edit.open {
+									edit.err = err
+									if path != "" {
+										edit.paths[i] = path
+									}
+								}
+							})
+						}
+					})
+				})
+			}
+			if edit.err != nil {
+				ui.Text(c, edit.err.Error()).TextColor(c.Theme().Danger)
+			}
+			d.themeEditorActions(c, &edit.open, func() bool {
+				for i, field := range fields {
+					updateSiteField(field.value, edit.paths[i])
+				}
+				return true
+			})
+		})
+	})
+	panel.Padding(24).Radius(12)
+}
+
+func (d *desktopWindow) themeEditorActions(c *ui.Context, open *bool, apply func() bool) {
+	ui.Row(c).FillWidth().Justify(ui.End).Gap(8).Children(func() {
+		if ui.Button(c, d.text("取消", "Cancel")).Height(36).Clicked() {
+			*open = false
+		}
+		if ui.PrimaryButton(c, d.text("应用", "Apply")).Height(36).Disabled(d.picking).Clicked() {
+			if apply() {
+				*open = false
+				d.edited()
+			}
+			c.Invalidate()
+		}
+	})
+}
+
+func (d *desktopWindow) pickThemeAsset(directory bool, title string, result func(string, error)) {
+	session := d.session
+	d.picking = true
+	go func() {
+		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+			Parent: d.window, Title: title, DefaultPath: session.Root, Directory: directory,
+		})
+		mygo.RunOnMain(func() {
+			d.picking = false
+			defer d.window.Invalidate()
+			if d.session != session {
+				return
+			}
+			if err != nil {
+				result("", err)
+			} else if len(paths) > 0 {
+				path := paths[0]
+				if relative, err := filepath.Rel(session.Root, path); err == nil && relative != ".." &&
+					!strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+					path = filepath.ToSlash(relative)
+				}
+				result(path, nil)
+			}
+		})
+	}()
 }
 
 func updateSiteField(value any, raw string) bool {

@@ -14,6 +14,8 @@ import (
 	"github.com/ConteMan/repolens/internal/config"
 )
 
+var errNotGitWorktree = errors.New("select a local Git worktree root")
+
 // Session holds editable configuration and its saved baselines.
 // Callers own draft edits and must synchronize them with session methods.
 type Session struct {
@@ -69,7 +71,7 @@ func Open(path string) (*Session, error) {
 	})
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("%q must be the root of a local Git worktree: %w", dir, err)
+		return nil, fmt.Errorf("%q: %w: %w", dir, errNotGitWorktree, err)
 	}
 	gitRoot := strings.TrimSuffix(string(output), "\n")
 	rootInfo, err := os.Stat(gitRoot)

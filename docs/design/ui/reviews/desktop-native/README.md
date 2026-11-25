@@ -70,3 +70,15 @@ Spec 021 的仓库与规则流程已确认作为首期实现基线。打开仓�
 ## 首期实现验收
 
 在 1024 × 632 视口，使用 MyGo 的离屏控件驱动实际窗口视图，并对 Git 临时工作树执行新增、返回编辑、确认写入和重开。实现截图包括[规则列表](runtime/rule-list.png)、[新增规则](runtime/rule-editor.png)和[确认写入](runtime/confirmation.png)。系统目录选择器的测试单独在 GitHub 托管的 macOS runner 运行，具体结果见 CI 步骤摘要。
+
+## 完整工作区实机验收
+
+Spec 022 使用临时 Git 工作树，在 macOS 原生窗口编辑站点设置、核对跨文件差异、保存后重开，并构建了 6 个页面。以下截图来自运行中的应用。数据、构建时间、未修改时的按钮状态随当前仓库变化。
+
+| 工作区 | 运行截图 |
+|---|---|
+| 站点设置 | [基础信息](runtime/workspace/SITE-01.png)、[浏览与主题](runtime/workspace/SITE-02.png)、[路径与规则](runtime/workspace/SITE-04.png)、[Agent 输出](runtime/workspace/SITE-05.png) |
+| 保存设置 | [仓库与外部配置的修改确认](runtime/workspace/SITE-10.png) |
+| 构建与应用设置 | [最近一次成功构建](runtime/workspace/BUILD-01.png)、[英文应用设置](runtime/workspace/APP-02.png) |
+
+Grok CLI 交叉检查了首轮运行截图与设计稿。根据对照调整了侧栏导航、表单密度、规则页层级、构建结果和更新控件，并在真实窗口重新检查。更新安装使用本地签名测试包验证，正式发布渠道在首个桌面版本发布时验收。

@@ -461,7 +461,11 @@ func (d *desktopWindow) openFailure(c *ui.Context) {
 		if d.openPath != "" {
 			ui.Text(c, filepath.Base(d.openPath)).Bold().Tooltip(d.openPath)
 		}
-		ui.Text(c, d.openError.Error()).TextColor(t.TextMuted).Selectable()
+		detail := d.openError.Error()
+		if errors.Is(d.openError, errNotGitWorktree) {
+			detail = d.text("所选文件夹不是 Git 工作树。请选择 Git 仓库的根目录。", "This folder is not a Git working tree. Choose the root folder of a Git repository.")
+		}
+		ui.Text(c, detail).TextColor(t.TextMuted).Selectable().Tooltip(d.openError.Error())
 	})
 }
 
