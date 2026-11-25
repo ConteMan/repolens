@@ -14,3 +14,4 @@
 | [ADR-006](ADR-006-react-base-ui-admin.md) | 本地管理界面采用 React、TypeScript 与 Base UI | 已接受 |
 | [ADR-007](ADR-007-optional-repo-conventions.md) | 仓库可选约定的准入条件 | 已接受 |
 | [ADR-008](ADR-008-native-desktop.md) | 原生桌面端与 CLI 共用 Go 工具链 | 已接受 |
+| [ADR-009](ADR-009-unified-release.md) | CLI 和桌面端统一版本，新增 Windows x64 | 已接受 |
