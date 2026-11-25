@@ -39,7 +39,7 @@
 
   function storageGet(store, key) {
     try {
-      return store.getItem(key);
+      return window[store].getItem(key);
     } catch (_) {
       return null;
     }
@@ -47,7 +47,7 @@
 
   function storageSet(store, key, value) {
     try {
-      store.setItem(key, value);
+      window[store].setItem(key, value);
     } catch (_) {
       return;
     }
@@ -55,30 +55,30 @@
 
   function storageRemove(store, key) {
     try {
-      store.removeItem(key);
+      window[store].removeItem(key);
     } catch (_) {
       return;
     }
   }
 
   function sessionGet(key) {
-    return storageGet(window.sessionStorage, key);
+    return storageGet("sessionStorage", key);
   }
 
   function sessionSet(key, value) {
-    storageSet(window.sessionStorage, key, value);
+    storageSet("sessionStorage", key, value);
   }
 
   function localGet(key) {
-    return storageGet(window.localStorage, key);
+    return storageGet("localStorage", key);
   }
 
   function localSet(key, value) {
-    storageSet(window.localStorage, key, value);
+    storageSet("localStorage", key, value);
   }
 
   function localRemove(key) {
-    storageRemove(window.localStorage, key);
+    storageRemove("localStorage", key);
   }
 
   function sitePreferenceKey(name) {
@@ -1164,7 +1164,7 @@
       if (!nextTopbar || !nextContent || !nextTree) {
         throw new Error("missing pjax targets");
       }
-      var nextSiteScript = doc.querySelector('script[src$="_assets/site.js"]');
+      var nextSiteScript = doc.querySelector('script[data-site-script], script[src$="_assets/site.js"]');
       if (!nextSiteScript || new URL(nextSiteScript.getAttribute("src"), url).href !== siteScriptURL.href) {
         throw new Error("different pjax deployment");
       }

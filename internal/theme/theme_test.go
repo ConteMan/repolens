@@ -407,7 +407,7 @@ func TestHybridTreeAssetsExposeContract(t *testing.T) {
 		`event.key === "End"`,
 		`event.key === "ArrowLeft"`,
 		`localRemove(sidebarStorageKey());`,
-		`storageGet(window.localStorage, key)`,
+		`storageGet("localStorage", key)`,
 		`window.matchMedia("(max-width: 1023px)")`,
 		`overlayTree.innerHTML = treeSource.innerHTML;`,
 		`event.key === "Escape"`,

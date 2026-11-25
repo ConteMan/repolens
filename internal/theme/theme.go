@@ -1,6 +1,7 @@
 package theme
 
 import (
+	"crypto/sha256"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -22,6 +23,7 @@ var embedded embed.FS
 
 // Renderer owns the parsed template set and static theme resources.
 type Renderer struct {
+	assetVersion string
 	templates    *template.Template
 	customCSS    string
 	hasCustomCSS bool
@@ -120,11 +122,20 @@ func New(overrideDir, customCSS string, vars map[string]string) (*Renderer, erro
 		}
 	}
 
+	hash := sha256.New()
+	for _, name := range []string{"site.js", "site.css"} {
+		data, err := embeddedAsset(name)
+		if err != nil {
+			return nil, err
+		}
+		hash.Write(data)
+	}
 	copiedVars := make(map[string]string, len(vars))
 	for k, v := range vars {
 		copiedVars[k] = v
 	}
 	return &Renderer{
+		assetVersion: fmt.Sprintf("%x", hash.Sum(nil)[:8]),
 		templates:    tpl,
 		customCSS:    customCSS,
 		hasCustomCSS: customCSS != "",
@@ -135,10 +146,12 @@ func New(overrideDir, customCSS string, vars map[string]string) (*Renderer, erro
 func (r *Renderer) Page(w io.Writer, d PageData) error {
 	view := struct {
 		PageData
+		AssetVersion string
 		VarsCSS      template.CSS
 		HasCustomCSS bool
 	}{
 		PageData:     fillPageDefaults(d),
+		AssetVersion: r.assetVersion,
 		VarsCSS:      template.CSS(r.varsCSS()),
 		HasCustomCSS: r.hasCustomCSS,
 	}
@@ -183,7 +196,11 @@ func (r *Renderer) WriteAssets(outDir string) error {
 		return err
 	}
 	for _, name := range []string{"site.css", "site.js", "mermaid.min.js"} {
-		if err := writeEmbeddedAsset(assetsDir, name); err != nil {
+		data, err := embeddedAsset(name)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(assetsDir, name), data, 0o644); err != nil {
 			return err
 		}
 	}
@@ -207,19 +224,19 @@ func (r *Renderer) WriteAssets(outDir string) error {
 	return nil
 }
 
-func writeEmbeddedAsset(assetsDir, name string) error {
+func embeddedAsset(name string) ([]byte, error) {
 	data, err := fs.ReadFile(embedded, "assets/"+name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if name == "site.js" {
 		translations, err := json.Marshal(map[string]map[string]string{"zh-CN": uiZH, "en": uiEN})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		data = []byte(strings.Replace(string(data), "/* REPOLENS_UI_STRINGS */ {}", string(translations), 1))
 	}
-	return os.WriteFile(filepath.Join(assetsDir, name), data, 0o644)
+	return data, nil
 }
 
 func chromaCSS() (string, error) {

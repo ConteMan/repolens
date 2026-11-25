@@ -762,3 +762,17 @@ test("falls back when localStorage is unavailable", async ({ browser }) => {
   await expect.poll(async () => Math.round((await page.locator(".sidebar").boundingBox())?.width ?? 0)).toBe(308);
   await context.close();
 });
+
+test("filters filenames when the preview denies browser storage access", async ({ page }) => {
+  await page.addInitScript(() => {
+    for (const name of ["localStorage", "sessionStorage"]) {
+      Object.defineProperty(window, name, { get() { throw new DOMException("Unavailable", "SecurityError"); } });
+    }
+  });
+  await page.goto(`${siteURL}/view/${currentPath}/`);
+  const script = new URL(await page.locator("script[data-site-script]").evaluate(node => (node as HTMLScriptElement).src));
+  expect(script.searchParams.get("v")).toMatch(/^[0-9a-f]{16}$/);
+  await page.locator("#tree-src input").fill("other.md");
+  await expect(page.locator("#tree-src [data-tree-matches] li.file")).toHaveCount(1);
+  await expect(page.locator("#tree-src [data-tree-scroll]")).toBeHidden();
+});

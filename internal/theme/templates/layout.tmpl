@@ -6,7 +6,7 @@
 {{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
 <title>{{.Title}} - {{.SiteTitle}}</title>
 <script>document.documentElement.className=document.documentElement.className.replace(/\bno-js\b/,"js");</script>
-<link rel="stylesheet" href="{{.RelRoot}}_assets/site.css">
+<link rel="stylesheet" href="{{.RelRoot}}_assets/site.css{{if .SnapshotID}}?v={{.AssetVersion}}{{end}}">
 <link rel="stylesheet" href="{{.RelRoot}}_assets/chroma.css">
 {{if .VarsCSS}}<style>{{.VarsCSS}}</style>{{end}}
 {{if .HasCustomCSS}}<link rel="stylesheet" href="{{.RelRoot}}_assets/custom.css">{{end}}
@@ -155,7 +155,7 @@
   <button id="snapshot-reload" type="button" data-i18n="snapshot_reload">{{index .UI "snapshot_reload"}}</button>
 </aside>{{end}}
 {{if .HasMermaid}}<script defer src="{{.RelRoot}}_assets/mermaid.min.js"></script>{{end}}
-<script defer src="{{.RelRoot}}_assets/site.js"></script>
+<script defer{{if .SnapshotID}} data-site-script{{end}} src="{{.RelRoot}}_assets/site.js{{if .SnapshotID}}?v={{.AssetVersion}}{{end}}"></script>
 </body>
 </html>{{end}}
 
