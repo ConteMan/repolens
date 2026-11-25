@@ -1,4 +1,5 @@
 """Build, notarize and verify the macOS artifacts and generate their Homebrew cask."""
+import argparse
 import base64
 import hashlib
 import json
@@ -21,14 +22,17 @@ notes = (package / "CHANGELOG.md").read_text()
 if re.search(r"^## (\S+)", notes, re.M)[1] != version:
     raise SystemExit("Version must match the first desktop changelog section")
 
-key = Path(os.environ.get("REPOLENS_UPDATE_KEY_PATH",
-                          Path.home() / "Library/Application Support/Repolens/update-keys/mygo-update.key"))
-if not key.is_file() or stat.S_IMODE(key.stat().st_mode) != 0o600:
-    raise SystemExit("Expected a readable private updater key with mode 0600")
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--verify-only", action="store_true", help="Verify and stage an existing local build")
 output = ROOT / "bin/desktop-release" / version
-subprocess.run(["go", "tool", "mygo", "build", "-platform", "darwin/universal",
-                "-o", str(output), str(package)], cwd=ROOT, check=True,
-               env=dict(os.environ, MYGO_UPDATER_PRIVATE_KEY=key.read_text().strip()))
+if not parser.parse_args().verify_only:
+    key = Path(os.environ.get("REPOLENS_UPDATE_KEY_PATH",
+                              Path.home() / "Library/Application Support/Repolens/update-keys/mygo-update.key"))
+    if not key.is_file() or stat.S_IMODE(key.stat().st_mode) != 0o600:
+        raise SystemExit("Expected a readable private updater key with mode 0600")
+    subprocess.run(["go", "tool", "mygo", "build", "-platform", "darwin/universal",
+                    "-o", str(output), str(package)], cwd=ROOT, check=True,
+                   env=dict(os.environ, MYGO_UPDATER_PRIVATE_KEY=key.read_text().strip()))
 
 stage = output / "darwin-universal"
 app = stage / "Repolens.app"
@@ -42,7 +46,9 @@ download = f"{repo}/releases/download/{tag}/"
 info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
 if info["CFBundleShortVersionString"] != version or info["CFBundleIdentifier"] != config["identifier"]:
     raise SystemExit("Unexpected application identity or version")
-subprocess.run(["lipo", "-verify_arch", "arm64", "x86_64", app / "Contents/MacOS/Repolens"], check=True)
+architectures = subprocess.check_output(["lipo", "-archs", app / "Contents/MacOS/Repolens"], text=True)
+if set(architectures.split()) != {"arm64", "x86_64"}:
+    raise SystemExit("Expected a Universal application")
 subprocess.run(["codesign", "--verify", "--strict", "--deep", app], check=True)
 subprocess.run(["spctl", "--assess", "--type", "execute", app], check=True)
 for item in (app, dmg):

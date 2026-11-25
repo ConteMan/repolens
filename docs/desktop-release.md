@@ -17,7 +17,7 @@ macOS 桌面版和 CLI 独立编号。桌面版以 `cmd/repolens-desktop/mygo.js
 python3 scripts/desktop-release.py
 ```
 
-构建使用 go.mod 固定的 MyGo 版本。Apple Developer ID Application 私钥在系统钥匙串中，公证复用已配置的 `cubbix-notary` 凭据。正常运行和本地调试不需要发布证书。本地开发包可以使用 `go tool mygo build -sign - -skip-notarize -skip-dmg ./cmd/repolens-desktop`。
+构建使用 go.mod 固定的 MyGo 版本，更新签名验证需要 OpenSSL 3 或更高版本。可用同一脚本的 `--verify-only` 参数复核已公证的本地构建。Apple Developer ID Application 私钥在系统钥匙串中，公证复用已配置的 `cubbix-notary` 凭据。正常运行和本地调试不需要发布证书。本地开发包可以使用 `go tool mygo build -sign - -skip-notarize -skip-dmg ./cmd/repolens-desktop`。
 
 应用更新使用专属 Ed25519 密钥。默认文件为 `~/Library/Application Support/Repolens/update-keys/mygo-update.key`，权限为 0600；可用 `REPOLENS_UPDATE_KEY_PATH` 指向备份恢复后的文件。私钥只由发布构建读取。已安装的客户端依赖仓内公钥验证后续更新。
 
